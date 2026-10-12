@@ -76,6 +76,7 @@ class SettingsWindowController: NSWindowController {
     }
     
     func showWindow() {
+        DockActivationPolicy.shared.setWindowVisible(true, id: "settings")
         // Ensure window exists
         _ = window
 
@@ -113,8 +114,7 @@ class SettingsWindowController: NSWindowController {
     private func relinquishFocus() {
         window?.orderOut(nil)
         
-        // Set app back to accessory mode immediately
-        NSApp.setActivationPolicy(.accessory)
+        DockActivationPolicy.shared.setWindowVisible(false, id: "settings")
     }
     
     deinit {
@@ -134,11 +134,37 @@ extension SettingsWindowController: NSWindowDelegate {
     }
     
     func windowDidBecomeKey(_ notification: Notification) {
-        // Ensure app is in regular mode when window becomes key
-        NSApp.setActivationPolicy(.regular)
+        DockActivationPolicy.shared.setWindowVisible(true, id: "settings")
     }
     
     func windowDidResignKey(_ notification: Notification) {
     }
     
+}
+
+/// One owner for Dock visibility, including settings, onboarding and modal windows.
+@MainActor
+final class DockActivationPolicy {
+    static let shared = DockActivationPolicy()
+    private(set) var isDynamicDockEnabled = false
+    private var visibleWindows: Set<String> = []
+    private let apply: @MainActor (NSApplication.ActivationPolicy) -> Void
+
+    init(apply: @escaping @MainActor (NSApplication.ActivationPolicy) -> Void = { NSApp.setActivationPolicy($0) }) {
+        self.apply = apply
+    }
+
+    func setDynamicDockEnabled(_ enabled: Bool) {
+        isDynamicDockEnabled = enabled
+        update()
+    }
+
+    func setWindowVisible(_ visible: Bool, id: String) {
+        if visible { visibleWindows.insert(id) } else { visibleWindows.remove(id) }
+        update()
+    }
+
+    private func update() {
+        apply(isDynamicDockEnabled || !visibleWindows.isEmpty ? .regular : .accessory)
+    }
 }

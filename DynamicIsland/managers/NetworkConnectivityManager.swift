@@ -9,9 +9,9 @@
  */
 
 import AppKit
-import CoreWLAN
+import Combine
+import EaveStatus
 import Foundation
-import Network
 
 enum ConnectivityHUDState: Equatable {
     case hidden
@@ -33,18 +33,14 @@ enum ConnectivityHUDState: Equatable {
     }
 }
 
-/// Watches the Mac's default network route and turns meaningful connectivity
-/// changes into short-lived HUD presentations.
-final class NetworkConnectivityManager: NSObject, ObservableObject, CWEventDelegate {
+/// Presents changes from the shared status monitor as short-lived notch HUDs.
+@MainActor
+final class NetworkConnectivityManager: ObservableObject {
     static let shared = NetworkConnectivityManager()
 
     @Published private(set) var hudState: ConnectivityHUDState = .hidden
 
-    private let pathMonitor = NWPathMonitor()
-    private let monitorQueue = DispatchQueue(label: "com.eave.network-connectivity", qos: .utility)
-    private let wiFiClient = CWWiFiClient.shared()
-
-    private var hasStarted = false
+    private var subscription: AnyCancellable?
     private var hasReceivedInitialPath = false
     private var lastConnectionSatisfied = false
     private var lastPathUsedWiFi = false
@@ -52,52 +48,34 @@ final class NetworkConnectivityManager: NSObject, ObservableObject, CWEventDeleg
     private var lastWiFiName: String?
     private var noConnectionDismissed = false
     private var hideWorkItem: DispatchWorkItem?
-    private let fallbackWiFiCacheLifetime: TimeInterval = 1.5
-    private var fallbackWiFiNameCache: (interfaceName: String, name: String?, updatedAt: Date)?
+    init() {}
 
-    private override init() {
-        super.init()
-    }
-
-    func startMonitoring() {
-        guard !hasStarted else { return }
-        hasStarted = true
-
-        pathMonitor.pathUpdateHandler = { [weak self] path in
-            guard let self else { return }
-            let isSatisfied = path.status == .satisfied
-            let usesWiFi = isSatisfied && path.usesInterfaceType(.wifi)
-            // `isExpensive` is the only Network framework signal exposed for
-            // Personal Hotspot. Exclude constrained paths so Low Data Mode on
-            // an ordinary Wi‑Fi network does not get the hotspot icon.
-            let isHotspot = usesWiFi && path.isExpensive && !path.isConstrained
-            let wiFiName = usesWiFi ? self.currentWiFiName() : nil
-
-            DispatchQueue.main.async { [weak self] in
-                self?.handlePathUpdate(
-                    isSatisfied: isSatisfied,
-                    usesWiFi: usesWiFi,
-                    isHotspot: isHotspot,
-                    wiFiName: wiFiName
-                )
-            }
+    func startMonitoring(updates: AnyPublisher<MenuBarNetworkState, Never>? = nil) {
+        guard subscription == nil else { return }
+        let updates = updates ?? MenuBarStatusManager.shared.controller.networkPublisher
+        subscription = updates.removeDuplicates().sink { [weak self] state in
+            guard state.connection != .unknown else { return }
+            self?.handlePathUpdate(
+                isSatisfied: state.isConnected,
+                usesWiFi: state.usesWiFi,
+                isHotspot: state.isHotspot,
+                wiFiName: state.wifiName
+            )
         }
-
-        wiFiClient.delegate = self
-        try? wiFiClient.startMonitoringEvent(with: .ssidDidChange)
-        try? wiFiClient.startMonitoringEvent(with: .linkDidChange)
-        pathMonitor.start(queue: monitorQueue)
     }
 
     func stopMonitoring() {
-        guard hasStarted else { return }
-        hasStarted = false
-        pathMonitor.cancel()
-        try? wiFiClient.stopMonitoringEvent(with: .ssidDidChange)
-        try? wiFiClient.stopMonitoringEvent(with: .linkDidChange)
-        wiFiClient.delegate = nil
+        subscription?.cancel()
+        subscription = nil
         hideWorkItem?.cancel()
         hideWorkItem = nil
+        hasReceivedInitialPath = false
+        lastConnectionSatisfied = false
+        lastPathUsedWiFi = false
+        lastConnectionWasHotspot = false
+        lastWiFiName = nil
+        noConnectionDismissed = false
+        hudState = .hidden
     }
 
     func dismissNoConnection() {
@@ -122,24 +100,6 @@ final class NetworkConnectivityManager: NSObject, ObservableObject, CWEventDeleg
         }
     }
 
-    func ssidDidChangeForWiFiInterface(withName interfaceName: String) {
-        refreshWiFiIdentity()
-    }
-
-    func linkDidChangeForWiFiInterface(withName interfaceName: String) {
-        refreshWiFiIdentity()
-    }
-
-    private func refreshWiFiIdentity() {
-        monitorQueue.async { [weak self] in
-            guard let self else { return }
-            let name = self.currentWiFiName()
-            DispatchQueue.main.async { [weak self] in
-                self?.handleWiFiIdentityChange(name)
-            }
-        }
-    }
-
     private func handlePathUpdate(
         isSatisfied: Bool,
         usesWiFi: Bool,
@@ -156,7 +116,7 @@ final class NetworkConnectivityManager: NSObject, ObservableObject, CWEventDeleg
                 !lastConnectionSatisfied
                     || !lastPathUsedWiFi
                     || isHotspot != lastConnectionWasHotspot
-                    || (wiFiName != nil && wiFiName != lastWiFiName)
+                    || (lastWiFiName != nil && wiFiName != nil && wiFiName != lastWiFiName)
             )
 
         hasReceivedInitialPath = true
@@ -191,6 +151,10 @@ final class NetworkConnectivityManager: NSObject, ObservableObject, CWEventDeleg
                 lastConnectionWasHotspot = isHotspot
                 if hudState == .noConnection {
                     hudState = .hidden
+                } else if hudState.isConnectedNetwork, let wiFiName {
+                    // A late name fills the current banner without announcing a
+                    // second connection or extending its dismissal timer.
+                    hudState = isHotspot ? .hotspot(name: wiFiName) : .wifi(name: wiFiName)
                 }
             }
         } else {
@@ -200,14 +164,6 @@ final class NetworkConnectivityManager: NSObject, ObservableObject, CWEventDeleg
             hideWorkItem = nil
             hudState = .hidden
         }
-    }
-
-    private func handleWiFiIdentityChange(_ name: String?) {
-        dispatchPrecondition(condition: .onQueue(.main))
-        guard hasReceivedInitialPath, lastConnectionSatisfied, lastPathUsedWiFi else { return }
-        guard let name, !name.isEmpty else { return }
-        guard name != lastWiFiName else { return }
-        showConnection(named: name, isHotspot: lastConnectionWasHotspot)
     }
 
     private func showNoConnection() {
@@ -243,70 +199,5 @@ final class NetworkConnectivityManager: NSObject, ObservableObject, CWEventDeleg
         }
         hideWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.5, execute: workItem)
-    }
-
-    /// CoreWLAN is the preferred source. `networksetup` is a permission-free
-    /// fallback for macOS configurations where SSID access is privacy-redacted.
-    private func currentWiFiName() -> String? {
-        if let name = wiFiClient.interface()?.ssid()?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !name.isEmpty {
-            return name
-        }
-
-        guard let interfaceName = wiFiClient.interface()?.interfaceName, !interfaceName.isEmpty else {
-            return nil
-        }
-
-        let now = Date()
-        if let cache = fallbackWiFiNameCache,
-           cache.interfaceName == interfaceName,
-           now.timeIntervalSince(cache.updatedAt) < fallbackWiFiCacheLifetime {
-            return cache.name
-        }
-
-        let name = Self.networkSetupWiFiName(for: interfaceName)
-        fallbackWiFiNameCache = (interfaceName: interfaceName, name: name, updatedAt: now)
-        return name
-    }
-
-    private static func networkSetupWiFiName(for interfaceName: String) -> String? {
-        let process = Process()
-        let output = Pipe()
-        let termination = DispatchSemaphore(value: 0)
-        process.executableURL = URL(fileURLWithPath: "/usr/sbin/networksetup")
-        process.arguments = ["-getairportnetwork", interfaceName]
-        process.standardOutput = output
-        process.standardError = Pipe()
-        process.terminationHandler = { _ in
-            termination.signal()
-        }
-
-        do {
-            try process.run()
-        } catch {
-            return nil
-        }
-
-        // `networksetup` normally returns immediately, but do not let a
-        // system-settings or interface race stall the connectivity queue.
-        guard termination.wait(timeout: .now() + 1) == .success else {
-            process.terminate()
-            return nil
-        }
-
-        guard process.terminationStatus == 0 else { return nil }
-        let data = output.fileHandleForReading.readDataToEndOfFile()
-        guard let result = String(data: data, encoding: .utf8)?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-              let separator = result.firstIndex(of: ":") else {
-            return nil
-        }
-
-        let name = result[result.index(after: separator)...]
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty, !name.localizedCaseInsensitiveContains("not associated") else {
-            return nil
-        }
-        return name
     }
 }

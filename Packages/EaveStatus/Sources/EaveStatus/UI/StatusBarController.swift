@@ -1,0 +1,799 @@
+// Modified for Eave menu-bar integration (2026-10-12); upstream Status Trio, Apache-2.0.
+import AppKit
+import Combine
+import SwiftUI
+
+private struct UncheckedSendableNSEvent: @unchecked Sendable {
+    let event: NSEvent
+}
+
+private struct StatusBarAccessibilityKey: Equatable {
+    let snapshot: StatusSnapshot
+    let language: AppLanguage
+}
+
+@MainActor
+final class StatusBarController: NSObject, NSPopoverDelegate {
+    static let popoverToggleLockoutInterval: TimeInterval = 0.25
+    static let popoverContentReleaseDelay: TimeInterval = 60
+
+    typealias MenuBarRenderer = @MainActor (
+        _ scene: IconSceneState,
+        _ size: Double,
+        _ scale: CGFloat,
+        _ appearance: NSAppearance,
+        _ phase: ChargingEffectPhase?
+    ) -> NSImage?
+
+    enum ClickKind: Equatable {
+        case left
+        case right
+    }
+
+    private let statusItem: NSStatusItem
+    private let popover = NSPopover()
+    private let store: SystemStatusStore
+    private let settings: SettingsStore
+    private let panelActions: StatusPanelActions
+    private let panelViewModel: StatusPanelViewModel
+    private let iconPresentation: IconPresentationViewModel
+    private let localization: Localization
+    private let renderMenuBarIcon: MenuBarRenderer
+    private let accessibilityValueDidChange: @MainActor (String) -> Void
+    let chargingEffectClock: ChargingEffectClock
+    private var iconPresentationCancellable: AnyCancellable?
+    private var accessibilityCancellable: AnyCancellable?
+    private var chargingEffectCancellable: AnyCancellable?
+    private var currentChargingEffectPhase: ChargingEffectPhase?
+    private var screenParametersCancellable: AnyCancellable?
+    private var refreshIntervalCancellable: AnyCancellable?
+    private let openSettings: () -> Void
+    private let quitAction: () -> Void
+    private let restartAction: () -> Void
+    private var usesTrioIcon = true
+    private var appearanceObservations: [NSKeyValueObservation] = []
+    private var renderCache = StatusBarRenderCache()
+    private let chargingFrameCache = StatusBarChargingFrameCache()
+    private let animationLayerPresenter = StatusBarAnimationLayerPresenter()
+    private let renderCoalescer = IconRenderCoalescer()
+    var cachedChargingFrameCount: Int { chargingFrameCache.frameCount }
+    var hasLayerBackedAnimation: Bool { animationLayerPresenter.isInstalled }
+    var presentedImageForTesting: NSImage? { statusItem.button?.image }
+    private var isStatusItemVisible: Bool
+    private var accessibilityKey: StatusBarAccessibilityKey?
+    private var latestIconOutput: IconPresentationOutput
+    private var popoverDismissMonitor: Any?
+    private var volumeScrollMonitor: Any?
+    private let volumeScrollAdjustment = PopupVolumeScrollAdjustment()
+    private var volumeScrollSession = PopupVolumeScrollSession()
+    private let popoverScrollTargets = PopoverScrollTargets()
+    private var popoverToggleGate = PopoverToggleGate(
+        lockout: StatusBarController.popoverToggleLockoutInterval
+    )
+    private var popoverContentRetention = PopoverContentRetention(
+        releaseDelay: StatusBarController.popoverContentReleaseDelay
+    )
+    private var popoverContentReleaseTask: Task<Void, Never>?
+
+    init(
+        store: SystemStatusStore,
+        settings: SettingsStore,
+        iconPresentation: IconPresentationViewModel,
+        localization: Localization,
+        isVisible: Bool = true,
+        openSettings: @escaping () -> Void,
+        quitAction: @escaping () -> Void,
+        restartAction: @escaping () -> Void = {},
+        chargingEffectClock: ChargingEffectClock = ChargingEffectClock(),
+        accessibilityValueDidChange: @escaping @MainActor (String) -> Void = { _ in },
+        renderMenuBarIcon: @escaping MenuBarRenderer = { scene, size, scale, appearance, phase in
+            StatusIconRenderer.image(
+                scene: scene,
+                size: CGFloat(size),
+                scale: scale,
+                appearance: appearance,
+                phase: phase
+            )
+        }
+    ) {
+        self.store = store
+        self.settings = settings
+        let panelActions = StatusPanelActions(store: store, settings: settings)
+        self.panelActions = panelActions
+        self.panelViewModel = StatusPanelViewModel(
+            store: store,
+            settings: settings,
+            localization: localization,
+            actions: panelActions
+        )
+        self.iconPresentation = iconPresentation
+        self.localization = localization
+        self.renderMenuBarIcon = renderMenuBarIcon
+        self.accessibilityValueDidChange = accessibilityValueDidChange
+        self.chargingEffectClock = chargingEffectClock
+        self.openSettings = openSettings
+        self.quitAction = quitAction
+        self.restartAction = restartAction
+        self.isStatusItemVisible = isVisible
+        self.latestIconOutput = iconPresentation.output
+        self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        super.init()
+
+        statusItem.isVisible = isVisible
+        configureButton()
+        configurePopover()
+        observeAppearanceChanges()
+        scheduleInitialRender()
+
+        iconPresentationCancellable = iconPresentation.$output
+            .removeDuplicates()
+            .sink { [weak self] output in
+                guard let self else { return }
+                latestIconOutput = output
+                renderCoalescer.submit { [weak self] in
+                    self?.renderLatestScene()
+                }
+            }
+
+        chargingEffectCancellable = chargingEffectClock.$phase
+            .removeDuplicates()
+            .sink { [weak self] phase in
+                self?.renderAnimationPhase(phase)
+            }
+
+        accessibilityCancellable = Publishers.CombineLatest(
+            store.$snapshot,
+            localization.$resolvedLanguage
+        )
+        .sink { [weak self] snapshot, language in
+            Task { @MainActor [weak self] in
+                self?.updateAccessibility(snapshot: snapshot, language: language)
+            }
+        }
+
+        refreshIntervalCancellable = settings.$refreshIntervalSeconds
+            .removeDuplicates()
+            .sink { [weak self] seconds in
+                self?.store.setRefreshInterval(.seconds(Int(seconds.rounded())))
+            }
+
+        screenParametersCancellable = NotificationCenter.default.publisher(
+            for: NSApplication.didChangeScreenParametersNotification,
+            object: NSApp
+        )
+        .receive(on: RunLoop.main)
+        .sink { [weak self] _ in
+            self?.renderLatestScene()
+        }
+    }
+
+    static func clickKind(eventType: NSEvent.EventType, modifiers: NSEvent.ModifierFlags) -> ClickKind? {
+        if eventType == .rightMouseUp || modifiers.contains(.control) {
+            return .right
+        }
+        if eventType == .leftMouseUp {
+            return .left
+        }
+        return nil
+    }
+
+    func setVisible(_ isVisible: Bool) {
+        guard isStatusItemVisible != isVisible else { return }
+        isStatusItemVisible = isVisible
+
+        if isVisible {
+            statusItem.isVisible = true
+            renderCache = StatusBarRenderCache()
+            renderLatestScene()
+        } else {
+            clearAnimationPresentation()
+            popover.performClose(nil)
+            store.setPopoverVisible(false)
+            statusItem.isVisible = false
+        }
+    }
+
+    func setUsesTrioIcon(_ enabled: Bool) {
+        usesTrioIcon = enabled
+        renderCache = StatusBarRenderCache()
+        renderLatestScene()
+    }
+
+    func stop() {
+        popover.performClose(nil)
+        setVisible(false)
+        removePopoverDismissMonitor()
+        removeVolumeScrollMonitor()
+        cancelPopoverContentRelease()
+        popover.contentViewController = nil
+        panelViewModel.stop()
+        NSStatusBar.system.removeStatusItem(statusItem)
+        iconPresentationCancellable = nil
+        accessibilityCancellable = nil
+        chargingEffectCancellable = nil
+        screenParametersCancellable = nil
+        refreshIntervalCancellable = nil
+        appearanceObservations.removeAll()
+    }
+
+    func refreshCurrentPresentation() {
+        renderLatestScene()
+    }
+
+    func flushPendingPresentationForTesting() {
+        renderCoalescer.flushPending()
+    }
+
+    private func configureButton() {
+        guard let button = statusItem.button else { return }
+        button.imagePosition = .imageOnly
+        button.target = self
+        button.action = #selector(handleClick(_:))
+        button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+    }
+
+    private func observeAppearanceChanges() {
+        guard let button = statusItem.button else { return }
+        appearanceObservations.append(button.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            Task { @MainActor in
+                self?.renderLatestScene()
+            }
+        })
+    }
+
+    private func scheduleInitialRender() {
+        Task { @MainActor [weak self] in
+            await Task.yield()
+            self?.renderLatestScene()
+        }
+    }
+
+    @objc private func handleClick(_ sender: NSStatusBarButton) {
+        guard
+            let event = NSApp.currentEvent,
+            let click = Self.clickKind(eventType: event.type, modifiers: event.modifierFlags)
+        else { return }
+
+        switch click {
+        case .left:
+            togglePopover()
+        case .right:
+            popover.performClose(nil)
+            showMenu()
+        }
+    }
+
+    private func configurePopover() {
+        popover.behavior = .transient
+        popover.delegate = self
+    }
+
+    private func installPopoverContentIfNeeded() {
+        guard popover.contentViewController == nil else { return }
+        let rootView = LocalizedRootView(localization: localization) {
+            StatusPopoverView(
+                panel: panelViewModel,
+                scrollTargets: popoverScrollTargets,
+                requestWiFiNameAccess: { self.handleRequestWiFiNameAccess() },
+                requestBluetoothAuthorization: { self.handleRequestBluetoothAuthorization() },
+                openBatterySettings: { self.handleOpenBatterySettings() },
+                openWiFiSettings: { self.handleOpenWiFiSettings() },
+                openNetworkSettings: { self.handleOpenNetworkSettings() },
+                openLocationSettings: { self.handleOpenLocationSettings() },
+                openBluetoothSettings: { self.handleOpenBluetoothSettings() },
+                openBluetoothPermissionSettings: { self.handleOpenBluetoothPermissionSettings() },
+                openSettings: { self.handleOpenSettings() },
+                openSoundSettings: { self.handleOpenSoundSettings() },
+                quit: quitAction
+            )
+        }
+        panelViewModel.start()
+        let hostingController = NSHostingController(rootView: rootView)
+        if #available(macOS 14.0, *) {
+            // The Ventura hosting pass can recurse while AppKit installs the
+            // popover content. Leave sizing to the popover's measured content
+            // there, and keep preferred sizing on the newer path.
+            hostingController.sizingOptions = [.preferredContentSize]
+        }
+        popover.contentViewController = hostingController
+    }
+
+    private func togglePopover() {
+        guard popoverToggleGate.shouldAccept(at: Date()) else { return }
+        guard let button = statusItem.button else { return }
+        if popover.isShown {
+            popover.performClose(nil)
+        } else {
+            presentPopover(
+                relativeTo: button.bounds,
+                of: button,
+                preferredEdge: .minY
+            )
+        }
+    }
+
+    /// Both entry points use this popover and its existing detail lifecycle.
+    @discardableResult
+    func showPopover(relativeTo view: NSView) -> Bool {
+        guard view.window != nil else { return false }
+        if popover.isShown { popover.performClose(nil) }
+        presentPopover(relativeTo: view.bounds, of: view, preferredEdge: .minY)
+        return popover.isShown
+    }
+
+    func closePopover() { popover.performClose(nil) }
+
+    private func presentPopover(
+        relativeTo rect: NSRect,
+        of view: NSView,
+        preferredEdge: NSRectEdge
+    ) {
+        cancelPopoverContentRelease()
+        popoverContentRetention.markOpened()
+        store.setPopoverVisible(true)
+        installPopoverContentIfNeeded()
+        panelActions.volumeListAppeared()
+        // Activate first: a transient popover shown while the app is still
+        // inactive can be dismissed again straight away.
+        // Status-item clicks come from the system menu bar process, so the
+        // modern activate() can be ignored by the user-activation policy.
+        NSApp.activate(ignoringOtherApps: true)
+        popover.show(relativeTo: rect, of: view, preferredEdge: preferredEdge)
+        // The popover's backing window only exists once it has been shown, and
+        // without a Spaces behavior it stays on this app's desktop Space while
+        // another app is full-screen.
+        popover.contentViewController?.view.window?.enableDisplayOnFullScreenSpaces()
+        popover.contentViewController?.view.window?.makeKey()
+        installPopoverDismissMonitor()
+        installVolumeScrollMonitor()
+    }
+
+    private func installPopoverDismissMonitor() {
+        removePopoverDismissMonitor()
+        popoverDismissMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown]
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.popover.performClose(nil)
+            }
+        }
+    }
+
+    private func removePopoverDismissMonitor() {
+        guard let popoverDismissMonitor else { return }
+        NSEvent.removeMonitor(popoverDismissMonitor)
+        self.popoverDismissMonitor = nil
+    }
+
+    private func installVolumeScrollMonitor() {
+        removeVolumeScrollMonitor()
+        volumeScrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
+            // Local event monitors run on the main thread. Keep the non-Sendable
+            // event inside this synchronous callback while hopping isolation.
+            let boxedEvent = UncheckedSendableNSEvent(event: event)
+            let shouldConsume = MainActor.assumeIsolated {
+                self?.shouldConsumeVolumeScrollWheel(boxedEvent.event) ?? false
+            }
+            return shouldConsume ? nil : event
+        }
+    }
+
+    private func removeVolumeScrollMonitor() {
+        guard let volumeScrollMonitor else { return }
+        NSEvent.removeMonitor(volumeScrollMonitor)
+        self.volumeScrollMonitor = nil
+        resetVolumeScrollSession()
+    }
+
+    private func shouldConsumeVolumeScrollWheel(_ event: NSEvent) -> Bool {
+        guard event.window === popover.contentViewController?.view.window,
+              settings.popupScrollAdjustsVolume,
+              store.isVolumeControlAvailable,
+              !popoverScrollTargets.containsAudioInput(at: event.locationInWindow, in: event.window),
+              !isPointerOverScrollView(event),
+              isPointerInsideVolumeScrollArea(event) else {
+            return false
+        }
+        guard event.momentumPhase.isEmpty else { return true }
+
+        guard let currentScalar = volumeScrollSession.scalar(
+            at: event.timestamp,
+            fallback: store.popupSnapshot.volume.scalar
+        ) else {
+            return false
+        }
+        let delta = volumeScrollAdjustment.volumeDelta(
+            deltaY: Double(event.scrollingDeltaY),
+            isPrecise: event.hasPreciseScrollingDeltas,
+            isDirectionInverted: event.isDirectionInvertedFromDevice,
+            usesNaturalScrolling: settings.popupVolumeNaturalScrolling
+        )
+        guard let delta else { return true }
+
+        let nextScalar = volumeScrollSession.applying(
+            delta: delta,
+            to: currentScalar
+        )
+        if volumeScrollSession.shouldUnmute(
+            isMuted: store.popupSnapshot.volume.isMuted,
+            isIncreasing: delta > 0
+        ) {
+            store.toggleMute()
+        }
+        store.setVolume(nextScalar)
+        return true
+    }
+
+    /// Scroll targeting only narrows the gesture area; the whole panel stays
+    /// valid when the preference is left at its default.
+    private func isPointerInsideVolumeScrollArea(_ event: NSEvent) -> Bool {
+        guard settings.popupVolumeScrollScope == .volumeControl else { return true }
+        return popoverScrollTargets.containsVolumeControl(
+            at: event.locationInWindow,
+            in: event.window
+        )
+    }
+
+    private func isPointerOverScrollView(_ event: NSEvent) -> Bool {
+        guard let rootView = popover.contentViewController?.view else { return false }
+        let point = rootView.convert(event.locationInWindow, from: nil)
+        var view = rootView.hitTest(point)
+        while let currentView = view {
+            if currentView is NSScrollView {
+                return true
+            }
+            view = currentView.superview
+        }
+        return false
+    }
+
+    private func resetVolumeScrollSession() {
+        volumeScrollSession.reset()
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        panelActions.volumeListDisappeared()
+        removePopoverDismissMonitor()
+        removeVolumeScrollMonitor()
+        // Read this before closing the popover: a detail panel keeps its own
+        // SwiftUI state, so reusing the built content would reopen on that
+        // panel. The battery page also clears its collector on disappear, so
+        // the flag has to be sampled while the panel is still open.
+        let hadOpenDetails = store.hasOpenPopoverPanel
+        store.setPopoverVisible(false)
+        store.closePopoverDetails()
+        if hadOpenDetails {
+            cancelPopoverContentRelease()
+            popover.contentViewController = nil
+            panelViewModel.stop()
+        } else {
+            schedulePopoverContentRelease()
+        }
+    }
+
+    /// Keeping the built content for a while makes rapid reopen cheap; releasing
+    /// it later keeps idle memory low.
+    private func schedulePopoverContentRelease() {
+        cancelPopoverContentRelease()
+        popoverContentRetention.markClosed(at: Date())
+        let delay = Self.popoverContentReleaseDelay
+        popoverContentReleaseTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled, let self else { return }
+            guard popoverContentRetention.shouldRelease(at: Date()), !popover.isShown else { return }
+            popover.contentViewController = nil
+            panelViewModel.stop()
+            popoverContentReleaseTask = nil
+        }
+    }
+
+    private func cancelPopoverContentRelease() {
+        popoverContentReleaseTask?.cancel()
+        popoverContentReleaseTask = nil
+        popoverContentRetention.markOpened()
+    }
+
+    private func render(scene: IconSceneState, iconSize: Double, phase: ChargingEffectPhase?) {
+        guard isStatusItemVisible, let button = statusItem.button else { return }
+        if !usesTrioIcon {
+            clearAnimationPresentation()
+            let image = NSImage(systemSymbolName: "house", accessibilityDescription: "Eave")
+            image?.size = NSSize(width: 18, height: 18)
+            image?.isTemplate = true
+            button.image = image
+            return
+        }
+
+        let backingScale =
+            button.window?.backingScaleFactor
+            ?? NSScreen.main?.backingScaleFactor
+            ?? 1
+        let key = StatusBarRenderKey(
+            scene: scene,
+            iconSize: iconSize,
+            backingScale: backingScale,
+            appearanceName: button.effectiveAppearance.name.rawValue,
+            phase: phase
+        )
+        guard renderCache.needsRender(key) else { return }
+
+        let renderedImage: NSImage?
+        if let phase, phase.kind == .steady,
+            let cachedImage = chargingFrameCache.image(
+                for: phase,
+                key: key,
+                backingScale: backingScale,
+                renderFrame: { framePhase in
+                    StatusIconRenderer.preRenderedMenuBarImage(
+                        scene: scene,
+                        size: CGFloat(iconSize),
+                        scale: backingScale,
+                        appearance: button.effectiveAppearance,
+                        phase: framePhase
+                    )
+                }
+            )
+        {
+            presentCachedAnimationFrame(
+                cachedImage,
+                button: button,
+                iconSize: CGFloat(iconSize),
+                backingScale: backingScale
+            )
+            renderedImage = cachedImage
+        } else {
+            renderedImage = renderMenuBarIcon(
+                scene,
+                iconSize,
+                backingScale,
+                button.effectiveAppearance,
+                phase
+            )
+            if let renderedImage {
+                animationLayerPresenter.clear()
+                button.image = renderedImage
+            }
+        }
+        if renderedImage != nil {
+            if phase == nil { clearAnimationPresentation() }
+            renderCache.recordSuccessfulRender(key)
+        }
+    }
+
+    private func clearAnimationPresentation() {
+        chargingFrameCache.reset()
+        animationLayerPresenter.clear()
+    }
+
+    private func presentCachedAnimationFrame(
+        _ image: NSImage,
+        button: NSStatusBarButton,
+        iconSize: CGFloat,
+        backingScale: CGFloat
+    ) {
+        guard
+            let cgImage = image.cgImage(
+                forProposedRect: nil,
+                context: nil,
+                hints: nil
+            )
+        else {
+            animationLayerPresenter.clear()
+            button.image = image
+            return
+        }
+
+        let targetImageSize = NSSize(width: iconSize, height: iconSize)
+        if button.image?.size != targetImageSize {
+            // The frame set has already rendered successfully. Update AppKit's
+            // button allocation before reinstalling the layer into its bounds.
+            animationLayerPresenter.clear()
+            button.image = image
+        }
+
+        guard let result = animationLayerPresenter.display(
+            cgImage,
+            in: button,
+            backingScale: backingScale
+        ) else {
+            animationLayerPresenter.clear()
+            button.image = image
+            return
+        }
+
+        guard result == .installed else { return }
+        guard
+            let placeholder = StatusIconRenderer.transparentMenuBarImage(
+                size: iconSize,
+                scale: backingScale
+            )
+        else {
+            animationLayerPresenter.clear()
+            button.image = image
+            return
+        }
+        button.image = placeholder
+    }
+
+    /// Clock-driven frames bypass the status/setting coalescer; the menu-bar key
+    /// includes every phase so the 20-fps stream cannot be deduplicated as static.
+    private func renderAnimationPhase(_ phase: ChargingEffectPhase?) {
+        currentChargingEffectPhase = phase
+        render(
+            scene: latestIconOutput.menuBarTestScene ?? latestIconOutput.scene,
+            iconSize: latestIconOutput.menuBarSize,
+            phase: phase
+        )
+    }
+
+    /// The status, the appearance, and the window's effective appearance all feed
+    /// one cached render, so the newest state wins over a redraw that is still
+    /// waiting out the coalescing interval.
+    private func renderLatestScene() {
+        render(
+            scene: latestIconOutput.menuBarTestScene ?? latestIconOutput.scene,
+            iconSize: latestIconOutput.menuBarSize,
+            phase: currentChargingEffectPhase
+        )
+    }
+
+    private func updateAccessibility(snapshot: StatusSnapshot, language: AppLanguage) {
+        let key = StatusBarAccessibilityKey(snapshot: snapshot, language: language)
+        guard key != accessibilityKey else { return }
+        accessibilityKey = key
+        guard let button = statusItem.button else { return }
+        button.setAccessibilityLabel(AccessibilityPresentation.statusItemLabel)
+        let value = AccessibilityPresentation.statusItemValue(snapshot, localization: localization)
+        button.setAccessibilityValue(value)
+        accessibilityValueDidChange(value)
+    }
+
+    private static var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
+    }
+
+    @objc private func handleOpenSettings() {
+        popover.performClose(nil)
+        openSettings()
+    }
+
+    @objc private func handleRestart() { restartAction() }
+    @objc private func handleQuit() { quitAction() }
+
+    @objc private func handleRequestWiFiNameAccess() {
+        popover.performClose(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        if store.requestWiFiNameAccess() == .openLocationSettings {
+            Self.openSystemSettings(Self.locationSettingsURLs)
+        }
+    }
+
+    @objc private func handleRequestBluetoothAuthorization() {
+        NSApp.activate(ignoringOtherApps: true)
+        store.requestBluetoothAuthorization()
+    }
+
+    @objc private func handleOpenBatterySettings() {
+        popover.performClose(nil)
+        Self.openSystemSettings(Self.batterySettingsURLs)
+    }
+
+    @objc private func handleOpenWiFiSettings() {
+        popover.performClose(nil)
+        Self.openSystemSettings(Self.wifiSettingsURLs)
+    }
+
+    /// Where the wired row's gear goes. The Network pane lists every service and
+    /// is where a cable's own settings live; sending a wired user to the Wi-Fi
+    /// pane would show them a radio that is not carrying the connection.
+    @objc private func handleOpenNetworkSettings() {
+        popover.performClose(nil)
+        Self.openSystemSettings(Self.networkSettingsURLs)
+    }
+
+    @objc private func handleOpenLocationSettings() {
+        popover.performClose(nil)
+        Self.openSystemSettings(Self.locationSettingsURLs)
+    }
+
+    @objc private func handleOpenSoundSettings() {
+        popover.performClose(nil)
+        Self.openSystemSoundSettings()
+    }
+
+    private func handleOpenBluetoothSettings() {
+        popover.performClose(nil)
+        Self.openSystemSettings(Self.bluetoothSettingsURLs)
+    }
+
+    /// Where a refused Bluetooth grant is given back. This is not the pane the
+    /// gear opens: that one turns the radio on and off, while a refusal lives in
+    /// Privacy & Security. The store owns the route so Settings and the popover
+    /// share one destination.
+    private func handleOpenBluetoothPermissionSettings() {
+        popover.performClose(nil)
+        store.openBluetoothPermissionSettings()
+    }
+
+    static let batterySettingsURLs = [
+        "x-apple.systempreferences:com.apple.Battery-Settings.extension",
+        "x-apple.systempreferences:com.apple.preference.battery"
+    ]
+    .compactMap(URL.init(string:))
+
+    /// The Wi-Fi pane is what this button promises, and it has its own Settings
+    /// extension on every macOS version the app supports. Routing through the
+    /// Network pane instead lands on the wrong list: that pane shows services
+    /// (Wi-Fi, Ethernet, VPNs) rather than networks, and its `?Wi-Fi` anchor
+    /// does not select the Wi-Fi section on macOS 15.
+    ///
+    /// Do not reintroduce an OS-version branch here. A `majorVersion >= 27`
+    /// guard shipped in 1.2.0 and 1.3.0 and sent macOS 15 through 26 to the
+    /// Network pane; the pane identifier is not version-specific, because the
+    /// extension bundle that declares it dates from macOS 14
+    /// (`BuildMachineOSBuild 23A344017` in `Wi-Fi.appex`).
+    ///
+    /// The first route decides the destination. System Settings launches even
+    /// for an unknown pane identifier and `open` reports success — verified on
+    /// macOS 27 with a nonexistent identifier — so the later entries only cover
+    /// the URL scheme itself failing to open, not a missing pane.
+    static let wifiSettingsURLs = [
+        "x-apple.systempreferences:com.apple.wifi-settings-extension",
+        "x-apple.systempreferences:com.apple.Network-Settings.extension?Wi-Fi",
+        "x-apple.systempreferences:com.apple.preference.network?Wi-Fi"
+    ]
+    .compactMap(URL.init(string:))
+
+    static let networkSettingsURLs = [
+        "x-apple.systempreferences:com.apple.Network-Settings.extension",
+        "x-apple.systempreferences:com.apple.preference.network"
+    ]
+    .compactMap(URL.init(string:))
+
+    static let bluetoothSettingsURLs = [
+        "x-apple.systempreferences:com.apple.BluetoothSettings",
+        "x-apple.systempreferences:com.apple.preference.bluetooth"
+    ]
+    .compactMap(URL.init(string:))
+
+    static let locationSettingsURLs = [
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_LocationServices",
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices"
+    ]
+    .compactMap(URL.init(string:))
+
+    private static func openSystemSoundSettings() {
+        let soundSettingsURLs = [
+            "x-apple.systempreferences:com.apple.Sound-Settings.extension",
+            "x-apple.systempreferences:com.apple.preference.sound"
+        ]
+        .compactMap(URL.init(string:))
+
+        for url in soundSettingsURLs where NSWorkspace.shared.open(url) {
+            return
+        }
+    }
+
+    private static func openSystemSettings(_ urls: [URL]) {
+        for url in urls where NSWorkspace.shared.open(url) {
+            return
+        }
+    }
+
+    private func showMenu() {
+        let menu = NSMenu()
+        let settingsItem = menu.addItem(withTitle: "Eave " + localization.string(.menuSettings), action: #selector(handleOpenSettings), keyEquivalent: ",")
+        settingsItem.target = self
+        let restartItem = menu.addItem(withTitle: localization.string(.menuRestart), action: #selector(handleRestart), keyEquivalent: "")
+        restartItem.target = self
+        menu.addItem(.separator())
+        let quitItem = menu.addItem(withTitle: localization.string(.menuQuit), action: #selector(handleQuit), keyEquivalent: "q")
+        quitItem.target = self
+        guard let button = statusItem.button else { return }
+        menu.popUp(
+            positioning: nil,
+            at: NSPoint(x: 0, y: button.bounds.maxY + 4),
+            in: button
+        )
+    }
+}

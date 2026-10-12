@@ -70,7 +70,9 @@ func AppIconAsNSImage(for bundleID: String) -> NSImage? {
     return nil
 }
 
-func applySelectedAppIcon() {
+@MainActor
+func applySelectedAppIcon(force: Bool = false) {
+    guard force || !DockActivationPolicy.shared.isDynamicDockEnabled else { return }
     let customIcons = Defaults[.customAppIcons]
     if let selectedID = Defaults[.selectedAppIconID],
        let icon = customIcons.first(where: { $0.id.uuidString == selectedID }),
@@ -82,6 +84,8 @@ func applySelectedAppIcon() {
     let fallbackName = Bundle.main.iconFileName ?? "AppIcon"
     if let image = NSImage(named: fallbackName) {
         NSApp.applicationIconImage = image
+    } else {
+        NSApp.applicationIconImage = nil
     }
 }
 

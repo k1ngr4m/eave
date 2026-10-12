@@ -49,6 +49,18 @@ jobs:
       - name: Validate timer lifecycle cleanup
         run: python3 -m unittest tests.test_timer_lifecycle
 
+      - name: Install mobile battery helper build tools
+        run: brew install autoconf automake libtool pkg-config
+
+      - name: Test mobile battery helper
+        run: |
+          bash scripts/test-mobile-battery-helper.sh
+          bash scripts/test-mobile-battery-rpaths.sh
+          bash scripts/test-mobile-battery-clang-version.sh
+
+      - name: Test menu bar status module
+        run: swift test --package-path Packages/EaveStatus
+
       - name: Download Metal Toolchain
         # The downloadable Metal Toolchain is an Xcode 26+ (macOS 26) component; older Xcode ships metal.
         run: |

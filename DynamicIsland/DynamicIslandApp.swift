@@ -26,36 +26,11 @@ import SkyLightWindow
 @main
 struct DynamicNotchApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @Default(.menubarIcon) var showMenuBarIcon
-    @Environment(\.openWindow) var openWindow
-
     var body: some Scene {
-        MenuBarExtra("Eave", systemImage: "house", isInserted: $showMenuBarIcon) {
-            Button("Settings") {
-                SettingsWindowController.shared.showWindow()
-            }
-            Divider()
-            Button("Restart Eave") {
-                guard let bundleIdentifier = Bundle.main.bundleIdentifier else { return }
-
-                let workspace = NSWorkspace.shared
-
-                if let appURL = workspace.urlForApplication(withBundleIdentifier: bundleIdentifier)
-                {
-
-                    let configuration = NSWorkspace.OpenConfiguration()
-                    configuration.createsNewApplicationInstance = true
-
-                    workspace.openApplication(at: appURL, configuration: configuration)
-                }
-
-                NSApplication.shared.terminate(self)
-            }
-            Button("Quit", role: .destructive) {
-                NSApplication.shared.terminate(self)
-            }
-            .keyboardShortcut(KeyEquivalent("Q"), modifiers: .command)
+        Settings {
+            EmptyView()
         }
+        .commands { commands }
     }
 
     @CommandsBuilder
@@ -136,6 +111,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        return false
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if onboardingWindowController?.window?.isVisible == true { return true }
+        SettingsWindowController.shared.showWindow()
         return false
     }
 
@@ -278,6 +259,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         extensionXPCServiceHost.stop()
         extensionRPCServer.stop()
         networkConnectivityManager.stopMonitoring()
+        MenuBarStatusManager.shared.stop()
         
         // Stop AudioTap capture
         AudioTap.shared.stopCapture()
@@ -728,6 +710,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Setup SystemHUD Manager
         SystemHUDManager.shared.setup(coordinator: coordinator)
+        if !AppRuntimeEnvironment.isUITesting {
+            MenuBarStatusManager.shared.start()
+        }
 
         // Setup BetterDisplay integration
         BetterDisplayManager.shared.configure(coordinator: coordinator)
@@ -1655,11 +1640,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             window.contentView = NSHostingView(rootView: OnboardingView(
                 onFinish: {
                     window.orderOut(nil)
-                    NSApp.setActivationPolicy(.accessory)
+                    DockActivationPolicy.shared.setWindowVisible(false, id: "onboarding")
                     window.close()
                     NSApp.deactivate()
                 },
                 onOpenSettings: {
+                    DockActivationPolicy.shared.setWindowVisible(false, id: "onboarding")
                     window.close()
                     SettingsWindowController.shared.showWindow()
                 }
@@ -1672,7 +1658,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             onboardingWindowController = NSWindowController(window: window)
         }
 
-        NSApp.setActivationPolicy(.regular)
+        DockActivationPolicy.shared.setWindowVisible(true, id: "onboarding")
         NSApp.activate(ignoringOtherApps: true)
         onboardingWindowController?.window?.makeKeyAndOrderFront(nil)
         onboardingWindowController?.window?.orderFrontRegardless()

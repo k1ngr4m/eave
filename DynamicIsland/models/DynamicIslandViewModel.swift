@@ -513,7 +513,7 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
 
         case .denied, .restricted:
             DispatchQueue.main.async {
-                NSApp.setActivationPolicy(.regular)
+                DockActivationPolicy.shared.setWindowVisible(true, id: "cameraPermission")
                 NSApp.activate(ignoringOtherApps: true)
 
                 let alert = NSAlert()
@@ -522,7 +522,7 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
                 alert.addButton(withTitle: String(localized: "OK"))
                 alert.runModal()
 
-                NSApp.setActivationPolicy(.accessory)
+                DockActivationPolicy.shared.setWindowVisible(false, id: "cameraPermission")
                 NSApp.deactivate()
             }
 

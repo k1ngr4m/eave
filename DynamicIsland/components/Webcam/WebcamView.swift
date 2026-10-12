@@ -83,7 +83,7 @@ struct CameraPreviewView: View {
             }
         case .denied, .restricted:
             DispatchQueue.main.async {
-                NSApp.setActivationPolicy(.regular)
+                DockActivationPolicy.shared.setWindowVisible(true, id: "cameraPermission")
                 NSApp.activate(ignoringOtherApps: true)
                 let alert = NSAlert()
                 alert.messageText = String(localized: "Camera Access Required")
@@ -96,7 +96,7 @@ struct CameraPreviewView: View {
                         NSWorkspace.shared.open(settingsURL)
                     }
                 }
-                NSApp.setActivationPolicy(.accessory)
+                DockActivationPolicy.shared.setWindowVisible(false, id: "cameraPermission")
                 NSApp.deactivate()
             }
         case .notDetermined:

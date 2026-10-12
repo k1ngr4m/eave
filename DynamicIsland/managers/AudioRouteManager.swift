@@ -114,9 +114,13 @@ final class AudioRouteManager: ObservableObject {
     }
 
     func select(device: AudioOutputDevice) {
+        select(deviceID: device.id)
+    }
+
+    func select(deviceID: AudioDeviceID) {
         queue.async { [weak self] in
             guard let self else { return }
-            self.setDefaultOutputDevice(device.id)
+            self.setDefaultOutputDevice(deviceID)
         }
     }
 

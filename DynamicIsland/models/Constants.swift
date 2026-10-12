@@ -1013,6 +1013,9 @@ extension Defaults.Keys {
         // MARK: General
     static let logLevel = Key<LogLevel>("logLevel", default: .none)
     static let menubarIcon = Key<Bool>("menubarIcon", default: true)
+    static let menuBarUsesTrioIcon = Key<Bool>("menuBarUsesTrioIcon", default: true)
+    static let dynamicDockIcon = Key<Bool>("dynamicDockIcon", default: false)
+    static let enableDirectDisplayVolumeControl = Key<Bool>("enableDirectDisplayVolumeControl", default: false)
     static let showOnAllDisplays = Key<Bool>("showOnAllDisplays", default: false)
     static let automaticallySwitchDisplay = Key<Bool>("automaticallySwitchDisplay", default: true)
     static let releaseName = Key<String>("releaseName", default: "Kaafu")

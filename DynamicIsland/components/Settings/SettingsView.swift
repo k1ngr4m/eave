@@ -8,6 +8,7 @@ import AppKit
 import AVFoundation
 import Combine
 import Defaults
+import EaveStatus
 import EventKit
 import KeyboardShortcuts
 import LaunchAtLogin
@@ -47,6 +48,7 @@ private enum SettingsTabGroup: String, CaseIterable, Identifiable {
 private enum SettingsTab: String, CaseIterable, Identifiable {
     case general
     case liveActivities
+    case menuBar
     case appearance
     case lockScreen
     case media
@@ -74,7 +76,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     /// Which sidebar group this tab belongs to.
     var group: SettingsTabGroup {
         switch self {
-        case .general, .appearance:                                          return .core
+        case .general, .appearance, .menuBar:                                return .core
         case .media, .liveActivities, .lockScreen, .devices:                 return .mediaAndDisplay
         case .hudAndOSD, .battery, .stats:                                   return .system
         case .timer, .calendar, .notes:                                      return .productivity
@@ -89,6 +91,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .general: return String(localized: "General")
+        case .menuBar: return String(localized: "Menu Bar")
         case .liveActivities: return String(localized: "Live Activities")
         case .appearance: return String(localized: "Appearance")
         case .lockScreen: return String(localized: "Lock Screen")
@@ -117,6 +120,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .general: return "gear"
+        case .menuBar: return "menubar.rectangle"
         case .liveActivities: return "waveform.path.ecg"
         case .appearance: return "paintpalette"
         case .lockScreen: return "lock.laptopcomputer"
@@ -145,6 +149,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     var tint: Color {
         switch self {
         case .general: return .blue
+        case .menuBar: return .teal
         case .liveActivities: return .pink
         case .appearance: return .purple
         case .lockScreen: return .orange
@@ -267,6 +272,8 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .liveActivities, title: "Enable music live activity", keywords: ["music", "now playing"], highlightID: SettingsTab.liveActivities.highlightID(for: "Enable music live activity")),
         SettingsSearchEntry(tab: .liveActivities, title: "Enable reminder live activity", keywords: ["reminder", "live activity"], highlightID: SettingsTab.liveActivities.highlightID(for: "Enable reminder live activity")),
 
+        SettingsSearchEntry(tab: .menuBar, title: "Menu Bar", keywords: ["status", "trio", "wifi", "network", "bluetooth", "volume", "battery", "菜单栏", "状态面板", "三合一", "蓝牙"], highlightID: nil),
+        SettingsSearchEntry(tab: .general, title: "Use three-in-one status icon", keywords: ["trio", "status icon", "menu bar", "三合一"], highlightID: SettingsTab.general.highlightID(for: "Use three-in-one status icon")),
         // Battery (Charge)
         SettingsSearchEntry(tab: .battery, title: "Show battery indicator", keywords: ["battery hud", "charge"], highlightID: SettingsTab.battery.highlightID(for: "Show battery indicator")),
         SettingsSearchEntry(tab: .battery, title: "Show battery percentage", keywords: ["battery percent"], highlightID: SettingsTab.battery.highlightID(for: "Show battery percentage")),
@@ -806,6 +813,7 @@ struct SettingsView: View {
             // Core
             .general,
             .appearance,
+            .menuBar,
             // Media & Display
             .media,
             .liveActivities,
@@ -1037,6 +1045,9 @@ struct SettingsView: View {
             SettingsForm(tab: .general) {
                 GeneralSettings()
             }
+        case .menuBar:
+            MenuBarStatusSettingsView(controller: MenuBarStatusManager.shared.controller)
+                .navigationTitle("Menu Bar")
         case .liveActivities:
             SettingsForm(tab: .liveActivities) {
                 LiveActivitiesSettings()
@@ -1211,6 +1222,13 @@ struct GeneralSettings: View {
                     Text("Menubar icon")
                 }
                 .settingsHighlight(id: highlightID("Menubar icon"))
+                Defaults.Toggle(key: .menuBarUsesTrioIcon) {
+                    Text("Use three-in-one status icon")
+                }
+                .settingsHighlight(id: highlightID("Use three-in-one status icon"))
+                Defaults.Toggle(key: .dynamicDockIcon) {
+                    Text("Dynamic status icon in Dock")
+                }
                 LaunchAtLogin.Toggle {
                     Text("Launch at login")
                 }
@@ -2640,6 +2658,13 @@ private struct ExternalDisplayIntegrationsSection: View {
             }
 
             Section {
+                Defaults.Toggle(key: .enableDirectDisplayVolumeControl) {
+                    Text("Direct display volume control (DDC)")
+                }
+                Text("Requires Apple silicon and one identifiable external display. Controls HDMI or DisplayPort volume when macOS cannot, and yields to the selected external volume provider while it is active.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
                 Toggle("Enable third-party DDC app integration", isOn: $enableThirdPartyDDCIntegration)
                     .settingsHighlight(id: highlightID("Third-party DDC app integration"))
 
@@ -5378,7 +5403,7 @@ struct Appearance: View {
     }
 
     private func importCustomIcon(from url: URL) {
-        guard let image = NSImage(contentsOf: url) else {
+        guard NSImage(contentsOf: url) != nil else {
             iconImportError = String(localized: "That file could not be loaded as an image.")
             return
         }
@@ -5401,7 +5426,7 @@ struct Appearance: View {
             customAppIcons.append(newIcon)
         }
         selectedAppIconID = newIcon.id.uuidString
-        NSApp.applicationIconImage = image
+        applySelectedAppIcon()
         iconImportError = nil
     }
 

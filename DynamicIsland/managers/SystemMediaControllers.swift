@@ -75,6 +75,75 @@ final class SystemVolumeController {
         get { deviceIDStorage.withLock { $0 } }
         set { deviceIDStorage.withLock { $0 = newValue } }
     }
+    private struct DisplayVolumeFallback {
+        let deviceID: AudioDeviceID
+        let scalar: Float?
+        let canMute: Bool
+        let setVolume: (Float) -> Void
+        let adjust: (Float) -> Void
+        let setMuted: (Bool) -> Void
+    }
+    private let displayVolumeStorage = OSAllocatedUnfairLock<DisplayVolumeFallback?>(initialState: nil)
+
+    /// A selected fallback consumes writes even before its first read, so an
+    /// unavailable display is never presented as a successful CoreAudio write.
+    var directDisplayVolumeCapabilities: (canSetVolume: Bool, canMute: Bool)? {
+        guard let fallback = displayVolumeFallback(on: currentDeviceID) else { return nil }
+        return (fallback.scalar != nil, fallback.canMute)
+    }
+
+    func updateDirectDisplayVolume(deviceID: AudioDeviceID?, scalar: Float?, canMute: Bool = false,
+                                   setVolume: @escaping (Float) -> Void,
+                                   adjust: @escaping (Float) -> Void,
+                                   setMuted: @escaping (Bool) -> Void) {
+        guard deviceID == nil || deviceID == currentDeviceID else { return }
+        let previous = displayVolumeStorage.withLock { state -> Float? in
+            let previous = state?.scalar
+            state = deviceID.map {
+                DisplayVolumeFallback(deviceID: $0, scalar: scalar, canMute: canMute, setVolume: setVolume, adjust: adjust, setMuted: setMuted)
+            }
+            return previous
+        }
+        if let scalar {
+            notifyCurrentState(showHUD: previous != nil && previous != scalar)
+        } else {
+            // Also update controls on failure/sleep: there is no numeric value
+            // to broadcast, but the previous value is no longer actionable.
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .systemVolumeDidChange, object: nil)
+            }
+        }
+    }
+
+    /// The route is read from CoreAudio at the decision point, not the asynchronously cached ID.
+    func directDisplayRoute() -> (id: AudioDeviceID, uid: String?, transport: UInt32, coreAudioWritable: Bool) {
+        let id = resolveDefaultDevice()
+        var uid: CFString? = nil
+        var uidSize = UInt32(MemoryLayout<CFString?>.size)
+        var uidAddress = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyDeviceUID,
+                                                   mScope: kAudioObjectPropertyScopeGlobal,
+                                                   mElement: kAudioObjectPropertyElementMain)
+        _ = AudioObjectGetPropertyData(id, &uidAddress, 0, nil, &uidSize, &uid)
+        var transport: UInt32 = 0
+        var transportSize = UInt32(MemoryLayout<UInt32>.size)
+        var transportAddress = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyTransportType,
+                                                         mScope: kAudioObjectPropertyScopeGlobal,
+                                                         mElement: kAudioObjectPropertyElementMain)
+        _ = AudioObjectGetPropertyData(id, &transportAddress, 0, nil, &transportSize, &transport)
+        let writable = [kAudioDevicePropertyVolumeScalar, virtualMainVolumeSelector].contains { selector in
+            candidateElements.contains { element in
+                var address = makeAddress(selector: selector, element: element)
+                var settable: DarwinBoolean = false
+                return AudioObjectIsPropertySettable(id, &address, &settable) == noErr && settable.boolValue
+            }
+        }
+        return (id, uid as String?, transport, writable)
+    }
+
+    private func displayVolumeFallback(on deviceID: AudioDeviceID) -> DisplayVolumeFallback? {
+        displayVolumeStorage.withLock { $0?.deviceID == deviceID ? $0 : nil }
+    }
+
     private var listenersInstalled = false
     private struct InstalledListener {
         let deviceID: AudioDeviceID
@@ -146,7 +215,12 @@ final class SystemVolumeController {
     }
 
     func adjust(by delta: Float) {
-        guard delta != 0 else { return }
+        guard delta.isFinite, delta != 0 else { return }
+        if let fallback = displayVolumeFallback(on: currentDeviceID) {
+            guard fallback.scalar != nil else { return }
+            fallback.adjust(delta)
+            return
+        }
         if isMuted {
             setMuted(false)
         }
@@ -194,7 +268,12 @@ final class SystemVolumeController {
     /// after. A route change in between had the write aiming the old device's
     /// elements at the new device.
     private func setVolume(_ value: Float, on deviceID: AudioDeviceID) {
+        guard value.isFinite else { return }
         let clamped = max(0, min(1, value))
+        if let fallback = displayVolumeFallback(on: deviceID) {
+            if fallback.scalar != nil { fallback.setVolume(clamped) }
+            return
+        }
         let currentlyMuted = getMuteState(on: deviceID)
 
         if clamped <= silenceThreshold {
@@ -252,6 +331,10 @@ final class SystemVolumeController {
     }
 
     private func setMuted(_ muted: Bool, on deviceID: AudioDeviceID) {
+        if let fallback = displayVolumeFallback(on: deviceID) {
+            if fallback.scalar != nil { fallback.setMuted(muted) }
+            return
+        }
         var muteFlag: UInt32 = muted ? 1 : 0
         let elements = muteElements(on: deviceID)
 
@@ -369,6 +452,10 @@ final class SystemVolumeController {
         callbackQueue.async { [weak self] in
             guard let self else { return }
             self.currentDeviceID = self.resolveDefaultDevice()
+            let deviceID = self.currentDeviceID
+            self.displayVolumeStorage.withLock {
+                if $0?.deviceID != deviceID { $0 = nil }
+            }
             self.refreshPropertyElements()
             self.installVolumeListeners(for: self.currentDeviceID)
             self.notifyCurrentState()
@@ -379,14 +466,14 @@ final class SystemVolumeController {
         }
     }
 
-    private func notifyCurrentState() {
+    private func notifyCurrentState(showHUD: Bool = true) {
         // Nothing has ever been read: say nothing rather than announce a
         // level. There is no volume to report yet, and every value that could
         // stand in for "unknown" is a real volume to whoever receives it.
         guard let volume = knownVolume() else { return }
         let muted = getMuteState()
         DispatchQueue.main.async {
-            self.onVolumeChange?(volume, muted)
+            if showHUD { self.onVolumeChange?(volume, muted) }
             NotificationCenter.default.post(name: .systemVolumeDidChange, object: nil, userInfo: ["value": volume, "muted": muted])
         }
     }
@@ -405,6 +492,7 @@ final class SystemVolumeController {
         // file the answer under device A -- the precise mix-up the per-device
         // memory exists to avoid.
         let deviceID = currentDeviceID
+        if let fallback = displayVolumeFallback(on: deviceID) { return fallback.scalar }
 
         if let value = readScalarVolume(on: deviceID) ?? readVirtualMainVolume(on: deviceID) {
             volumeMemory.withLock {
@@ -476,6 +564,7 @@ final class SystemVolumeController {
     }
 
     private func getMuteState(on deviceID: AudioDeviceID) -> Bool {
+        if let fallback = displayVolumeFallback(on: deviceID) { return fallback.scalar == 0 }
         let elements = muteElements(on: deviceID)
 
         if elements.isEmpty {

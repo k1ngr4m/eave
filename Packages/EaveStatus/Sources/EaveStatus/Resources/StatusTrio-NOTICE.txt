@@ -1,0 +1,11 @@
+Status Trio
+Copyright 2026 lingyired
+
+Vendored from https://github.com/lingyired/status-trio
+Source revision: 60d4d57c94da7104ab157c7d03546fed4fe23af7
+
+Modified for Eave menu-bar integration (2026-10-12).
+Eave owns application lifecycle, settings window, battery readings and audio writes.
+This module embeds the status icon and panel without Status Trio's application,
+updater or telemetry. Optional Dock, direct DDC audio and a bundled mobile-device
+helper are integrated with Eave's lifecycle and volume control owner.

@@ -6,7 +6,16 @@ is licensed under the GNU General Public License v3.0.
 
 See the LICENSE file for the full GPL v3 text.
 
+The menu bar status panel includes software from Status Trio,
+Copyright 2026 lingyired, licensed under the Apache License 2.0.
+See Packages/EaveStatus/LICENSE and Packages/EaveStatus/NOTICE.
+
 FingerprintScan.json is the "Fingerprint Scan" animation by Eddy Gann,
 downloaded from LottieFiles and used under the Lottie Simple License:
 https://lottiefiles.com/free-animation/fingerprint-scan-VQf6EWRtkS
 https://lottiefiles.com/page/license
+
+Direct display audio includes AppleSiliconDDC, licensed under the MIT License.
+See Packages/EaveStatus/Sources/EaveStatus/Resources/AppleSiliconDDC-LICENSE.txt.
+Mobile battery helper dependencies and their licenses are included under
+Support/MobileBatteryHelper/ThirdPartyNotices and in the application bundle.

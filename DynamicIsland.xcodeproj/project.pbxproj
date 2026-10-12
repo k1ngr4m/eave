@@ -51,6 +51,9 @@
 		C1A2B3C4D5E6F70819AB2C3D /* ClipboardHistoryPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A2B3C4D5E6F70819AB2C3E /* ClipboardHistoryPersistenceTests.swift */; };
 		C1DE0FAV0001000000000001 /* CiderFavoritingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1DE0FAV0001000000000002 /* CiderFavoritingTests.swift */; };
 		D1A2B3C4D5E6F70819AB2C4D /* SystemHUDPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2B3C4D5E6F70819AB2C4E /* SystemHUDPlacementTests.swift */; };
+		EA7E57A70000000000000001 /* EaveStatus in Frameworks */ = {isa = PBXBuildFile; productRef = EA7E57A70000000000000002 /* EaveStatus */; };
+		EA7E57A70000000000000004 /* MenuBarStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7E57A70000000000000005 /* MenuBarStatusTests.swift */; };
+		EA7E57A70000000000000006 /* SharedNetworkHUDTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7E57A70000000000000007 /* SharedNetworkHUDTests.swift */; };
 		F1E2D3C4B5A6E7F8A9B0C1D2 /* JSONLUsageParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D6E7F8A9B0C1D2 /* JSONLUsageParserTests.swift */; };
 		F3E4D5C6B7A8E9F0A1B2C3D4 /* Contents/Helpers/NowPlayingTestClient in CopyFiles */ = {isa = PBXBuildFile; fileRef = F2E3D4C5B6A7E8F9A0B1C2D3 /* Contents/Helpers/NowPlayingTestClient */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F5A6B7C8D9E0F1A2B3C4D5E6 /* NewAPIUsageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6B7C8D9E0F1A2B3C4D5E6F7 /* NewAPIUsageTests.swift */; };
@@ -121,6 +124,8 @@
 		DAA671E7B1B26733F02166C5 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		DFA269966BB987D4A1B411A2 /* SpotifyLibraryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpotifyLibraryTests.swift; sourceTree = "<group>"; };
 		E1F2A3B4C5D6E7F8A9B0C1D2 /* JSONLUsageParserTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = JSONLUsageParserTests.swift; sourceTree = "<group>"; };
+		EA7E57A70000000000000005 /* MenuBarStatusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarStatusTests.swift; sourceTree = "<group>"; };
+		EA7E57A70000000000000007 /* SharedNetworkHUDTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedNetworkHUDTests.swift; sourceTree = "<group>"; };
 		F2E3D4C5B6A7E8F9A0B1C2D3 /* Contents/Helpers/NowPlayingTestClient */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = "compiled.mach-o.executable"; path = Contents/Helpers/NowPlayingTestClient; sourceTree = "<group>"; };
 		F4C1DD09EC134302938E84F6 /* MediaRemoteAdapter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaRemoteAdapter.framework; path = Frameworks/MediaRemoteAdapter.framework; sourceTree = SOURCE_ROOT; };
 		F54406E72CD4987A00C7AFD9 /* Eave.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Eave.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -184,6 +189,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA7E57A70000000000000001 /* EaveStatus in Frameworks */,
 				7EF19C172F577040005B9929 /* SwiftTerm in Frameworks */,
 				7EF10C122F817ECF004229A0 /* Accelerate.framework in Frameworks */,
 				7E1ADF1D2EA209B1001DA867 /* SkyLightWindow in Frameworks */,
@@ -215,6 +221,8 @@
 		50983E4A1FCC1F5E2220FF8A /* DynamicIslandTests */ = {
 			isa = PBXGroup;
 			children = (
+				EA7E57A70000000000000005 /* MenuBarStatusTests.swift */,
+				EA7E57A70000000000000007 /* SharedNetworkHUDTests.swift */,
 				9A7D1A022F90000200A71002 /* AudioTapTests.swift */,
 				A4B5C6D7E8F90123456789AC /* AppleMusicControllerTests.swift */,
 				C0DEFACE1234567890ABCDEF /* FlyoutFrameCalculatorTests.swift */,
@@ -366,6 +374,7 @@
 				F54406E42CD4987A00C7AFD9 /* Frameworks */,
 				F54406E52CD4987A00C7AFD9 /* Resources */,
 				7EA69B1B2F5AE13500EB2D16 /* CopyFiles */,
+				EA7E57A70000000000000008 /* Embed Mobile Battery Helper */,
 				7EFAA8AA2F6F12F3000A99E8 /* ShellScript */,
 			);
 			buildRules = (
@@ -378,6 +387,7 @@
 			);
 			name = DynamicIsland;
 			packageProductDependencies = (
+				EA7E57A70000000000000002 /* EaveStatus */,
 				14D032192C68F32E0096E6A1 /* LaunchAtLogin */,
 				14D0321C2C68F3350096E6A1 /* Sparkle */,
 				B18654382C6F4990000B926A /* KeyboardShortcuts */,
@@ -424,6 +434,7 @@
 			mainGroup = F54406DE2CD4987A00C7AFD9;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				EA7E57A70000000000000003 /* XCLocalSwiftPackageReference "Packages/EaveStatus" */,
 				F54407082CD4A23F00C7AFD9 /* XCRemoteSwiftPackageReference "swift-collections" */,
 				14D032182C68F32E0096E6A1 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
 				14D0321B2C68F3350096E6A1 /* XCRemoteSwiftPackageReference "Sparkle" */,
@@ -483,6 +494,18 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		EA7E57A70000000000000008 /* Embed Mobile Battery Helper */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = ();
+			outputPaths = ();
+			name = "Embed Mobile Battery Helper";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "/bin/bash \"$SRCROOT/scripts/embed-mobile-battery-helper.sh\"";
+		};
 		7EFAA8AA2F6F12F3000A99E8 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -508,6 +531,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA7E57A70000000000000004 /* MenuBarStatusTests.swift in Sources */,
+				EA7E57A70000000000000006 /* SharedNetworkHUDTests.swift in Sources */,
 				9A7D1A012F90000200A71001 /* AudioTapTests.swift in Sources */,
 				A4B5C6D7E8F90123456789AB /* AppleMusicControllerTests.swift in Sources */,
 				B4777BB9FE29243B253B8306 /* SpotifyLibraryTests.swift in Sources */,
@@ -810,7 +835,7 @@
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_MetalCaptureEnabled = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Eave uses AppleScripts to control Spotify, Apple Music, and Notes.";
-				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Eave needs Bluetooth access to detect when audio devices connect and display their battery status in the HUD.";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Eave uses Bluetooth to display and connect paired devices and read their battery status.";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Show calender events inside the notch";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "Need for Calendar Mode";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need your camera for Mirror mode";
@@ -818,8 +843,8 @@
 				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "Eave needs access to save and read shelf dragged files.";
 				INFOPLIST_KEY_NSDownloadsFolderUsageDescription = "Eave needs access to read files in the downloads folder.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSLocationUsageDescription = "Eave uses your location to display accurate lock screen weather.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Eave uses your location to display accurate lock screen weather.";
+				INFOPLIST_KEY_NSLocationUsageDescription = "Eave uses location access to display lock screen weather and Wi-Fi network names and details.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Eave uses location access to display lock screen weather and Wi-Fi network names and details.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Eave needs microphone access to record voice questions for the AI assistant feature.";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Eave needs Reminders access to show your reminders";
 				INFOPLIST_KEY_NSRemindersUsageDescription = "Eave needs Reminders access to show your reminders";
@@ -885,7 +910,7 @@
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_MetalCaptureEnabled = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Eave uses AppleScripts to control Spotify, Apple Music, and Notes.";
-				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Eave needs Bluetooth access to detect when audio devices connect and display their battery status in the HUD.";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Eave uses Bluetooth to display and connect paired devices and read their battery status.";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Show calender events inside the notch";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "Need for Calendar Mode";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need your camera for Mirror mode";
@@ -893,8 +918,8 @@
 				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "Eave needs access to save and read shelf dragged files.";
 				INFOPLIST_KEY_NSDownloadsFolderUsageDescription = "Eave needs access to read files in the downloads folder.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSLocationUsageDescription = "Eave uses your location to display accurate lock screen weather.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Eave uses your location to display accurate lock screen weather.";
+				INFOPLIST_KEY_NSLocationUsageDescription = "Eave uses location access to display lock screen weather and Wi-Fi network names and details.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Eave uses location access to display lock screen weather and Wi-Fi network names and details.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Eave needs microphone access to record voice questions for the AI assistant feature.";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Eave needs Reminders access to show your reminders";
 				INFOPLIST_KEY_NSRemindersUsageDescription = "Eave needs Reminders access to show your reminders";
@@ -963,6 +988,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		EA7E57A70000000000000003 /* XCLocalSwiftPackageReference "Packages/EaveStatus" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/EaveStatus;
+		};
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		146BC4352D366E9B0047C66A /* XCRemoteSwiftPackageReference "MacroVisionKit" */ = {
@@ -1126,6 +1158,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B19424072CD0DB52003E5DC2 /* XCRemoteSwiftPackageReference "LottieUI" */;
 			productName = LottieUI;
+		};
+		EA7E57A70000000000000002 /* EaveStatus */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EA7E57A70000000000000003 /* XCLocalSwiftPackageReference "Packages/EaveStatus" */;
+			productName = EaveStatus;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -178,3 +178,15 @@ TemporaryAssets/
 
 # Python regression checks
 __pycache__/
+
+# Bundled notices for the embedded status panel.
+!Packages/EaveStatus/Sources/EaveStatus/Resources/StatusTrio-LICENSE.txt
+!Packages/EaveStatus/Sources/EaveStatus/Resources/StatusTrio-NOTICE.txt
+
+# Mobile battery helper and bundled dependency notices.
+!scripts/*mobile-battery*.sh
+!scripts/verify-platform-version.sh
+!Support/MobileBatteryHelper/ThirdPartyNotices/**/*.txt
+!Packages/EaveStatus/Sources/EaveStatus/Resources/AppleSiliconDDC-LICENSE.txt
+!scripts/otool-dependencies.py
+!scripts/otool-rpaths.py

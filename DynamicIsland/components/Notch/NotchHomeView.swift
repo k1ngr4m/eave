@@ -1686,6 +1686,7 @@ struct MediaOutputSelectorPopover: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .disabled(!volumeModel.canMute)
 
                 Slider(
                     value: Binding(
@@ -1697,6 +1698,7 @@ struct MediaOutputSelectorPopover: View {
                     in: 0 ... 1
                 )
                 .tint(.accentColor)
+                .disabled(!volumeModel.canSetVolume)
             }
 
             HStack {
@@ -1773,7 +1775,7 @@ struct MediaOutputSelectorPopover: View {
     }
 
     private var volumePercentage: String {
-        "\(Int(round(volumeModel.level * 100)))%"
+        volumeModel.canSetVolume ? "\(Int(round(volumeModel.level * 100)))%" : "—"
     }
 }
 
@@ -1878,6 +1880,8 @@ struct AirPlayVolumeSlider: View {
 final class MediaOutputVolumeViewModel: ObservableObject {
     @Published var level: Float
     @Published var isMuted: Bool
+    @Published private(set) var canSetVolume: Bool
+    @Published private(set) var canMute: Bool
 
     private let controller: SystemVolumeController
     private var cancellables: Set<AnyCancellable> = []
@@ -1887,16 +1891,12 @@ final class MediaOutputVolumeViewModel: ObservableObject {
         controller.start()
         level = controller.currentVolume
         isMuted = controller.isMuted
+        canSetVolume = controller.directDisplayVolumeCapabilities?.canSetVolume ?? true
+        canMute = controller.directDisplayVolumeCapabilities?.canMute ?? true
 
         NotificationCenter.default.publisher(for: .systemVolumeDidChange)
             .receive(on: RunLoop.main)
-            .sink { [weak self] notification in
-                guard let self,
-                      let value = notification.userInfo?["value"] as? Float,
-                      let muted = notification.userInfo?["muted"] as? Bool else { return }
-                self.level = value
-                self.isMuted = muted
-            }
+            .sink { [weak self] _ in self?.syncFromController() }
             .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: .systemAudioRouteDidChange)
@@ -1917,21 +1917,27 @@ final class MediaOutputVolumeViewModel: ObservableObject {
         // raise the notch's volume HUD puts a second slider on screen and swaps
         // out the content this one is anchored to, tearing the popover down
         // mid-drag -- which is why the slider could not be dragged at all.
+        guard value.isFinite, canSetVolume else { return }
         HUDSuppressionCoordinator.shared.suppressVolumeHUD(for: Self.ownControlHUDSuppression)
-        level = value
-        if value > 0 {
-            isMuted = false
+        // Native writes are synchronous; DDC only publishes verified readback.
+        if controller.directDisplayVolumeCapabilities == nil {
+            level = value
+            if value > 0 { isMuted = false }
         }
         controller.setVolume(value)
     }
 
     func toggleMute() {
+        guard canMute else { return }
         HUDSuppressionCoordinator.shared.suppressVolumeHUD(for: Self.ownControlHUDSuppression)
-        isMuted.toggle()
+        if controller.directDisplayVolumeCapabilities == nil { isMuted.toggle() }
         controller.toggleMute()
     }
 
     private func syncFromController() {
+        canSetVolume = controller.directDisplayVolumeCapabilities?.canSetVolume ?? true
+        canMute = controller.directDisplayVolumeCapabilities?.canMute ?? true
+        guard canSetVolume else { return }
         level = controller.currentVolume
         isMuted = controller.isMuted
     }
