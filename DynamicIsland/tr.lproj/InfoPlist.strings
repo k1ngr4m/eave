@@ -1,0 +1,14 @@
+"CFBundleDisplayName" = "Eave";
+"NSAppleEventsUsageDescription" = "Eave, Spotify ve Apple Music'i kontrol etmek için AppleScript kullanır.";
+"NSBluetoothAlwaysUsageDescription" = "Eave, ses aygıtları bağlandığında bunları algılamak ve HUD'da pil durumlarını göstermek için Bluetooth erişimine ihtiyaç duyar.";
+"NSCalendarsFullAccessUsageDescription" = "Takvim etkinliklerini çentik içinde gösterir.";
+"NSCalendarsUsageDescription" = "Takvim modu için gereklidir.";
+"NSCameraUsageDescription" = "Ayna modu için kameranıza ihtiyaç duyuyoruz.";
+"NSDesktopFolderUsageDescription" = "Eave, ekran görüntülerini masaüstünüze kaydetmek için erişime ihtiyaç duyar.";
+"NSDocumentsFolderUsageDescription" = "Eave, rafa sürüklenen dosyaları kaydetmek ve okumak için erişime ihtiyaç duyar.";
+"NSDownloadsFolderUsageDescription" = "Eave, İndirilenler klasöründeki dosyaları okumak için erişime ihtiyaç duyar.";
+"NSLocationUsageDescription" = "Eave, doğru kilit ekranı hava durumunu göstermek için konumunuzu kullanır.";
+"NSLocationWhenInUseUsageDescription" = "Eave, doğru kilit ekranı hava durumunu göstermek için konumunuzu kullanır.";
+"NSRemindersUsageDescription" = "Eave, anımsatıcılarınızı göstermek için Anımsatıcılar erişimine ihtiyaç duyar.";
+"NSAudioCaptureUsageDescription" = "Eave, gerçek zamanlı müzik dalga biçimi görselleştiricisini göstermek için ses yakalama iznine ihtiyaç duyar.";
+"NSScreenCaptureUsageDescription" = "Eave, yapay zeka asistanı özelliği için ekran görüntüleri yakalamak üzere ekran kaydı iznine ihtiyaç duyar.";
