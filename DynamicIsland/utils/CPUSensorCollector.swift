@@ -47,22 +47,18 @@ final class CPUSensorCollector {
         setupFrequencyChannel()
     }
 
-    deinit {
-        if let subscription {
-            IOReportCreateSamples(subscription, nil, nil) // best-effort flush
-        }
-    }
+    func resetFrequencySampling() { previousSample = nil }
 
     func readTemperature() -> CPUTemperatureMetrics {
         let platform = hardware.platform
-        if let value = primaryTemperatureKeyCandidates.compactMap({ SMC.shared.getValue($0) }).first(where: { $0 < 110 }) {
+        if let value = primaryTemperatureKeyCandidates.compactMap({ SMC.shared.getValue($0) }).first(where: { $0.isFinite && $0 > 0 && $0 < 120 }) {
             return CPUTemperatureMetrics(celsius: value)
         }
         let list = temperatureFallbackKeys(for: platform)
         var total: Double = 0
         var count: Double = 0
         for key in list {
-            if let value = SMC.shared.getValue(key), value < 110 {
+            if let value = SMC.shared.getValue(key), value.isFinite, value > 0, value < 120 {
                 total += value
                 count += 1
             }

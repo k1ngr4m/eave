@@ -313,7 +313,8 @@ func statsAdjustedNotchSize(
         Defaults[.showMemoryGraph],
         Defaults[.showGpuGraph],
         Defaults[.showNetworkGraph],
-        Defaults[.showDiskGraph]
+        Defaults[.showDiskGraph],
+        Defaults[.showSensorsGraph]
     ].filter { $0 }.count
 
     guard enabledGraphsCount >= 4 else {

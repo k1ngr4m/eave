@@ -1,693 +1,199 @@
-/*
- * Atoll (DynamicIsland)
- * Copyright (C) 2024-2026 Atoll Contributors
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
-
-import SwiftUI
 import Defaults
+import SwiftUI
+import Charts
 
-// Graph data protocol for unified interface
-protocol GraphData {
-    var title: String { get }
-    var color: Color { get }
-    var icon: String { get }
-    var type: GraphType { get }
-    var rankingType: ProcessRankingType? { get }
-}
-
-enum GraphType {
-    case single
-    case dual
-}
-
-// Single value graph data
-struct SingleGraphData: GraphData {
-    let title: String
-    let value: String
-    let data: [Double]
-    let color: Color
-    let icon: String
-    let type: GraphType = .single
-    let rankingType: ProcessRankingType?
-}
-
-// Dual value graph data (for network/disk)
-struct DualGraphData: GraphData {
-    let title: String
-    let positiveValue: String
-    let negativeValue: String
-    let positiveData: [Double]
-    let negativeData: [Double]
-    let positiveColor: Color
-    let negativeColor: Color
-    let color: Color // Primary color for the component
-    let icon: String
-    let type: GraphType = .dual
-    let rankingType: ProcessRankingType?
+extension MonitoringModule {
+    var color: Color {
+        switch self {
+        case .cpu: return .blue
+        case .memory: return .green
+        case .gpu: return .purple
+        case .disk: return .cyan
+        case .network: return .orange
+        case .sensors: return .pink
+        }
+    }
+    var primaryLabel: String {
+        switch self {
+        case .disk: return String(localized: "Read")
+        case .network: return String(localized: "Download")
+        case .sensors: return String(localized: "Hottest sensor")
+        default: return String(localized: "Usage")
+        }
+    }
+    var secondaryLabel: String { self == .disk ? String(localized: "Write") : String(localized: "Upload") }
+    var hasProcesses: Bool { self == .cpu || self == .memory || self == .disk || self == .network }
 }
 
 struct NotchStatsView: View {
-    @ObservedObject var statsManager = StatsManager.shared
-    @Default(.enableStatsFeature) var enableStatsFeature
-    @Default(.showCpuGraph) var showCpuGraph
-    @Default(.showMemoryGraph) var showMemoryGraph
-    @Default(.showGpuGraph) var showGpuGraph
-    @Default(.showNetworkGraph) var showNetworkGraph
-    @Default(.showDiskGraph) var showDiskGraph
-    @State private var showingCPUPopover = false
-    @State private var showingMemoryPopover = false
-    @State private var showingGPUPopover = false
-    @State private var showingNetworkPopover = false
-    @State private var showingDiskPopover = false
-    @State private var isHoveringCPUPopover = false
-    @State private var isHoveringMemoryPopover = false
-    @State private var isHoveringGPUPopover = false
-    @State private var isHoveringNetworkPopover = false
-    @State private var isHoveringDiskPopover = false
-    @EnvironmentObject var vm: DynamicIslandViewModel
-    @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
-
-    var availableGraphs: [GraphData] {
-        var graphs: [GraphData] = []
-
-        if showCpuGraph {
-            graphs.append(SingleGraphData(
-                title: String(localized: "CPU"),
-                value: statsManager.cpuUsageString,
-                data: statsManager.cpuHistory,
-                color: .blue,
-                icon: "cpu",
-                rankingType: .cpu
-            ))
-        }
-
-        if showMemoryGraph {
-            graphs.append(SingleGraphData(
-                title: String(localized: "Memory"),
-                value: statsManager.memoryUsageString,
-                data: statsManager.memoryHistory,
-                color: .green,
-                icon: "memorychip",
-                rankingType: .memory
-            ))
-        }
-
-        if showGpuGraph {
-            graphs.append(SingleGraphData(
-                title: String(localized: "GPU"),
-                value: statsManager.gpuUsageString,
-                data: statsManager.gpuHistory,
-                color: .purple,
-                icon: "display",
-                rankingType: .gpu
-            ))
-        }
-
-        if showNetworkGraph {
-            graphs.append(DualGraphData(
-                title: String(localized: "Network"),
-                positiveValue: "↓" + statsManager.networkDownloadString,
-                negativeValue: "↑" + statsManager.networkUploadString,
-                positiveData: statsManager.networkDownloadHistory,
-                negativeData: statsManager.networkUploadHistory,
-                positiveColor: .orange,
-                negativeColor: .red,
-                color: .orange,
-                icon: "network",
-                rankingType: .network
-            ))
-        }
-
-        if showDiskGraph {
-            graphs.append(DualGraphData(
-                title: String(localized: "Disk"),
-                positiveValue: String(localized: "R ") + statsManager.diskReadString,
-                negativeValue: String(localized: "W ") + statsManager.diskWriteString,
-                positiveData: statsManager.diskReadHistory,
-                negativeData: statsManager.diskWriteHistory,
-                positiveColor: .cyan,
-                negativeColor: .yellow,
-                color: .cyan,
-                icon: "internaldrive",
-                rankingType: .disk
-            ))
-        }
-
-        return graphs
-    }
-
-    // Smart grid layout system for different graph counts
-    @ViewBuilder
-    var statsGridLayout: some View {
-        let graphCount = availableGraphs.count
-
-        if graphCount <= 3 {
-            // 1-3 graphs: Single row with equal spacing
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: graphCount),
-                spacing: 12
-            ) {
-                ForEach(0..<graphCount, id: \.self) { index in
-                    graphViewForIndex(index)
-                }
-            }
-        } else if graphCount == 4 {
-            // 4 graphs: two rows (2x2) without a collapsible expansion
-            VStack(spacing: statsGridSpacingHeight) {
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2),
-                    spacing: 12
-                ) {
-                    ForEach(0..<2, id: \.self) { index in
-                        graphViewForIndex(index)
-                    }
-                }
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2),
-                    spacing: 12
-                ) {
-                    ForEach(2..<graphCount, id: \.self) { index in
-                        graphViewForIndex(index)
-                    }
-                }
-            }
-        } else {
-            // 5 graphs: First row 3 graphs, second row 2 graphs (half-width each)
-            VStack(spacing: statsGridSpacingHeight) {
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3),
-                    spacing: 8
-                ) {
-                    ForEach(0..<3, id: \.self) { index in
-                        graphViewForIndex(index)
-                    }
-                }
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2),
-                    spacing: 8
-                ) {
-                    ForEach(3..<graphCount, id: \.self) { index in
-                        graphViewForIndex(index)
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func graphViewForIndex(_ index: Int) -> some View {
-        let graphData = availableGraphs[index]
-
-        if let rankingType = rankingTypeForGraph(graphData) {
-            Button(action: {
-                handleGraphClick(for: graphData)
-            }) {
-                UnifiedStatsCard(graphData: graphData)
-            }
-            .buttonStyle(PlainButtonStyle())
-            .popover(isPresented: bindingForGraph(graphData)) {
-                RankedProcessPopover(
-                    rankingType: rankingType,
-                    onHoverChange: { hovering in
-                        switch rankingType {
-                        case .cpu:
-                            isHoveringCPUPopover = hovering
-                        case .memory:
-                            isHoveringMemoryPopover = hovering
-                        case .gpu:
-                            isHoveringGPUPopover = hovering
-                        case .network:
-                            isHoveringNetworkPopover = hovering
-                        case .disk:
-                            isHoveringDiskPopover = hovering
-                        }
-                    }
-                )
-                .onDisappear {
-                    switch rankingType {
-                    case .cpu:
-                        isHoveringCPUPopover = false
-                    case .memory:
-                        isHoveringMemoryPopover = false
-                    case .gpu:
-                        isHoveringGPUPopover = false
-                    case .network:
-                        isHoveringNetworkPopover = false
-                    case .disk:
-                        isHoveringDiskPopover = false
-                    }
-                    DispatchQueue.main.async {
-                        updateStatsPopoverState()
-                    }
-                }
-            }
-            .transition(.asymmetric(
-                insertion: .scale.combined(with: .opacity).animation(.easeInOut(duration: 0.4)),
-                removal: .scale.combined(with: .opacity).animation(.easeInOut(duration: 0.4))
-            ))
-        } else {
-            UnifiedStatsCard(graphData: graphData)
-                .transition(.asymmetric(
-                    insertion: .scale.combined(with: .opacity).animation(.easeInOut(duration: 0.4)),
-                    removal: .scale.combined(with: .opacity).animation(.easeInOut(duration: 0.4))
-                ))
-        }
-    }
-
-    private func handleGraphClick(for graphData: GraphData) {
-        switch graphData.rankingType {
-        case .cpu:
-            showingCPUPopover = true
-        case .memory:
-            showingMemoryPopover = true
-        case .gpu:
-            showingGPUPopover = true
-        case .network:
-            showingNetworkPopover = true
-        case .disk:
-            showingDiskPopover = true
-        case nil:
-            break
-        }
-    }
-
-    private func bindingForGraph(_ graphData: GraphData) -> Binding<Bool> {
-        switch graphData.rankingType {
-        case .cpu:
-            return $showingCPUPopover
-        case .memory:
-            return $showingMemoryPopover
-        case .gpu:
-            return $showingGPUPopover
-        case .network:
-            return $showingNetworkPopover
-        case .disk:
-            return $showingDiskPopover
-        case nil:
-            return .constant(false)
-        }
-    }
-
-    private func rankingTypeForGraph(_ graphData: GraphData) -> ProcessRankingType? {
-        graphData.rankingType
-    }
-    
-    // Helper function to create graph views using unified component
-    @ViewBuilder
-    func graphView(for graphData: GraphData) -> some View {
-        UnifiedStatsCard(graphData: graphData)
-    }
+    @ObservedObject private var manager = StatsManager.shared
+    @Default(.enableStatsFeature) private var enabled
+    @Default(.cpuTemperatureUnit) private var temperatureUnit
+    @EnvironmentObject private var vm: DynamicIslandViewModel
+    @State private var selected: MonitoringModule?
 
     var body: some View {
-        VStack(spacing: 0) {
-            if !enableStatsFeature {
-                // Disabled state
-                VStack(spacing: 12) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.system(size: 40))
-                        .foregroundColor(.secondary)
-                    
-                    Text("Stats Disabled")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    Text("Enable stats monitoring in Settings to view system performance data.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding()
-            } else if availableGraphs.isEmpty {
-                // No graphs enabled state
-                VStack(spacing: 12) {
-                    Image(systemName: "chart.xyaxis.line")
-                        .font(.system(size: 40))
-                        .foregroundColor(.secondary)
-                    
-                    Text("No Graphs Enabled")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    Text("Enable graph visibility in Settings → Stats to view performance data.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding()
+        Group {
+            if !enabled || manager.enabledModules.isEmpty {
+                ContentUnavailableView(enabled ? String(localized: "No Graphs Enabled") : String(localized: "Stats Disabled"),
+                                       systemImage: "chart.xyaxis.line",
+                                       description: Text("Enable graph visibility in Settings → Stats to view performance data."))
             } else {
-                VStack(spacing: 8) {
-                    statsGridLayout
+                let columns = manager.enabledModules.count == 4 ? 2 : min(3, manager.enabledModules.count)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: columns), spacing: 12) {
+                    ForEach(manager.enabledModules) { module in
+                        Button { selected = module } label: { tile(module) }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(module.title + ": " + module.unit.string(manager.samples[module]?.value, fahrenheit: temperatureUnit == .fahrenheit))
+                            .popover(isPresented: Binding(get: { selected == module }, set: { if !$0 { selected = nil } })) {
+                                MonitoringDetailView(module: module)
+                            }
+                    }
                 }
                 .padding(12)
-                .animation(.easeInOut(duration: 0.4), value: availableGraphs.count)
-                .transition(.asymmetric(
-                    insertion: .scale.combined(with: .opacity).animation(.easeInOut(duration: 0.4)),
-                    removal: .scale.combined(with: .opacity).animation(.easeInOut(duration: 0.4))
-                ))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear {
-            // Note: Smart monitoring will handle starting/stopping based on notch state and current view
+        .onAppear { manager.updateMonitoringState(notchIsOpen: vm.notchState == .open, currentView: "stats") }
+        .onChange(of: selected) { _, value in
+            vm.isStatsPopoverActive = value != nil
+            manager.detail = value
         }
-        .onDisappear {
-            // Keep monitoring running when tab is not visible
-            updateStatsPopoverState()
+        .onChange(of: manager.enabledModules) { _, modules in
+            if let selected, !modules.contains(selected) { self.selected = nil }
         }
-        .animation(.easeInOut(duration: 0.4), value: enableStatsFeature)
-        .animation(.easeInOut(duration: 0.4), value: availableGraphs.count)
-        .onChange(of: showingCPUPopover) { _, newValue in
-            updateStatsPopoverState()
-        }
-        .onChange(of: showingMemoryPopover) { _, newValue in
-            updateStatsPopoverState()
-        }
-        .onChange(of: showingGPUPopover) { _, newValue in
-            updateStatsPopoverState()
-        }
-        .onChange(of: showingNetworkPopover) { _, newValue in
-            updateStatsPopoverState()
-        }
-        .onChange(of: showingDiskPopover) { _, newValue in
-            updateStatsPopoverState()
-        }
-        .onChange(of: isHoveringCPUPopover) { _, _ in
-            updateStatsPopoverState()
-        }
-        .onChange(of: isHoveringMemoryPopover) { _, _ in
-            updateStatsPopoverState()
-        }
-        .onChange(of: isHoveringGPUPopover) { _, _ in
-            updateStatsPopoverState()
-        }
-        .onChange(of: isHoveringNetworkPopover) { _, _ in
-            updateStatsPopoverState()
-        }
-        .onChange(of: isHoveringDiskPopover) { _, _ in
-            updateStatsPopoverState()
-        }
+        .onDisappear { selected = nil; manager.detail = nil; vm.isStatsPopoverActive = false }
     }
-    private func updateStatsPopoverState() {
-        let anyPopoverOpen = showingCPUPopover || showingMemoryPopover || showingGPUPopover || showingNetworkPopover || showingDiskPopover
-        let newState = anyPopoverOpen
-        if vm.isStatsPopoverActive != newState {
-            vm.isStatsPopoverActive = newState
-            #if DEBUG
-            print("📊 Stats popover state updated: \(newState)")
-            print("   CPU open=\(showingCPUPopover)")
-            print("   Memory open=\(showingMemoryPopover)")
-            print("   GPU open=\(showingGPUPopover)")
-            print("   Network open=\(showingNetworkPopover)")
-            print("   Disk open=\(showingDiskPopover)")
-            #endif
+
+    private func tile(_ module: MonitoringModule) -> some View {
+        let sample = manager.samples[module]
+        return VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 5) {
+                Image(systemName: module.icon).foregroundStyle(module.color)
+                Text(module.title).fontWeight(.medium)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.system(size: 8, weight: .semibold)).foregroundStyle(.secondary)
+            }
+            .font(.system(size: 11))
+            Text(module.unit.string(sample?.value, fahrenheit: temperatureUnit == .fahrenheit))
+                .font(.system(size: 19, weight: .semibold, design: .rounded)).monospacedDigit()
+                .lineLimit(1).minimumScaleFactor(0.7)
+            HStack(spacing: 3) {
+                Text(module.primaryLabel)
+                if module == .disk || module == .network {
+                    Spacer(minLength: 0)
+                    Text(module.secondaryLabel + " " + module.unit.string(sample?.secondary))
+                }
+            }
+            .font(.system(size: 9)).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
+            MonitoringHistoryChart(module: module, points: manager.history[module] ?? [])
+                .frame(height: 25)
+                .accessibilityHidden(true)
         }
+        .padding(10)
+        .frame(maxWidth: .infinity, minHeight: 112, maxHeight: 112, alignment: .topLeading)
+        .background(Color.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(module.color.opacity(0.15), lineWidth: 0.5))
+        .contentShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 
-// Unified Stats Card Component - handles both single and dual data types, matches boring.notch sizing
-struct UnifiedStatsCard: View {
-    let graphData: GraphData
-    @State private var isHovered = false
-    
+private struct MonitoringHistoryChart: View {
+    let module: MonitoringModule
+    let points: [MonitoringPoint]
+    private var ceiling: Double {
+        if module.unit == .percent { return 100 }
+        return max(1, points.flatMap { [$0.value, $0.secondary].compactMap { $0 } }.max() ?? 1) * 1.1
+    }
     var body: some View {
-        VStack(spacing: 3) { // Match boring.notch spacing
-            // Header - consistent across all card types
-            HStack(spacing: 4) {
-                Image(systemName: graphData.icon)
-                    .foregroundStyle(graphData.color)
-                    .font(.caption) // Match boring.notch font size
-                
-                Text(graphData.title)
-                    .font(.caption) // Match boring.notch font size
-                    .fontWeight(.medium)
-                    .foregroundStyle(Color.white.opacity(0.8))
-                
+        Chart(points) { point in
+            if let value = point.value {
+                LineMark(x: .value("Time", point.date), y: .value("Value", value), series: .value("Series", "Primary"))
+                    .foregroundStyle(module.color).lineStyle(StrokeStyle(lineWidth: 1.5))
+            }
+            if let value = point.secondary {
+                LineMark(x: .value("Time", point.date), y: .value("Value", value), series: .value("Series", "Secondary"))
+                    .foregroundStyle(module.color.opacity(0.45)).lineStyle(StrokeStyle(lineWidth: 1.2))
+            }
+        }
+        .chartYScale(domain: 0...ceiling)
+        .chartXAxis(.hidden).chartYAxis(.hidden).chartLegend(.hidden)
+    }
+}
+
+private struct MonitoringDetailView: View {
+    let module: MonitoringModule
+    @ObservedObject private var manager = StatsManager.shared
+    @Default(.cpuTemperatureUnit) private var temperatureUnit
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        let sample = manager.samples[module] ?? MonitoringSample()
+        VStack(spacing: 0) {
+            HStack {
+                Label(module.title, systemImage: module.icon).font(.headline)
                 Spacer()
-            }
-            
-            // Values section - same height for every card so the grid boxes match
-            Group {
-                if let singleData = graphData as? SingleGraphData {
-                    Text(singleData.value)
-                        .font(.caption) // Match boring.notch font size
-                        .fontWeight(.bold)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                } else if let dualData = graphData as? DualGraphData {
-                    HStack(spacing: 6) {
-                        Text(dualData.positiveValue)
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(dualData.positiveColor)
-                        
-                        Text("•")
-                            .font(.caption2)
-                            .foregroundStyle(Color.white.opacity(0.45))
-                        
-                        Text(dualData.negativeValue)
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(dualData.negativeColor)
-                    }
-                }
-            }
-            .frame(height: 18) // Fixed height for the values section
-            
-            // Graph section - adapts based on graph type
-            Group {
-                if let singleData = graphData as? SingleGraphData {
-                    MiniGraph(data: singleData.data, color: singleData.color)
-                } else if let dualData = graphData as? DualGraphData {
-                    DualQuadrantGraph(
-                        positiveData: dualData.positiveData,
-                        negativeData: dualData.negativeData,
-                        positiveColor: dualData.positiveColor,
-                        negativeColor: dualData.negativeColor
-                    )
-                }
-            }
-            .frame(height: 36) // Match boring.notch exactly - reduced from 50
-            
-            // Click hint - shown for graphs that open popovers
-            if graphData.rankingType != nil {
-                Text("Click for details")
-                    .font(.caption2)
-                    .foregroundStyle(Color.white.opacity(0.75))
-                    .opacity(isHovered ? 1.0 : 0.0)
-                    .animation(.easeInOut(duration: 0.2), value: isHovered)
-            }
-        }
-        .padding(8) // Match boring.notch padding - reduced from 10
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.white.opacity(0.08))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.white.opacity(isHovered ? 0.45 : 0.18), lineWidth: 1)
-                )
-        )
-        .scaleEffect(isHovered ? 1.02 : 1.0)
-        .animation(.easeInOut(duration: 0.2), value: isHovered)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onHover { hovering in
-            isHovered = hovering
-        }
-    }
-}
-
-struct MiniGraph: View {
-    let data: [Double]
-    let color: Color
-    
-    var body: some View {
-        GeometryReader { geometry in
-            let maxValue = data.max() ?? 1.0
-            let normalizedData = maxValue > 0 ? data.map { $0 / maxValue } : data
-            
-            Path { path in
-                guard !normalizedData.isEmpty else { return }
-                
-                let stepX = geometry.size.width / CGFloat(normalizedData.count - 1)
-                
-                for (index, value) in normalizedData.enumerated() {
-                    let x = CGFloat(index) * stepX
-                    let y = geometry.size.height * (1 - CGFloat(value))
-                    
-                    if index == 0 {
-                        path.move(to: CGPoint(x: x, y: y))
-                    } else {
-                        path.addLine(to: CGPoint(x: x, y: y))
-                    }
-                }
-            }
-            .stroke(color, lineWidth: 2)
-            
-            // Gradient fill
-            Path { path in
-                guard !normalizedData.isEmpty else { return }
-                
-                let stepX = geometry.size.width / CGFloat(normalizedData.count - 1)
-                
-                path.move(to: CGPoint(x: 0, y: geometry.size.height))
-                
-                for (index, value) in normalizedData.enumerated() {
-                    let x = CGFloat(index) * stepX
-                    let y = geometry.size.height * (1 - CGFloat(value))
-                    path.addLine(to: CGPoint(x: x, y: y))
-                }
-                
-                path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height))
-                path.closeSubpath()
-            }
-            .fill(
-                LinearGradient(
-                    gradient: Gradient(colors: [color.opacity(0.3), color.opacity(0.1)]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-        }
-    }
-}
-
-
-
-struct DualQuadrantGraph: View {
-    let positiveData: [Double]
-    let negativeData: [Double]
-    let positiveColor: Color
-    let negativeColor: Color
-    
-    var body: some View {
-        GeometryReader { geometry in
-            let maxPositive = positiveData.max() ?? 1.0
-            let maxNegative = negativeData.max() ?? 1.0
-            let maxValue = max(maxPositive, maxNegative)
-            
-            let normalizedPositive = maxValue > 0 ? positiveData.map { $0 / maxValue } : positiveData
-            let normalizedNegative = maxValue > 0 ? negativeData.map { $0 / maxValue } : negativeData
-            
-            let centerY = geometry.size.height / 2
-            
-            ZStack {
-                // Center dividing line
-                Path { path in
-                    path.move(to: CGPoint(x: 0, y: centerY))
-                    path.addLine(to: CGPoint(x: geometry.size.width, y: centerY))
-                }
-                .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
-                
-                // Positive quadrant (upper half)
-                Path { path in
-                    guard !normalizedPositive.isEmpty else { return }
-                    
-                    let stepX = geometry.size.width / CGFloat(normalizedPositive.count - 1)
-                    
-                    for (index, value) in normalizedPositive.enumerated() {
-                        let x = CGFloat(index) * stepX
-                        let y = centerY - (centerY * CGFloat(value)) // Above center
-                        
-                        if index == 0 {
-                            path.move(to: CGPoint(x: x, y: y))
-                        } else {
-                            path.addLine(to: CGPoint(x: x, y: y))
+                Text(manager.isMonitoring ? String(localized: "Live") : String(localized: "Stopped"))
+                    .font(.caption).foregroundStyle(.secondary)
+                Button { dismiss() } label: { Image(systemName: "xmark.circle.fill") }
+                    .buttonStyle(.plain).accessibilityLabel(Text("Close"))
+            }.padding(16)
+            Divider()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(alignment: .firstTextBaseline) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(module.primaryLabel).font(.caption).foregroundStyle(.secondary)
+                            Text(module.unit.string(sample.value, fahrenheit: temperatureUnit == .fahrenheit)).font(.system(size: 30, weight: .semibold, design: .rounded)).foregroundStyle(module.color)
+                        }
+                        Spacer()
+                        if module == .disk || module == .network {
+                            VStack(alignment: .trailing, spacing: 4) {
+                                Text(module.secondaryLabel).font(.caption).foregroundStyle(.secondary)
+                                Text(module.unit.string(sample.secondary)).font(.title2).foregroundStyle(module.color.opacity(0.65))
+                            }
                         }
                     }
-                }
-                .stroke(positiveColor, lineWidth: 2)
-                
-                // Positive fill
-                Path { path in
-                    guard !normalizedPositive.isEmpty else { return }
-                    
-                    let stepX = geometry.size.width / CGFloat(normalizedPositive.count - 1)
-                    
-                    path.move(to: CGPoint(x: 0, y: centerY))
-                    
-                    for (index, value) in normalizedPositive.enumerated() {
-                        let x = CGFloat(index) * stepX
-                        let y = centerY - (centerY * CGFloat(value))
-                        path.addLine(to: CGPoint(x: x, y: y))
+                    MonitoringHistoryChart(module: module, points: manager.history[module] ?? []).frame(height: 65)
+                        .accessibilityLabel(Text("Recent history"))
+                    if sample.sections.isEmpty {
+                        Text(manager.lastUpdated == nil ? "Waiting for sample…" : "No readable data on this Mac.")
+                            .font(.callout).foregroundStyle(.secondary)
                     }
-                    
-                    path.addLine(to: CGPoint(x: geometry.size.width, y: centerY))
-                    path.closeSubpath()
-                }
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [positiveColor.opacity(0.3), positiveColor.opacity(0.1)]),
-                        startPoint: .top,
-                        endPoint: .center
-                    )
-                )
-                
-                // Negative quadrant (lower half)
-                Path { path in
-                    guard !normalizedNegative.isEmpty else { return }
-                    
-                    let stepX = geometry.size.width / CGFloat(normalizedNegative.count - 1)
-                    
-                    for (index, value) in normalizedNegative.enumerated() {
-                        let x = CGFloat(index) * stepX
-                        let y = centerY + (centerY * CGFloat(value)) // Below center
-                        
-                        if index == 0 {
-                            path.move(to: CGPoint(x: x, y: y))
-                        } else {
-                            path.addLine(to: CGPoint(x: x, y: y))
+                    ForEach(sample.sections) { section in
+                        VStack(alignment: .leading, spacing: 9) {
+                            Text(section.title).font(.headline)
+                            ForEach(section.rows) { row in metric(row) }
                         }
+                        .padding(12).background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 10))
                     }
-                }
-                .stroke(negativeColor, lineWidth: 2)
-                
-                // Negative fill
-                Path { path in
-                    guard !normalizedNegative.isEmpty else { return }
-                    
-                    let stepX = geometry.size.width / CGFloat(normalizedNegative.count - 1)
-                    
-                    path.move(to: CGPoint(x: 0, y: centerY))
-                    
-                    for (index, value) in normalizedNegative.enumerated() {
-                        let x = CGFloat(index) * stepX
-                        let y = centerY + (centerY * CGFloat(value))
-                        path.addLine(to: CGPoint(x: x, y: y))
+                    if module.hasProcesses {
+                        VStack(alignment: .leading, spacing: 9) {
+                            Text("Top Processes").font(.headline)
+                            if module == .network || module == .disk {
+                                Text(module.primaryLabel + " / " + module.secondaryLabel).font(.caption).foregroundStyle(.secondary)
+                            }
+                            if sample.processes.isEmpty {
+                                Text(sample.processStatus ?? String(localized: "Waiting for process sample…")).font(.caption).foregroundStyle(.secondary)
+                            }
+                            ForEach(sample.processes) { row in metric(row) }
+                        }.padding(12).background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 10))
                     }
-                    
-                    path.addLine(to: CGPoint(x: geometry.size.width, y: centerY))
-                    path.closeSubpath()
-                }
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [negativeColor.opacity(0.3), negativeColor.opacity(0.1)]),
-                        startPoint: .bottom,
-                        endPoint: .center
-                    )
-                )
+                    if let date = manager.lastUpdated {
+                        Text(date, style: .time).font(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                }.padding(16)
             }
         }
+        .frame(width: 420, height: 530)
     }
-}
 
-#Preview {
-    NotchStatsView()
-        .frame(width: 400, height: 300)
-        .background(Color.black)
+    private func metric(_ row: MonitoringRow) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(row.label).lineLimit(2).foregroundStyle(.secondary)
+            Spacer(minLength: 4)
+            Text(row.text ?? row.unit.string(row.value, fahrenheit: temperatureUnit == .fahrenheit))
+                .monospacedDigit().textSelection(.enabled)
+        }.font(.system(size: 11))
+    }
 }

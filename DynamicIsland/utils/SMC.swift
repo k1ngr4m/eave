@@ -1,21 +1,5 @@
-/*
- * Atoll (DynamicIsland)
- * Copyright (C) 2024-2026 Atoll Contributors
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
-
+// Adapted from exelban/stats, commit 0c0e551e199938a92af963c25a15a3ca1aef7764.
+// Copyright (c) 2019 Serhiy Mytrovtsiy. MIT; see Resources/Stats-LICENSE.txt.
 import Foundation
 import IOKit
 
@@ -25,10 +9,10 @@ internal enum SMCDataType: String {
     case UI32 = "ui32"
     case SP1E = "sp1e"
     case SP3C = "sp3c"
-    case SP4B = "sp5b"
+    case SP4B = "sp4b"
     case SP5A = "sp5a"
     case SPA5 = "spa5"
-    case SP69 = "sp669"
+    case SP69 = "sp69"
     case SP78 = "sp78"
     case SP87 = "sp87"
     case SP96 = "sp96"
@@ -43,17 +27,13 @@ internal enum SMCDataType: String {
 internal enum SMCKeys: UInt8 {
     case kernelIndex = 2
     case readBytes = 5
-    case writeBytes = 6
     case readIndex = 8
     case readKeyInfo = 9
     case readPLimit = 11
     case readVers = 12
 }
 
-public enum FanMode: Int, Codable {
-    case automatic = 0
-    case forced = 1
-}
+
 
 internal struct SMCKeyData_t {
     typealias SMCBytes_t = (UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8,
@@ -150,7 +130,7 @@ extension Int {
 extension Float {
     init?(_ bytes: [UInt8]) {
         self = bytes.withUnsafeBytes {
-            return $0.load(fromByteOffset: 0, as: Self.self)
+            return $0.loadUnaligned(fromByteOffset: 0, as: Self.self)
         }
     }
     
@@ -162,6 +142,8 @@ extension Float {
 public class SMC {
     public static let shared = SMC()
     private var conn: io_connect_t = 0
+    private let keyInfoLock = NSLock()
+    private var keyInfoCache: [UInt32: SMCKeyData_t.keyInfo_t] = [:]
     
     public init() {
         var result: kern_return_t
@@ -169,7 +151,7 @@ public class SMC {
         let device: io_object_t
         
         let matchingDictionary: CFMutableDictionary = IOServiceMatching("AppleSMC")
-        result = IOServiceGetMatchingServices(kIOMasterPortDefault, matchingDictionary, &iterator)
+        result = IOServiceGetMatchingServices(kIOMainPortDefault, matchingDictionary, &iterator)
         if result != kIOReturnSuccess {
             print("Error IOServiceGetMatchingServices(): " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
             return
@@ -198,6 +180,9 @@ public class SMC {
     }
     
     public func close() -> kern_return_t {
+        self.keyInfoLock.lock()
+        defer { self.keyInfoLock.unlock() }
+        self.keyInfoCache.removeAll()
         return IOServiceClose(conn)
     }
     
@@ -206,16 +191,13 @@ public class SMC {
         var val: SMCVal_t = SMCVal_t(key)
         
         result = read(&val)
+        if result == kIOReturnNotFound { return nil }
         if result != kIOReturnSuccess {
             print("Error read(\(key)): " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
             return nil
         }
         
         if val.dataSize > 0 {
-            if val.bytes.first(where: { $0 != 0 }) == nil && val.key != "FS! " && val.key != "F0Md" && val.key != "F1Md" {
-                return nil
-            }
-            
             switch val.dataType {
             case SMCDataType.UI8.rawValue:
                 return Double(val.bytes[0])
@@ -277,8 +259,9 @@ public class SMC {
         var val: SMCVal_t = SMCVal_t(key)
         
         result = read(&val)
+        if result == kIOReturnNotFound { return nil }
         if result != kIOReturnSuccess {
-            print("Error read(): " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
+            print("Error read(\(key)): " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
             return nil
         }
         
@@ -325,7 +308,7 @@ public class SMC {
         var input: SMCKeyData_t = SMCKeyData_t()
         var output: SMCKeyData_t = SMCKeyData_t()
         
-        for i in 0...Int(keysNum!) {
+        for i in 0..<Int(keysNum!) {
             input = SMCKeyData_t()
             output = SMCKeyData_t()
             
@@ -333,7 +316,7 @@ public class SMC {
             input.data32 = UInt32(i)
             
             result = call(SMCKeys.kernelIndex.rawValue, input: &input, output: &output)
-            if result != kIOReturnSuccess {
+            if result != kIOReturnSuccess || output.result != 0 {
                 continue
             }
             
@@ -343,190 +326,55 @@ public class SMC {
         return list
     }
     
-    public func write(_ key: String, _ newValue: Int) -> kern_return_t {
-        var value = SMCVal_t(key)
-        value.dataSize = 2
-        value.bytes = [UInt8(newValue >> 6), UInt8((newValue << 2) ^ ((newValue >> 6) << 8)), UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                       UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                       UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                       UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                       UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                       UInt8(0), UInt8(0)]
-        
-        return write(value)
-    }
-    
-    // MARK: - fans
-    
-    public func setFanMode(_ id: Int, mode: FanMode) {
-        if self.getValue("F\(id)Md") != nil {
-            var result: kern_return_t = 0
-            var value = SMCVal_t("F\(id)Md")
-            
-            result = read(&value)
-            if result != kIOReturnSuccess {
-                print("Error read fan mode: " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
-                return
-            }
-            
-            value.bytes = [UInt8(mode.rawValue), UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                                   UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                                   UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                                   UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                                   UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                                   UInt8(0), UInt8(0)]
-            
-            result = write(value)
-            if result != kIOReturnSuccess {
-                print("Error write: " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
-                return
-            }
-        }
-        
-        let fansMode = Int(self.getValue("FS! ") ?? 0)
-        var newMode: UInt8 = 0
-        
-        if fansMode == 0 && id == 0 && mode == .forced {
-            newMode = 1
-        } else if fansMode == 0 && id == 1 && mode == .forced {
-            newMode = 2
-        } else if fansMode == 1 && id == 0 && mode == .automatic {
-            newMode = 0
-        } else if fansMode == 1 && id == 1 && mode == .forced {
-            newMode = 3
-        } else if fansMode == 2 && id == 1 && mode == .automatic {
-            newMode = 0
-        } else if fansMode == 2 && id == 0 && mode == .forced {
-            newMode = 3
-        } else if fansMode == 3 && id == 0 && mode == .automatic {
-            newMode = 2
-        } else if fansMode == 3 && id == 1 && mode == .automatic {
-            newMode = 1
-        }
-        
-        if fansMode == newMode {
-            return
-        }
-        
-        var result: kern_return_t = 0
-        var value = SMCVal_t("FS! ")
-        
-        result = read(&value)
-        if result != kIOReturnSuccess {
-            print("Error read fan mode: " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
-            return
-        }
-        
-        value.bytes = [0, newMode, UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                       UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                       UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                       UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                       UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0), UInt8(0),
-                       UInt8(0), UInt8(0)]
-        
-        result = write(value)
-        if result != kIOReturnSuccess {
-            print("Error write: " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
-            return
-        }
-    }
-    
-    public func setFanSpeed(_ id: Int, speed: Int) {
-        let maxSpeed = Int(self.getValue("F\(id)Mx") ?? 4000)
-        
-        if speed > maxSpeed {
-            print("new fan speed (\(speed)) is more than maximum speed (\(maxSpeed))")
-            return
-        }
-        
-        var result: kern_return_t = 0
-        var value = SMCVal_t("F\(id)Tg")
-        
-        result = read(&value)
-        if result != kIOReturnSuccess {
-            print("Error read fan value: " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
-            return
-        }
-        
-        if value.dataType == "flt " {
-            let bytes = Float(speed).bytes
-            value.bytes[0] = bytes[0]
-            value.bytes[1] = bytes[1]
-            value.bytes[2] = bytes[2]
-            value.bytes[3] = bytes[3]
-        } else if value.dataType == "fpe2" {
-            value.bytes[0] = UInt8(speed >> 6)
-            value.bytes[1] = UInt8((speed << 2) ^ ((speed >> 6) << 8))
-            value.bytes[2] = UInt8(0)
-            value.bytes[3] = UInt8(0)
-        }
-        
-        result = write(value)
-        if result != kIOReturnSuccess {
-            print("Error write: " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
-            return
-        }
-    }
-    
-    public func resetFans() {
-        var value = SMCVal_t("FS! ")
-        value.dataSize = 2
-        
-        let result = write(value)
-        if result != kIOReturnSuccess {
-            print("Error write: " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
-        }
-    }
-    
-    // MARK: - internal functions
-    
     private func read(_ value: UnsafeMutablePointer<SMCVal_t>) -> kern_return_t {
+        guard value.pointee.key.count == 4, value.pointee.key.utf8.count == 4 else { return kIOReturnBadArgument }
+        self.keyInfoLock.lock()
+        defer { self.keyInfoLock.unlock() }
+
         var result: kern_return_t = 0
         var input = SMCKeyData_t()
         var output = SMCKeyData_t()
         
         input.key = FourCharCode(fromString: value.pointee.key)
-        input.data8 = SMCKeys.readKeyInfo.rawValue
-        
-        result = call(SMCKeys.kernelIndex.rawValue, input: &input, output: &output)
-        if result != kIOReturnSuccess {
-            return result
+        let keyInfo: SMCKeyData_t.keyInfo_t
+        var cacheable = true
+        if let cached = self.keyInfoCache[input.key] {
+            keyInfo = cached
+        } else {
+            input.data8 = SMCKeys.readKeyInfo.rawValue
+            result = call(SMCKeys.kernelIndex.rawValue, input: &input, output: &output)
+            if result != kIOReturnSuccess {
+                return result
+            }
+            // SMC reports an unavailable key as 0x84 during sensor probing.
+            if output.result == 0x84 { return kIOReturnNotFound }
+            if output.result != 0 { return kIOReturnError }
+            keyInfo = output.keyInfo
+            cacheable = output.result == 0 && keyInfo.dataSize > 0 && keyInfo.dataSize <= value.pointee.bytes.count && keyInfo.dataType != 0
         }
         
-        value.pointee.dataSize = UInt32(output.keyInfo.dataSize)
-        value.pointee.dataType = output.keyInfo.dataType.toString()
-        input.keyInfo.dataSize = output.keyInfo.dataSize
+        value.pointee.dataSize = UInt32(keyInfo.dataSize)
+        value.pointee.dataType = keyInfo.dataType.toString()
+        input.keyInfo.dataSize = keyInfo.dataSize
         input.data8 = SMCKeys.readBytes.rawValue
         
         result = call(SMCKeys.kernelIndex.rawValue, input: &input, output: &output)
+        if result == kIOReturnSuccess && output.result == 0 && cacheable {
+            self.keyInfoCache[input.key] = keyInfo
+        } else {
+            self.keyInfoCache.removeValue(forKey: input.key)
+        }
         if result != kIOReturnSuccess {
             return result
         }
+        if output.result == 0x84 { return kIOReturnNotFound }
+        if output.result != 0 { return kIOReturnError }
         
-        memcpy(&value.pointee.bytes, &output.bytes, Int(value.pointee.dataSize))
-        
-        return kIOReturnSuccess
-    }
-    
-    private func write(_ value: SMCVal_t) -> kern_return_t {
-        var input = SMCKeyData_t()
-        var output = SMCKeyData_t()
-        
-        input.key = FourCharCode(fromString: value.key)
-        input.data8 = SMCKeys.writeBytes.rawValue
-        input.keyInfo.dataSize = IOByteCount32(value.dataSize)
-        input.bytes = (value.bytes[0], value.bytes[1], value.bytes[2], value.bytes[3], value.bytes[4], value.bytes[5],
-                       value.bytes[6], value.bytes[7], value.bytes[8], value.bytes[9], value.bytes[10], value.bytes[11],
-                       value.bytes[12], value.bytes[13], value.bytes[14], value.bytes[15], value.bytes[16], value.bytes[17],
-                       value.bytes[18], value.bytes[19], value.bytes[20], value.bytes[21], value.bytes[22], value.bytes[23],
-                       value.bytes[24], value.bytes[25], value.bytes[26], value.bytes[27], value.bytes[28], value.bytes[29],
-                       value.bytes[30], value.bytes[31])
-        
-        let result = self.call(SMCKeys.kernelIndex.rawValue, input: &input, output: &output)
-        if result != kIOReturnSuccess {
-            return result
+        guard value.pointee.dataSize <= 32 else { return kIOReturnBadArgument }
+        withUnsafeBytes(of: output.bytes) { buffer in
+            value.pointee.bytes = Array(buffer.prefix(Int(value.pointee.dataSize))) + Array(repeating: 0, count: 32 - Int(value.pointee.dataSize))
         }
-        
+
         return kIOReturnSuccess
     }
     

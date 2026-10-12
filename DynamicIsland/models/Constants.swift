@@ -1329,8 +1329,9 @@ extension Defaults.Keys {
     static let showCpuGraph = Key<Bool>("showCpuGraph", default: true)
     static let showMemoryGraph = Key<Bool>("showMemoryGraph", default: true)
     static let showGpuGraph = Key<Bool>("showGpuGraph", default: true)
-    static let showNetworkGraph = Key<Bool>("showNetworkGraph", default: false)
-    static let showDiskGraph = Key<Bool>("showDiskGraph", default: false)
+    static let showNetworkGraph = Key<Bool>("showNetworkGraph", default: true)
+    static let showDiskGraph = Key<Bool>("showDiskGraph", default: true)
+    static let showSensorsGraph = Key<Bool>("showSensorsGraph", default: true)
     static let cpuTemperatureUnit = Key<LockScreenWeatherTemperatureUnit>("cpuTemperatureUnit", default: .matchingSystemPreference)
     
     // MARK: Terminal Feature

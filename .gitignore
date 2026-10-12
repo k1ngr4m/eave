@@ -190,3 +190,6 @@ __pycache__/
 !Packages/EaveStatus/Sources/EaveStatus/Resources/AppleSiliconDDC-LICENSE.txt
 !scripts/otool-dependencies.py
 !scripts/otool-rpaths.py
+
+!tests/test_monitoring.py
+!DynamicIsland/Resources/Stats-LICENSE.txt

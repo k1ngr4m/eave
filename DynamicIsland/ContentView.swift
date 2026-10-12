@@ -76,6 +76,7 @@ struct ContentView: View {
     @Default(.showGpuGraph) var showGpuGraph
     @Default(.showNetworkGraph) var showNetworkGraph
     @Default(.showDiskGraph) var showDiskGraph
+    @Default(.showSensorsGraph) var showSensorsGraph
     @Default(.enableReminderLiveActivity) var enableReminderLiveActivity
     @Default(.enableTimerFeature) var enableTimerFeature
     @Default(.timerDisplayMode) var timerDisplayMode
@@ -795,13 +796,10 @@ struct ContentView: View {
             })
             .onChange(of: vm.notchState) { _, newState in
                 // Update smart monitoring based on notch state
-                if enableStatsFeature {
-                    let currentViewString = coordinator.currentView == .stats ? "stats" : "other"
-                    statsManager.updateMonitoringState(
-                        notchIsOpen: newState == .open,
-                        currentView: currentViewString
-                    )
-                }
+                statsManager.updateMonitoringState(
+                    notchIsOpen: newState == .open,
+                    currentView: coordinator.currentView == .stats ? "stats" : "other"
+                )
 
                 // Reset hover state when notch state changes
                 if newState == .closed && isHovering {
@@ -861,13 +859,10 @@ struct ContentView: View {
                 }
             }
             .onChange(of: coordinator.currentView) { _, newValue in
-                if enableStatsFeature {
-                    let currentViewString = newValue == .stats ? "stats" : "other"
-                    statsManager.updateMonitoringState(
-                        notchIsOpen: vm.notchState == .open,
-                        currentView: currentViewString
-                    )
-                }
+                statsManager.updateMonitoringState(
+                    notchIsOpen: vm.notchState == .open,
+                    currentView: newValue == .stats ? "stats" : "other"
+                )
                 syncStickyTerminalOutsideClickMonitor()
             }
             .sensoryFeedback(.alignment, trigger: haptics)
@@ -2528,6 +2523,7 @@ struct ContentView: View {
         if showGpuGraph { enabledCount += 1 }
         if showNetworkGraph { enabledCount += 1 }
         if showDiskGraph { enabledCount += 1 }
+        if showSensorsGraph { enabledCount += 1 }
         return enabledCount
     }
 

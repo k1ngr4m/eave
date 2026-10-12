@@ -454,6 +454,7 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .stocks, title: "Enable A-share stocks", keywords: ["stocks", "quotes", "watchlist", "股票", "行情", "自选"], highlightID: nil),
 
         // Stats
+        SettingsSearchEntry(tab: .stats, title: "Sensors", keywords: ["temperature", "power", "fans", "传感器"], highlightID: SettingsTab.stats.highlightID(for: "Sensors")),
         SettingsSearchEntry(tab: .stats, title: "Enable system stats monitoring", keywords: ["stats", "monitoring"], highlightID: SettingsTab.stats.highlightID(for: "Enable system stats monitoring")),
         SettingsSearchEntry(tab: .llmAgents, title: "Enable LLM Usage Monitor", keywords: ["llm", "usage", "ai", "monitor"], highlightID: SettingsTab.llmAgents.highlightID(for: "Enable LLM Usage Monitor")),
         SettingsSearchEntry(tab: .llmAgents, title: "Claude Provider", keywords: ["llm", "claude", "provider", "toggle"], highlightID: SettingsTab.llmAgents.highlightID(for: "Claude Provider")),
@@ -8018,257 +8019,55 @@ private struct TimerPresetComponentControl: View {
 }
 
 struct StatsSettings: View {
-    @ObservedObject var statsManager = StatsManager.shared
-    @Default(.enableStatsFeature) var enableStatsFeature
-    @Default(.statsStopWhenNotchCloses) var statsStopWhenNotchCloses
-    @Default(.statsUpdateInterval) var statsUpdateInterval
-    @Default(.showCpuGraph) var showCpuGraph
-    @Default(.showMemoryGraph) var showMemoryGraph
-    @Default(.showGpuGraph) var showGpuGraph
-    @Default(.showNetworkGraph) var showNetworkGraph
-    @Default(.showDiskGraph) var showDiskGraph
-    @Default(.cpuTemperatureUnit) var cpuTemperatureUnit
+    @ObservedObject private var manager = StatsManager.shared
+    @Default(.enableStatsFeature) private var enabled
+    @Default(.statsStopWhenNotchCloses) private var stopWhenClosed
+    @Default(.statsUpdateInterval) private var interval
+    @Default(.cpuTemperatureUnit) private var temperatureUnit
 
-    private func highlightID(_ title: String) -> String {
-        SettingsTab.stats.highlightID(for: title)
-    }
-
-    var enabledGraphsCount: Int {
-        [showCpuGraph, showMemoryGraph, showGpuGraph, showNetworkGraph, showDiskGraph].filter { $0 }.count
-    }
-
-    private var formattedUpdateInterval: String {
-        let seconds = Int(statsUpdateInterval.rounded())
-        if seconds >= 60 {
-            return String(localized: "60 s (1 min)")
-        } else if seconds == 1 {
-            return String(localized: "1 s")
-        } else {
-            return String(localized: "\(seconds) s")
-        }
-    }
-
-    private var shouldShowStatsBatteryWarning: Bool {
-        !statsStopWhenNotchCloses && statsUpdateInterval <= 5
-    }
+    private let moduleSettings: [(MonitoringModule, String)] = [
+        (.cpu, "CPU Usage"), (.memory, "Memory Usage"), (.gpu, "GPU Usage"),
+        (.disk, "Disk I/O"), (.network, "Network Activity"), (.sensors, "Sensors")
+    ]
 
     var body: some View {
         Form {
             Section {
-                Defaults.Toggle(key: .enableStatsFeature) {
-                    Text("Enable system stats monitoring")
-                }
-                .settingsHighlight(id: highlightID("Enable system stats monitoring"))
-                .onChange(of: enableStatsFeature) { _, newValue in
-                    if !newValue {
-                        statsManager.stopMonitoring()
-                    }
-                    // Note: Smart monitoring will handle starting when switching to stats tab
-                }
-            } header: {
-                Text("General")
-            } footer: {
-                Text("When enabled, the Stats tab will display real-time system performance graphs. This feature requires system permissions and may use additional battery.")
-                    .multilineTextAlignment(.trailing)
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
+                Defaults.Toggle(key: .enableStatsFeature) { Text("Enable system stats monitoring") }
+                    .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Enable system stats monitoring"))
             }
-
-            if enableStatsFeature {
-                Section {
-                    Defaults.Toggle(key: .statsStopWhenNotchCloses) {
-                        Text("Stop monitoring after closing the notch")
-                    }
-                    .settingsHighlight(id: highlightID("Stop monitoring after closing the notch"))
-                    .help("When enabled, stats monitoring stops a few seconds after the notch closes.")
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Update interval")
-                            Spacer()
-                            Text(formattedUpdateInterval)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Slider(value: $statsUpdateInterval, in: 1...60, step: 1)
-                            .accessibilityLabel("Stats update interval")
-
-                        Text("Controls how often system metrics refresh while monitoring is active.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    if shouldShowStatsBatteryWarning {
-                        Label {
-                            Text("High-frequency updates without a timeout can increase battery usage.")
-                        } icon: {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                        .padding(.top, 4)
-                    }
-                } header: {
-                    Text("Monitoring Behavior")
-                } footer: {
-                    Text("Sampling can continue while the notch is closed when the timeout is disabled.")
-                        .multilineTextAlignment(.trailing)
-                        .foregroundStyle(.secondary)
-                        .font(.caption)
-                }
-
-                Section {
-                    Defaults.Toggle(key: .showCpuGraph) {
-                        Text("CPU Usage")
-                    }
-                    .settingsHighlight(id: highlightID("CPU Usage"))
-
-                    if showCpuGraph {
-                        SettingsSegmentedPicker(
-                            "Temperature unit",
-                            selection: $cpuTemperatureUnit,
-                            items: Array(LockScreenWeatherTemperatureUnit.allCases)
-                        ) { $0.localizedName }
-                        .settingsHighlight(id: highlightID("Temperature unit"))
-                    }
-                    Defaults.Toggle(key: .showMemoryGraph) {
-                        Text("Memory Usage")
-                    }
-                    .settingsHighlight(id: highlightID("Memory Usage"))
-                    Defaults.Toggle(key: .showGpuGraph) {
-                        Text("GPU Usage")
-                    }
-                    .settingsHighlight(id: highlightID("GPU Usage"))
-                    Defaults.Toggle(key: .showNetworkGraph) {
-                        Text("Network Activity")
-                    }
-                    .settingsHighlight(id: highlightID("Network Activity"))
-                    Defaults.Toggle(key: .showDiskGraph) {
-                        Text("Disk I/O")
-                    }
-                    .settingsHighlight(id: highlightID("Disk I/O"))
-                } header: {
-                    Text("Graph Visibility")
-                } footer: {
-                    if enabledGraphsCount >= 4 {
-                        Text("With \(enabledGraphsCount) graphs enabled, the Dynamic Island will expand horizontally to accommodate all graphs in a single row.")
-                            .multilineTextAlignment(.trailing)
-                            .foregroundStyle(.secondary)
-                            .font(.caption)
-                    } else {
-                        Text("Each graph can be individually enabled or disabled. Network activity shows download/upload speeds, and disk I/O shows read/write speeds.")
-                            .multilineTextAlignment(.trailing)
-                            .foregroundStyle(.secondary)
-                            .font(.caption)
-                    }
-                }
-
-                Section {
+            if enabled {
+                Section("Monitoring Behavior") {
+                    Defaults.Toggle(key: .statsStopWhenNotchCloses) { Text("Stop monitoring after closing the notch") }
+                        .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Stop monitoring after closing the notch"))
                     HStack {
-                        Text("Monitoring Status")
-                        Spacer()
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(statsManager.isMonitoring ? .green : .red)
-                                .frame(width: 8, height: 8)
-                            Text(statsManager.isMonitoring ? "Active" : "Stopped")
-                                .foregroundStyle(.secondary)
-                        }
+                        Text("Update interval")
+                        Slider(value: $interval, in: 1...60, step: 1).accessibilityLabel("Stats update interval")
+                        Text("\(Int(interval.isFinite ? min(60, max(1, interval)) : 1)) s").monospacedDigit().frame(width: 40)
                     }
-
-                    if statsManager.isMonitoring {
-                        if showCpuGraph {
-                            HStack {
-                                Text("CPU Usage")
-                                Spacer()
-                                Text(statsManager.cpuUsageString)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-
-                        if showMemoryGraph {
-                            HStack {
-                                Text("Memory Usage")
-                                Spacer()
-                                Text(statsManager.memoryUsageString)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-
-                        if showGpuGraph {
-                            HStack {
-                                Text("GPU Usage")
-                                Spacer()
-                                Text(statsManager.gpuUsageString)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-
-                        if showNetworkGraph {
-                            HStack {
-                                Text("Network Download")
-                                Spacer()
-                                Text(String(format: "%.1f MB/s", statsManager.networkDownload))
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            HStack {
-                                Text("Network Upload")
-                                Spacer()
-                                Text(String(format: "%.1f MB/s", statsManager.networkUpload))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-
-                        if showDiskGraph {
-                            HStack {
-                                Text("Disk Read")
-                                Spacer()
-                                Text(String(format: "%.1f MB/s", statsManager.diskRead))
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            HStack {
-                                Text("Disk Write")
-                                Spacer()
-                                Text(String(format: "%.1f MB/s", statsManager.diskWrite))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-
-                        HStack {
-                            Text("Last Updated")
-                            Spacer()
-                            Text(statsManager.lastUpdated, style: .relative)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                } header: {
-                    Text("Live Performance Data")
+                    Text("Only enabled modules are sampled. Process details are collected while their detail view is open.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
-
-                Section {
-                    HStack {
-                        Button(statsManager.isMonitoring ? "Stop Monitoring" : "Start Monitoring") {
-                            if statsManager.isMonitoring {
-                                statsManager.stopMonitoring()
-                            } else {
-                                statsManager.startMonitoring()
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .foregroundColor(statsManager.isMonitoring ? .red : .blue)
-
-                        Spacer()
-
-                        Button("Clear Data") {
-                            statsManager.clearHistory()
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(statsManager.isMonitoring)
+                Section("Modules") {
+                    ForEach(moduleSettings, id: \.0) { module, title in
+                        Defaults.Toggle(key: module.visibilityKey) { Text(LocalizedStringKey(title)) }
+                            .settingsHighlight(id: SettingsTab.stats.highlightID(for: title))
                     }
-                } header: {
-                    Text("Controls")
+                    SettingsSegmentedPicker("Temperature unit", selection: $temperatureUnit,
+                                            items: Array(LockScreenWeatherTemperatureUnit.allCases)) { $0.localizedName }
+                        .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Temperature unit"))
+                }
+                Section("Monitoring Status") {
+                    LabeledContent("Status", value: manager.isMonitoring ? String(localized: "Active") : String(localized: "Stopped"))
+                    ForEach(manager.enabledModules) { module in
+                        LabeledContent(module.title, value: module.unit.string(manager.samples[module]?.value,
+                                                                              fahrenheit: temperatureUnit == .fahrenheit))
+                    }
+                    if let date = manager.lastUpdated {
+                        HStack { Text("Last Updated"); Spacer(); Text(date, style: .time).foregroundStyle(.secondary) }
+                    }
+                    Button("Clear Data") { manager.clearHistory() }
+                        .disabled(manager.isMonitoring)
                 }
             }
         }
