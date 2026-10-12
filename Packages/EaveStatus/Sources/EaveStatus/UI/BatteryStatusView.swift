@@ -40,6 +40,7 @@ struct BatteryStatusView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .focusEffectDisabled()
             .disabled(!hasDetails)
             .accessibilityLabel(state.accessibilityLabel)
             .accessibilityValue(state.accessibilityValue)

@@ -15,7 +15,6 @@ public struct MenuBarStatusSettingsView: View {
 
     public var body: some View {
         Form {
-            MobileBatterySettingsSection(controller: controller)
             Section(localization.string(.settingsIconSize)) {
                 HStack {
                     Slider(value: $settings.iconSize, in: SettingsStore.iconSizeRange, step: 1) {
@@ -42,38 +41,65 @@ public struct MenuBarStatusSettingsView: View {
             Section(localization.string(.settingsNetworkConnectionIcons)) {
                 Toggle(localization.string(.settingsNetworkWiFiIconForEthernet), isOn: $settings.showsWiFiIconForEthernet)
                 Toggle(localization.string(.settingsNetworkWiFiIconForHotspot), isOn: $settings.showsWiFiIconForHotspot)
-                Toggle(localization.string(.settingsBluetoothReplaceNetworkIcon), isOn: $settings.replacesNetworkIconWithBluetoothAudio)
             }
+            BluetoothSettingsSection(controller: controller)
             Section(localization.string(.settingsAudioIndicatorStyleTitle)) {
                 Picker(localization.string(.settingsAudioIndicatorStyle), selection: $settings.volumeDisplayStyle) {
                     Text(localization.string(.settingsAudioIndicatorStyleDots)).tag(VolumeDisplayStyle.dots)
                     Text(localization.string(.settingsAudioIndicatorStyleArc)).tag(VolumeDisplayStyle.arc)
                 }
                 Toggle(localization.string(.settingsAudioShowAll), isOn: $settings.alwaysShowsAllOutputDevices)
-                Stepper(localization.string(.settingsAudioMaximumVisible) + ": \(settings.maxVisibleOutputDevices)",
-                        value: $settings.maxVisibleOutputDevices, in: SettingsStore.outputDeviceLimitRange)
+                Stepper(value: $settings.maxVisibleOutputDevices, in: SettingsStore.outputDeviceLimitRange) {
+                    HStack {
+                        Text(localization.string(.settingsAudioMaximumVisible))
+                        Spacer()
+                        Text("\(settings.maxVisibleOutputDevices)").monospacedDigit()
+                    }
+                }
                 Toggle(localization.string(.settingsPopupVolumeScroll), isOn: $settings.popupScrollAdjustsVolume)
             }
             Section(localization.string(.settingsPopupOrder)) {
-                ForEach(sections) { section in
-                    HStack {
-                        Toggle(localization.string(section.titleKey), isOn: Binding(
-                            get: { settings.enabledPopupSections.contains(section) },
-                            set: { enabled in
-                                settings.setPopupSection(section, enabled: enabled)
+                List {
+                    ForEach(settings.popupSectionOrder) { section in
+                        HStack(spacing: 8) {
+                            Toggle("", isOn: Binding(
+                                get: { settings.enabledPopupSections.contains(section) },
+                                set: { settings.setPopupSection(section, enabled: $0) }
+                            ))
+                            .labelsHidden()
+                            .toggleStyle(.checkbox)
+                            .accessibilityLabel(localization.string(section.titleKey))
+
+                            Group {
+                                if section == .bluetooth {
+                                    BluetoothIcon(size: 16)
+                                } else {
+                                    Image(systemName: section.systemImage)
+                                        .font(.system(size: 13))
+                                }
                             }
-                        ))
-                        Button { move(section, by: -1) } label: { Image(systemName: "chevron.up") }
-                            .disabled(section == sections.first)
-                            .help(localization.string(.settingsMoveUp))
-                            .accessibilityLabel(localization.string(.settingsMoveUp))
-                        Button { move(section, by: 1) } label: { Image(systemName: "chevron.down") }
-                            .disabled(section == sections.last)
-                            .help(localization.string(.settingsMoveDown))
-                            .accessibilityLabel(localization.string(.settingsMoveDown))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 18)
+                            .accessibilityHidden(true)
+
+                            Text(localization.string(section.titleKey))
+                                .font(.system(size: 13))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            Image(systemName: "line.3.horizontal")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
+                        }
+                        .padding(.vertical, 3)
+                    }
+                    .onMove { source, destination in
+                        settings.movePopupSections(fromOffsets: source, toOffset: destination)
                     }
                 }
-                Toggle(localization.string(.settingsBluetoothBatteryLevels), isOn: $settings.showsBluetoothBatteryLevels)
+                .listStyle(.inset)
+                .scrollContentBackground(.hidden)
+                .frame(height: CGFloat(settings.popupSectionOrder.count) * 32 + 12)
             }
         }
         .formStyle(.grouped)
@@ -82,12 +108,4 @@ public struct MenuBarStatusSettingsView: View {
         .onDisappear { controller.store.setSettingsVisible(false) }
     }
 
-    private var sections: [PopupSection] { settings.popupSectionOrder }
-
-    private func move(_ section: PopupSection, by offset: Int) {
-        guard let current = sections.firstIndex(of: section), sections.indices.contains(current + offset),
-              let source = settings.popupSectionOrder.firstIndex(of: section),
-              let target = settings.popupSectionOrder.firstIndex(of: sections[current + offset]) else { return }
-        settings.movePopupSections(fromOffsets: IndexSet(integer: source), toOffset: offset > 0 ? target + 1 : target)
-    }
 }
