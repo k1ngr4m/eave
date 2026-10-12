@@ -524,3 +524,140 @@ private struct DelayedCodexUsageProvider: UsageProvider {
         return snapshot
     }
 }
+
+final class CodexLogStorePersistenceTests: XCTestCase {
+    private let now = Date(timeIntervalSince1970: 1_791_785_000)
+
+    private func fixture(_ body: (URL, URL, URL) throws -> Void) throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try body(root, root.appendingPathComponent("session.jsonl"), root.appendingPathComponent("cache/usage.plist"))
+    }
+
+    private func store(_ root: URL, _ cache: URL?) -> CodexLogStore {
+        CodexLogStore(roots: [root], cacheURL: cache, price: { _ in 0 })
+    }
+
+    private func record(_ id: String, input: Int = 10) -> String {
+        let timestamp = ISO8601DateFormatter().string(from: now)
+        return "{\"type\":\"token_usage_record\",\"timestamp\":\"\(timestamp)\",\"payload\":{\"response_id\":\"\(id)\",\"usage\":{\"input_tokens\":\(input),\"output_tokens\":2}}}\n"
+    }
+
+    private func append(_ text: String, to file: URL) throws {
+        let handle = try FileHandle(forWritingTo: file)
+        defer { try? handle.close() }
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data(text.utf8))
+    }
+
+    func testRestartAndAppendMatchFreshScan() throws {
+        try fixture { root, file, cache in
+            let timestamp = ISO8601DateFormatter().string(from: now)
+            let context = "{\"type\":\"session_meta\",\"payload\":{\"id\":\"session\",\"cwd\":\"/project\"}}\n"
+                + "{\"type\":\"turn_context\",\"payload\":{\"model\":\"model-a\"}}\n"
+                + "{\"type\":\"event_msg\",\"timestamp\":\"\(timestamp)\",\"payload\":{\"type\":\"task_started\"}}\n"
+            try Data((context + record("one")).utf8).write(to: file)
+            let first = store(root, cache).snapshot(now: now)
+            let restored = store(root, cache)
+            XCTAssertEqual(restored.snapshot(now: now), first)
+            XCTAssertEqual(restored.bytesRead, 0, "An unchanged history must resume without scanning it")
+            let added = record("two")
+            try append(added, to: file)
+            XCTAssertEqual(restored.snapshot(now: now), store(root, nil).snapshot(now: now))
+            XCTAssertEqual(restored.bytesRead, UInt64(added.utf8.count))
+            XCTAssertEqual(restored.snapshot(now: now).today.totalTokens, 24)
+        }
+    }
+
+    func testPartialLineIsNotPersistedAndResumes() throws {
+        try fixture { root, file, cache in
+            let secret = "PRIVATE_CONVERSATION_NOT_FOR_CACHE"
+            let partial = "{\"type\":\"response_item\",\"payload\":{\"text\":\"\(secret)"
+            try Data((record("one") + partial).utf8).write(to: file)
+            XCTAssertEqual(store(root, cache).snapshot(now: now).today.totalTokens, 12)
+            let archive = try PropertyListSerialization.propertyList(from: Data(contentsOf: cache), format: nil)
+            XCTAssertFalse(String(describing: archive).contains(secret))
+            let suffix = "\"}}\n" + record("two")
+            try append(suffix, to: file)
+            let restored = store(root, cache)
+            XCTAssertEqual(restored.snapshot(now: now), store(root, nil).snapshot(now: now))
+            XCTAssertEqual(restored.bytesRead, UInt64((partial + suffix).utf8.count))
+        }
+    }
+
+    func testRewrittenBoundaryWithSameMetadataIsDetected() throws {
+        try fixture { root, file, cache in
+            let padding = "{\"type\":\"response_item\",\"text\":\"" + String(repeating: "x", count: 9000) + "\"}\n"
+            try Data((padding + record("one", input: 10)).utf8).write(to: file)
+            _ = store(root, cache).snapshot(now: now)
+            let modified = try FileManager.default.attributesOfItem(atPath: file.path)[.modificationDate]!
+            let handle = try FileHandle(forWritingTo: file)
+            try handle.write(contentsOf: Data((padding + record("one", input: 20)).utf8))
+            try handle.close()
+            try FileManager.default.setAttributes([.modificationDate: modified], ofItemAtPath: file.path)
+            let restored = store(root, cache)
+            XCTAssertEqual(restored.snapshot(now: now).today.totalTokens, 22)
+            XCTAssertGreaterThan(restored.bytesRead, 9000)
+        }
+    }
+
+    func testReplacedTruncatedAndDeletedFiles() throws {
+        try fixture { root, file, cache in
+            try Data((record("one") + record("two")).utf8).write(to: file)
+            _ = store(root, cache).snapshot(now: now)
+            try Data(record("new", input: 20).utf8).write(to: file, options: .atomic)
+            XCTAssertEqual(store(root, cache).snapshot(now: now).today.totalTokens, 22)
+            let handle = try FileHandle(forWritingTo: file)
+            try handle.truncate(atOffset: 0)
+            try handle.close()
+            XCTAssertEqual(store(root, cache).snapshot(now: now).today.totalTokens, 0)
+            try FileManager.default.removeItem(at: file)
+            XCTAssertEqual(store(root, cache).snapshot(now: now).today.totalTokens, 0)
+        }
+    }
+
+    func testInvalidCacheFallsBackToLogs() throws {
+        try fixture { root, file, cache in
+            try Data(record("one").utf8).write(to: file)
+            _ = store(root, cache).snapshot(now: now)
+            for field in ["version", "build", "roots"] {
+                var archive = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: cache), format: nil) as? [String: Any])
+                archive[field] = field == "version" ? 999 : "incompatible"
+                try PropertyListSerialization.data(fromPropertyList: archive, format: .binary, options: 0).write(to: cache)
+                let restored = store(root, cache)
+                XCTAssertEqual(restored.snapshot(now: now).today.totalTokens, 12)
+                XCTAssertGreaterThan(restored.bytesRead, 0)
+            }
+            try Data("damaged cache".utf8).write(to: cache)
+            XCTAssertEqual(store(root, cache).snapshot(now: now).today.totalTokens, 12)
+        }
+    }
+
+    func testFilterHandlesWhitespaceEscapesAndNestedTypes() throws {
+        try fixture { root, file, _ in
+            let valid = record("one").replacingOccurrences(of: "\"type\":", with: "\"ty\\u0070e\" : ")
+            let timestamp = ISO8601DateFormatter().string(from: now)
+            let reordered = "{ \"payload\": {\"response_id\":\"two\",\"usage\":{\"input_tokens\":10,\"output_tokens\":2}}, \"timestamp\":\"\(timestamp)\", \"type\" : \"token_usage_record\" }\n"
+            let ignored = "{\"type\":\"response_item\",\"payload\":{\"type\":\"token_usage_record\",\"usage\":{\"input_tokens\":999}}}\n"
+                + "{\"type\":\"event_msg\",\"payload\":{\"type\":\"agent_message\",\"text\":\"\\\"type\\\":\\\"token_count\\\"\"}}\n"
+            try Data((ignored + valid + reordered).utf8).write(to: file)
+            let parser = store(root, nil)
+            XCTAssertEqual(parser.snapshot(now: now).today.totalTokens, 24)
+            XCTAssertEqual(parser.recordsParsed, 2)
+        }
+    }
+
+    func testOversizedPartialAndFinalLineSurviveRestart() throws {
+        try fixture { root, file, cache in
+            let oversized = String(repeating: "x", count: 1_048_600)
+            try Data((record("one") + oversized).utf8).write(to: file)
+            _ = store(root, cache).snapshot(now: now)
+            try append("remainder\n" + record("two").trimmingCharacters(in: .newlines), to: file)
+            XCTAssertEqual(store(root, cache).snapshot(now: now).today.totalTokens, 24)
+            let restored = store(root, cache)
+            XCTAssertEqual(restored.snapshot(now: now).today.totalTokens, 24)
+            XCTAssertEqual(restored.bytesRead, 0)
+        }
+    }
+}

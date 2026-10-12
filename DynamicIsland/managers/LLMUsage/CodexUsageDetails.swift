@@ -45,7 +45,7 @@ struct CodexPeriodUsage: Equatable {
     var projects: [CodexUsageShare] = []
 }
 
-struct CodexLiveTask: Equatable, Identifiable {
+struct CodexLiveTask: Equatable, Identifiable, Codable {
     let id: String
     let started: Date
     var lastActivity: Date
@@ -74,7 +74,7 @@ struct CodexUsageDetails: Equatable {
 
 /// Queue confined by CodexUsageBackend. Keeps counters and metadata only, never conversation text.
 final class CodexLogStore {
-    struct Record {
+    struct Record: Codable {
         let key: String
         let session: String
         let modern: Bool
@@ -82,13 +82,13 @@ final class CodexLogStore {
         let project: String
         let turn: Date?
     }
-    private struct Cursor {
+    private struct Cursor: Codable {
         var offset: UInt64 = 0
         var pending = Data()
         var discarding = false
         var inode: UInt64 = 0
         var modified = Date.distantPast
-        var prefix = Data()
+        var fingerprint: UInt64 = 0
         var session: String
         var model = "codex"
         var project = ""
@@ -97,8 +97,39 @@ final class CodexLogStore {
         var modern = false
         var records: [String: Record] = [:]
         var task: CodexLiveTask?
-        var plan: (String, Date)?
+        var plan: String?
+        var planDate = Date.distantPast
+        var boundary: UInt64 { offset - UInt64(pending.count) }
+
+        // Never persist a partial line: it may contain conversation text.
+        enum CodingKeys: String, CodingKey {
+            case offset, discarding, inode, modified, fingerprint, session, model, project
+            case total, epoch, modern, records, task, plan, planDate
+        }
     }
+    private struct Archive: Codable {
+        // Bump when parsing semantics or the saved representation changes.
+        var version = 1
+        var build: String
+        var roots: [URL]
+        var since: Date
+        var cursors: [URL: Cursor]
+    }
+    private static var build: String {
+        let info = Bundle.main.infoDictionary ?? [:]
+        return "\(info["CFBundleShortVersionString"] ?? "")-\(info["CFBundleVersion"] ?? "")"
+    }
+    static var defaultCacheURL: URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
+            .appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.eave.app", isDirectory: true)
+            .appendingPathComponent("AgentUsage", isDirectory: true)
+            .appendingPathComponent("codex-usage.plist")
+    }
+    private let cacheURL: URL?
+    private var restoredFiles = Set<URL>()
+    private var retainedSince: Date?
+    private var archiveDirty = false
+    private var archiveSavedAt = Date.distantPast
     private var cursors: [URL: Cursor] = [:]
     private var discovered: [URL] = []
     private var discoveredAt = Date.distantPast
@@ -117,13 +148,22 @@ final class CodexLogStore {
         return formatter
     }()
 
-    init(roots: [URL], price: @escaping (UsageRecord) -> Double? = {
+    init(roots: [URL], cacheURL: URL? = nil, price: @escaping (UsageRecord) -> Double? = {
         ModelPricing.cost(model: $0.model, inputTokens: $0.uncachedInputTokens,
                           outputTokens: $0.outputTokens, cacheReadTokens: $0.cacheReadTokens,
                           cacheWriteTokens: $0.cacheWriteTokens)
     }) {
         self.roots = roots
+        self.cacheURL = cacheURL
         self.price = price
+        if let cacheURL,
+           let data = try? Data(contentsOf: cacheURL),
+           let archive = try? PropertyListDecoder().decode(Archive.self, from: data),
+           archive.version == 1, archive.build == Self.build, archive.roots == roots {
+            cursors = archive.cursors
+            retainedSince = archive.since
+            restoredFiles = Set(cursors.keys)
+        }
     }
 
     static func defaultRoots(environment: [String: String] = ProcessInfo.processInfo.environment,
@@ -136,6 +176,13 @@ final class CodexLogStore {
 
     func snapshot(now: Date, calendar: Calendar = .current, rediscover: Bool = false) -> UsageSnapshot {
         let start = calendar.date(byAdding: .day, value: -90, to: calendar.startOfDay(for: now))!
+        if let retainedSince, start < retainedSince {
+            cursors.removeAll()
+            restoredFiles.removeAll()
+            cached = nil
+            archiveDirty = true
+        }
+        retainedSince = start
         var changed = false
         var readFailed = false
         if rediscover || now.timeIntervalSince(discoveredAt) >= 2 || discoveredAt == .distantPast {
@@ -166,6 +213,7 @@ final class CodexLogStore {
             do { if try read(file, cutoff: start) { changed = true } }
             catch { readFailed = true }
         }
+        archiveDirty = archiveDirty || changed
         if !changed, !rediscover, let cached, cachedCalendar == calendar,
            calendar.isDate(cachedAt, inSameDayAs: now), now.timeIntervalSince(cachedAt) < 60,
            nextRecordDate.map({ now < $0 }) ?? true, !readFailed { return cached }
@@ -195,34 +243,79 @@ final class CodexLogStore {
         }
         nextRecordDate = unique.values.map(\.usage.timestamp).filter { $0 > now }.min()
         var result = aggregate(Array(unique.values), tasks: Array(tasks.values), now: now, calendar: calendar)
-        result.plan = cursors.values.compactMap(\.plan).max { $0.1 < $1.1 }?.0
+        result.plan = cursors.values.filter { $0.plan != nil }.max { $0.planDate < $1.planDate }?.plan
         if readFailed { result.localUsageError = String(localized: "Some Codex logs could not be read. Showing available data.") }
         else if discovered.isEmpty { result.localUsageError = String(localized: "No Codex usage logs found") }
         cached = result
         cachedAt = now
         cachedCalendar = calendar
+        if !readFailed { saveArchive(now: now, since: start) }
         return result
+    }
+
+    private func saveArchive(now: Date, since: Date) {
+        guard let cacheURL, archiveDirty, now.timeIntervalSince(archiveSavedAt) >= 60 else { return }
+        // ponytail: rewrite the small counter archive at most once a minute; use a database if it outgrows this.
+        autoreleasepool {
+            let saved = cursors.mapValues { value -> Cursor in
+                var cursor = value
+                cursor.offset = cursor.boundary
+                cursor.pending = Data()
+                return cursor
+            }
+            do {
+                let encoder = PropertyListEncoder()
+                encoder.outputFormat = .binary
+                let data = try encoder.encode(Archive(build: Self.build, roots: roots, since: since, cursors: saved))
+                try FileManager.default.createDirectory(at: cacheURL.deletingLastPathComponent(),
+                    withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+                try data.write(to: cacheURL, options: .atomic)
+                try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: cacheURL.path)
+                archiveSavedAt = now
+                archiveDirty = false
+            } catch { /* A disposable cache: a later scan retries the write. */ }
+        }
+    }
+
+    /// Vorssaint's bounded fingerprint of the read boundary detects replaced or rewritten logs.
+    private func fingerprint(_ handle: FileHandle, upTo offset: UInt64) throws -> UInt64 {
+        var hash: UInt64 = 0xCBF2_9CE4_8422_2325
+        func mix(_ bytes: UnsafeRawBufferPointer) {
+            for byte in bytes { hash = (hash ^ UInt64(byte)) &* 0x100_0000_01B3 }
+        }
+        withUnsafeBytes(of: offset.littleEndian, mix)
+        for start in [0, offset - min(4096, offset)] {
+            try handle.seek(toOffset: start)
+            let length = Int(min(4096, offset - start))
+            let data = try handle.read(upToCount: length) ?? Data()
+            guard data.count == length else { throw CocoaError(.fileReadCorruptFile) }
+            data.withUnsafeBytes(mix)
+        }
+        return hash
     }
 
     private func read(_ file: URL, cutoff: Date) throws -> Bool {
         let attributes = try FileManager.default.attributesOfItem(atPath: file.path)
+        guard attributes[.type] as? FileAttributeType == .typeRegular else { throw CocoaError(.fileReadUnsupportedScheme) }
         let size = (attributes[.size] as? NSNumber)?.uint64Value ?? 0
         let inode = (attributes[.systemFileNumber] as? NSNumber)?.uint64Value ?? 0
         let modified = attributes[.modificationDate] as? Date ?? .distantPast
         var cursor = cursors[file] ?? Cursor(session: file.deletingPathExtension().lastPathComponent)
-        if cursor.offset == size, cursor.modified == modified, cursor.inode == inode { return false }
+        if !restoredFiles.contains(file), cursor.offset == size, cursor.modified == modified, cursor.inode == inode { return false }
         let handle = try FileHandle(forReadingFrom: file)
         defer { try? handle.close() }
-        let prefix = try handle.read(upToCount: Int(min(size, UInt64(cursor.prefix.isEmpty ? 512 : cursor.prefix.count)))) ?? Data()
-        if inode != cursor.inode || size < cursor.offset || (!cursor.prefix.isEmpty && prefix != cursor.prefix)
+        if try inode != cursor.inode || size < cursor.offset
+            || (cursor.offset > 0 && fingerprint(handle, upTo: cursor.boundary) != cursor.fingerprint)
             || (size == cursor.offset && cursor.modified != modified) {
             cursor = Cursor(session: file.deletingPathExtension().lastPathComponent)
         }
         cursor.inode = inode
         cursor.modified = modified
-        cursor.prefix = prefix
         try handle.seek(toOffset: cursor.offset)
-        while let chunk = try handle.read(upToCount: 64 * 1024), !chunk.isEmpty {
+        // Bound both reads and JSON temporaries, even during a multi-gigabyte first scan.
+        while cursor.offset < size, try autoreleasepool(invoking: { () throws -> Bool in
+            let wanted = Int(min(64 * 1024, size - cursor.offset))
+            guard let chunk = try handle.read(upToCount: wanted), !chunk.isEmpty else { return false }
             bytesRead += UInt64(chunk.count)
             cursor.offset += UInt64(chunk.count)
             chunk.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) in
@@ -247,18 +340,27 @@ final class CodexLogStore {
                     offset = end + 1
                 }
             }
-        }
+            return true
+        }) {}
         // Accept a complete final JSON object; retain an incomplete write until the next poll.
         if !cursor.pending.isEmpty, !cursor.discarding,
            (try? JSONSerialization.jsonObject(with: cursor.pending)) != nil {
             parse(cursor.pending, cursor: &cursor, cutoff: cutoff)
             cursor.pending.removeAll(keepingCapacity: true)
         }
+        cursor.fingerprint = try fingerprint(handle, upTo: cursor.boundary)
+        restoredFiles.remove(file)
         cursors[file] = cursor
         return true
     }
 
     private func parse(_ data: Data, cursor: inout Cursor, cutoff: Date) {
+        guard let envelope = AgentLogObject(data), let type = envelope.string("type"),
+              ["session_meta", "turn_context", "token_usage_record", "event_msg"].contains(type) else { return }
+        if type == "event_msg" {
+            guard let event = envelope.object("payload")?.string("type"),
+                  ["task_started", "task_complete", "turn_aborted", "token_count"].contains(event) else { return }
+        }
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let kind = object["type"] as? String,
               ["session_meta", "turn_context", "token_usage_record", "event_msg"].contains(kind),
@@ -298,7 +400,8 @@ final class CodexLogStore {
             key = "response:\(cursor.session):\(payload["response_id"] as? String ?? stamp)"
         } else if event == "token_count" {
             if let limits = payload["rate_limits"] as? [String: Any], let plan = limits["plan_type"] as? String, !plan.isEmpty {
-                cursor.plan = (plan, date)
+                cursor.plan = plan
+                cursor.planDate = date
             }
             guard !cursor.modern, let info = payload["info"] as? [String: Any] else { return }
             if let totalUsage = info["total_token_usage"] as? [String: Any] {

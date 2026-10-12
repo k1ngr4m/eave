@@ -1,7 +1,7 @@
 import Foundation
 import Darwin
 
-struct UsageRecord {
+struct UsageRecord: Codable {
     let timestamp: Date
     let model: String
     /// All prompt tokens, cache hits and cache writes included (what the UI shows).
@@ -178,9 +178,9 @@ struct JSONLUsageParser {
             processRecord(rec)
         }
 
-        while true {
+        while autoreleasepool(invoking: { () -> Bool in
             let chunk = handle.readData(ofLength: chunkSize)
-            if chunk.isEmpty { break }
+            if chunk.isEmpty { return false }
             // Scan only new bytes. memchr avoids Swift's per-byte Data subscripting;
             // long records are never rescanned or shifted after each 64 KB read.
             chunk.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) in
@@ -205,7 +205,8 @@ struct JSONLUsageParser {
                     offset = end + 1
                 }
             }
-        }
+            return true
+        }) {}
 
         // Process any remaining data in buffer (last line without trailing newline)
         // but only if it's within the size limit and we're not discarding

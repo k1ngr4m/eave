@@ -24,7 +24,7 @@ enum ProviderID: String, CaseIterable, Identifiable {
     }
 }
 
-struct UsageTotals: Equatable {
+struct UsageTotals: Equatable, Codable {
     var inputTokens: Int = 0
     var outputTokens: Int = 0
     var costUSD: Double = 0

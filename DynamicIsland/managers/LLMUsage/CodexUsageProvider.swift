@@ -5,7 +5,8 @@ struct CodexUsageProvider: UsageProvider {
     private let backend: CodexUsageBackend
 
     init(root: URL? = nil, quotaClient: CodexQuotaClient = CodexQuotaClient()) {
-        backend = CodexUsageBackend(roots: root.map { [$0] } ?? CodexLogStore.defaultRoots(), quotaClient: quotaClient)
+        backend = CodexUsageBackend(roots: root.map { [$0] } ?? CodexLogStore.defaultRoots(),
+                                    cacheURL: root == nil ? CodexLogStore.defaultCacheURL : nil, quotaClient: quotaClient)
     }
 
     func fetchSnapshot(now: Date) async throws -> UsageSnapshot {
@@ -27,8 +28,8 @@ private actor CodexUsageBackend {
     private var request: Task<CodexQuotaClient.Reading, Never>?
     private var lastSnapshot: UsageSnapshot?
 
-    init(roots: [URL], quotaClient: CodexQuotaClient) {
-        store = CodexLogStore(roots: roots)
+    init(roots: [URL], cacheURL: URL?, quotaClient: CodexQuotaClient) {
+        store = CodexLogStore(roots: roots, cacheURL: cacheURL)
         self.quotaClient = quotaClient
     }
 
