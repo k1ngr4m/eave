@@ -198,3 +198,7 @@ __pycache__/
 
 !scripts/eave_release.py
 !tests/test_eave_updates.py
+
+# Repository community documents
+/CODE_OF_CONDUCT.md
+/CONTRIBUTING.md
