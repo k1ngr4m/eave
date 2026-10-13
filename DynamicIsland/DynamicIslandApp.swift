@@ -390,10 +390,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 .environmentObject(webcamManager)
                 //.moveToSky()
         )
-        // AppDelegate owns the panel frame. Content-driven window sizing feeds
-        // back into safe-area/layout updates and can loop on macOS 26.
+        // Keep SwiftUI below an AppKit-owned content view so its animated size
+        // proposals cannot resize the panel during AppKit's window layout pass.
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: roundedWidth, height: roundedHeight))
         hostingView.sizingOptions = []
-        window.contentView = hostingView
+        hostingView.safeAreaRegions = [] // Notch geometry already accounts for the screen inset.
+        hostingView.frame = container.bounds
+        hostingView.autoresizingMask = [.width, .height]
+        container.addSubview(hostingView)
+        window.contentView = container
 
         window.orderFrontRegardless()
         NotchSpaceManager.shared.notchSpace.windows.insert(window)
