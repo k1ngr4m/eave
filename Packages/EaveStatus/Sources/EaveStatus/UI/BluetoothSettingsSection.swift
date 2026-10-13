@@ -382,8 +382,10 @@ struct BluetoothSettingsSection: View {
         return NearbyBLEDeviceCatalog.settingsCandidates(selections: store.nearbyBLESelections)
     }
 
+    /// Sized for every row so no device is clipped; the enclosing Form scrolls
+    /// when the paired list is long.
     private var orderListHeight: CGFloat {
-        min(max(CGFloat(orderedBluetoothDevices.count) * 32 + 12, 48), 180)
+        max(CGFloat(orderedBluetoothDevices.count) * 32 + 12, 48)
     }
 
     private var showInStatusPanelBinding: Binding<Bool> {
