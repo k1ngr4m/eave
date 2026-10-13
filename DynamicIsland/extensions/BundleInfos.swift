@@ -27,7 +27,7 @@ extension Bundle {
         return infoDictionary?["CFBundleShortVersionString"] as? String
     }
     var buildVersionNumber: String? {
-        return infoDictionary?["CFBundleVersion"] as? String
+        return infoDictionary?["EaveBuildNumber"] as? String
     }
     var releaseVersionNumberPretty: String {
         return "v\(releaseVersionNumber ?? "1.0.0")"

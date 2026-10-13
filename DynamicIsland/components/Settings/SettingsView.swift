@@ -4230,15 +4230,16 @@ struct CalendarSettings: View {
 
 struct About: View {
     @State private var showBuildNumber: Bool = false
-    @Environment(\.openWindow) var openWindow
+    @ObservedObject private var updates = EaveUpdater.shared
+    @State private var showDevNotice = false
     var body: some View {
         VStack {
             Form {
                 Section {
                     HStack {
-                        Text("Release name")
+                        Text("Product name")
                         Spacer()
-                        Text(Defaults[.releaseName])
+                        Text("Eave")
                             .foregroundStyle(.secondary)
                     }
                     HStack {
@@ -4259,7 +4260,7 @@ struct About: View {
                             Text("(\(Bundle.main.buildVersionNumber ?? ""))")
                                 .foregroundStyle(.secondary)
                         }
-                        Text(Bundle.main.releaseVersionNumber ?? "unkown")
+                        Text(Bundle.main.releaseVersionNumber ?? "—")
                             .foregroundStyle(.secondary)
                     }
                     .onTapGesture {
@@ -4271,60 +4272,32 @@ struct About: View {
                     Text("Version info")
                 }
 
-
-                HStack(spacing: 30) {
-                    Spacer(minLength: 0)
-                    Button {
-                        NSWorkspace.shared.open(sponsorPage)
-                    } label: {
-                        VStack(spacing: 5) {
-                            Image(systemName: "cup.and.saucer.fill")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(.primary)
-                                .shadow(color: .black.opacity(0.15), radius: 2, y: 1)
-                            Text("Support upstream")
-                                .foregroundStyle(.primary)
+                Section {
+                    Button("Check for Updates…") {
+                        if UpdateChannel.buildChannel == .release {
+                            updates.checkForUpdates()
+                        } else {
+                            showDevNotice = true
                         }
-                        .contentShape(Rectangle())
                     }
-                    Spacer(minLength: 0)
-                    Button {
-                        NSWorkspace.shared.open(productPage)
-                    } label: {
-                        VStack(spacing: 5) {
-                            Image("Github")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 18)
-                                .shadow(color: .black.opacity(0.15), radius: 2, y: 1)
-                            Text("Upstream source")
-                                .foregroundStyle(.primary)
-                        }
-                        .contentShape(Rectangle())
+                    .disabled(updates.updater != nil && !updates.canCheckForUpdates)
+                    if UpdateChannel.buildChannel == .release {
+                        Toggle("Automatically check for updates", isOn: $updates.automaticallyChecksForUpdates)
                     }
-                    Spacer(minLength: 0)
                 }
-                .buttonStyle(PlainButtonStyle())
-                
-                Text("Your support funds software development learning for students in 9th–12th grade.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.bottom, 5)
+                Link("Eave source code", destination: URL(string: "https://github.com/k1ngr4m/eave")!)
 
-                VStack(spacing: 0) {
-                    Divider()
-                        .padding(.bottom, 5)
-                    Text("Based on Atoll by Ebullioscopic")
-                        .foregroundStyle(.secondary)
-                        .padding(.bottom, 7)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 10)
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .navigationTitle("About")
+        .alert("Release updates only", isPresented: $showDevNotice) {
+            Button("Download Release") {
+                NSWorkspace.shared.open(URL(string: "https://github.com/k1ngr4m/eave/releases/latest")!)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Development builds do not install updates. Download a release build to enable automatic updates.")
+        }
     }
 }
 

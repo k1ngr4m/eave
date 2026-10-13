@@ -44,12 +44,14 @@ class EaveUserDriver: NSObject, @preconcurrency SPUUserDriver {
     }
     
     func showUserInitiatedUpdateCheck(cancellation: @escaping () -> Void) {
+        updateState.reset()
         updateState.phase = .checking
         updateState.cancelAction = cancellation
         presentWindow(with: UpdateCheckingView(state: updateState))
     }
     
     func showUpdateFound(with appcastItem: SUAppcastItem, state: SPUUserUpdateState, reply: @escaping (SPUUserUpdateChoice) -> Void) {
+        updateState.reset()
         updateState.phase = .updateFound
         updateState.appcastItem = appcastItem
         updateState.userUpdateState = state
@@ -85,6 +87,8 @@ class EaveUserDriver: NSObject, @preconcurrency SPUUserDriver {
     func showDownloadInitiated(cancellation: @escaping () -> Void) {
         updateState.phase = .downloading
         updateState.progress = 0
+        updateState.downloadedBytes = 0
+        updateState.totalBytes = 0
         updateState.cancelAction = cancellation
         presentWindow(with: UpdateProgressView(state: updateState))
     }
@@ -96,7 +100,7 @@ class EaveUserDriver: NSObject, @preconcurrency SPUUserDriver {
     func showDownloadDidReceiveData(ofLength length: UInt64) {
         updateState.downloadedBytes += length
         if updateState.totalBytes > 0 {
-            updateState.progress = Double(updateState.downloadedBytes) / Double(updateState.totalBytes)
+            updateState.progress = min(1, Double(updateState.downloadedBytes) / Double(updateState.totalBytes))
         }
     }
     
@@ -106,18 +110,17 @@ class EaveUserDriver: NSObject, @preconcurrency SPUUserDriver {
     }
     
     func showExtractionReceivedProgress(_ progress: Double) {
-        updateState.progress = progress
+        updateState.progress = min(1, max(0, progress))
     }
     
     func showReady(toInstallAndRelaunch reply: @escaping (SPUUserUpdateChoice) -> Void) {
-        updateState.phase = .readyToInstall
-        updateState.updateReply = reply
+        updateState.phase = .installing
+        reply(.install)
     }
     
     func showInstallingUpdate(withApplicationTerminated applicationTerminated: Bool, retryTerminatingApplication: @escaping () -> Void) {
         updateState.phase = .installing
-        // If app hasn't terminated yet, we just show the progress.
-        // Sparkle handles the quit/relaunch flow.
+        updateState.retryAction = applicationTerminated ? nil : retryTerminatingApplication
     }
     
     func showUpdateInstalledAndRelaunched(_ relaunched: Bool, acknowledgement: @escaping () -> Void) {
@@ -184,6 +187,28 @@ class UpdateUIState: ObservableObject {
     @Published var appcastItem: SUAppcastItem?
     @Published var userUpdateState: SPUUserUpdateState?
     
+    @Published var retryAction: (() -> Void)?
+    func reset() {
+        phase = .idle
+        progress = 0
+        totalBytes = 0
+        downloadedBytes = 0
+        errorMessage = nil
+        releaseNotesHTML = nil
+        appcastItem = nil
+        userUpdateState = nil
+        cancelAction = nil
+        acknowledgeAction = nil
+        updateReply = nil
+        retryAction = nil
+    }
+
+    func chooseUpdate(_ choice: SPUUserUpdateChoice) {
+        let reply = updateReply
+        updateReply = nil
+        reply?(choice)
+    }
+
     var cancelAction: (() -> Void)?
     var acknowledgeAction: (() -> Void)?
     var updateReply: ((SPUUserUpdateChoice) -> Void)?

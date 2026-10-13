@@ -162,22 +162,11 @@ struct UpdateProgressView: View {
                 .padding(.bottom, 20)
             }
 
-            // Install & Relaunch button (when ready)
-            if state.phase == .readyToInstall {
-                Button {
-                    state.updateReply?(.install)
-                } label: {
-                    Text("Install & Relaunch")
-                        .font(.system(.body, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(channelColor)
-                .controlSize(.large)
-                .padding(.horizontal, 40)
-                .padding(.bottom, 20)
+            if let retry = state.retryAction {
+                Button("Retry Relaunch", action: retry)
+                    .padding(.bottom, 20)
             }
+
         }
         .frame(width: 460, height: 380)
         .background(.ultraThinMaterial)

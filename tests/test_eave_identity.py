@@ -16,10 +16,13 @@ for path in (ROOT / 'DynamicIslandTests').glob('*.swift'):
     assert '@testable import Atoll' not in path.read_text(), path
 
 info = plistlib.loads((APP / 'Info.plist').read_bytes())
-assert not any(key.startswith('SU') for key in info), 'An update feed or Sparkle configuration returned'
+assert info['SUFeedURL'] == 'https://github.com/k1ngr4m/eave/releases/latest/download/appcast.xml'
+import base64
+assert len(base64.b64decode(info['SUPublicEDKey'], validate=True)) == 32
 swift = '\n'.join(path.read_text() for path in APP.rglob('*.swift'))
-assert not re.search(r'SPUStandardUpdaterController\s*\(', swift), 'Updater must never be instantiated'
-assert not re.search(r'\b(?:CheckForUpdatesView|UpdaterSettingsView)\s*\(', swift), 'Update UI is reachable'
+updater = (APP / 'components/Settings/SoftwareUpdater.swift').read_text()
+assert 'guard UpdateChannel.buildChannel == .release' in updater
+assert 'SPUUpdater(hostBundle:' in updater
 assert 'appcast' not in (APP / 'models/UpdateChannel.swift').read_text()
 assert 'ForEach(UpdateChannel.availableChannels)' not in swift
 for name in ('release', 'mirror-release', 'nightly-merge'):
@@ -54,4 +57,4 @@ for path in (ROOT / 'Localizable.xcstrings', APP / 'Localizable.xcstrings'):
         assert key in strings, (path, key)
         for language in strings[key].get('localizations', {}).values():
             assert 'Atoll' not in json.dumps(language), (path, key)
-print('Eave identity, storage isolation, disabled updates, and compatibility checks passed.')
+print('Eave identity, storage isolation, release updates, and compatibility checks passed.')

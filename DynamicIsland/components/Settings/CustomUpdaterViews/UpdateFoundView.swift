@@ -136,9 +136,9 @@ struct UpdateFoundView: View {
             // Action buttons
             VStack(spacing: 8) {
                 Button {
-                    state.updateReply?(.install)
+                    state.chooseUpdate(.install)
                 } label: {
-                    Text("Install Update")
+                    Text("Update & Relaunch")
                         .font(.system(.body, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
@@ -149,14 +149,14 @@ struct UpdateFoundView: View {
 
                 HStack(spacing: 16) {
                     Button("Remind Me Later") {
-                        state.updateReply?(.dismiss)
+                        state.chooseUpdate(.dismiss)
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
                     .font(.caption)
 
                     Button("Skip This Version") {
-                        state.updateReply?(.skip)
+                        state.chooseUpdate(.skip)
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)

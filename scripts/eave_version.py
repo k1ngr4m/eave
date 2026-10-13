@@ -36,13 +36,13 @@ def stamp(root, output, channel, counter_dir):
         temporary = counter.with_suffix(".tmp")
         temporary.write_text(f"{number}\n")
         temporary.replace(counter)
-    info.update(CFBundleShortVersionString=version, CFBundleVersion=str(number),
+    info.update(CFBundleShortVersionString=version, CFBundleVersion=version, EaveBuildNumber=str(number),
                 EaveBuildChannel=channel)
     output.write_bytes(plistlib.dumps(info))
     print(f"Eave {version} · {channel} ({number})")
 
 
-def archive(root, version):
+def archive(root, version, build_settings=()):
     requested = version_parts(version)
     current = version_parts((root / "VERSION").read_text().strip())
     if requested < current:
@@ -58,12 +58,12 @@ def archive(root, version):
         "xcodebuild", "archive", "-project", "DynamicIsland.xcodeproj",
         "-scheme", "DynamicIsland", "-configuration", "Release",
         "-destination", "generic/platform=macOS", "-archivePath", str(archive_path),
-        "EAVE_CHANNEL=release",
+        *build_settings, "EAVE_CHANNEL=release",
     ], cwd=root, check=True)
     info = plistlib.loads((archive_path / "Products/Applications/Eave.app/Contents/Info.plist").read_bytes())
     if info.get("CFBundleShortVersionString") != version or info.get("EaveBuildChannel") != "release":
         raise ValueError("Archive version/channel does not match the requested release")
-    print(f"Archive ready: {archive_path} (build {info['CFBundleVersion']})")
+    print(f"Archive ready: {archive_path} (build {info['EaveBuildNumber']})")
     print(f"After verification, commit VERSION and release notes, then tag that commit {tag}.")
 
 

@@ -40,24 +40,24 @@ def check():
         (root / "VERSION").write_text("0.1.0\n")
         for channel, number in (("dev", "1"), ("dev", "2"), ("release", "1")):
             info = build(root, channel, channel)
-            assert info["CFBundleVersion"] == number
-            assert info["CFBundleShortVersionString"] == "0.1.0"
+            assert info["EaveBuildNumber"] == number
+            assert info["CFBundleShortVersionString"] == info["CFBundleVersion"] == "0.1.0"
             assert info["EaveBuildChannel"] == channel
             assert info["NSAudioCaptureUsageDescription"] == plistlib.loads(source)["NSAudioCaptureUsageDescription"]
         assert (root / "VERSION").read_text() == "0.1.0\n"
         assert (root / "DynamicIsland/Info.plist").read_bytes() == source
         # New output directory (like Clean Build Folder) must not reset counters.
-        assert build(root, "dev", "after-clean")["CFBundleVersion"] == "3"
+        assert build(root, "dev", "after-clean")["EaveBuildNumber"] == "3"
         rejected(lambda: build(root, "beta", "invalid"))
         (root / "VERSION").write_text("0.1.1\n")
-        assert build(root, "dev", "new-version")["CFBundleVersion"] == "4"
+        assert build(root, "dev", "new-version")["EaveBuildNumber"] == "4"
         (root / "VERSION").write_text("0.1.1-beta.1\n")
         rejected(lambda: build(root, "dev", "invalid-version"))
         assert (root / "counters/dev").read_text() == "4\n"
         (root / "VERSION").write_text("0.1.1\n")
         with ProcessPoolExecutor(max_workers=4) as pool:
             jobs = [pool.submit(build, root, "dev", str(i)) for i in range(8)]
-            assert sorted(int(job.result()["CFBundleVersion"]) for job in jobs) == list(range(5, 13))
+            assert sorted(int(job.result()["EaveBuildNumber"]) for job in jobs) == list(range(5, 13))
         (root / "counters/dev").write_text("broken")
         rejected(lambda: build(root, "dev", "broken-counter"))
         assert (root / "counters/dev").read_text() == "broken"

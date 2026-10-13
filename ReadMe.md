@@ -27,9 +27,13 @@ keychain service names. Existing Atoll settings and credentials are not migrated
 
 ## Updates and compatibility
 
-Automatic and manual application updates are disabled. Eave has no published
-update feed or download URL. The inherited multi-channel release, mirror, and
-nightly merge recipes have been removed; CI build checks remain active.
+Release builds use Sparkle to check for Eave updates automatically (opt out in
+Settings → About) or with **Check for Updates**. Clicking **Update & Relaunch**
+downloads, verifies, installs and relaunches the app. Development builds only
+link to the official download. The first update-enabled release must be installed
+manually. Until it is published, checking the feed will report a network error.
+The feed is the `appcast.xml` asset on the latest non-prerelease GitHub Release.
+Only Eave's Ed25519 key can sign its update archives; old Atoll feeds are removed.
 
 `AtollExtensionKit`, its RPC/XPC contracts, and the Spotify OAuth callback remain
 compatible with upstream. Do not run both apps' extension services simultaneously:
@@ -48,7 +52,10 @@ does not make a build an official release. The settings badge shows the channel;
 click the version row to show its build number.
 
 Every app build in Xcode or `xcodebuild` stamps the final Info.plist before signing,
-using a new build number for its channel. Counters start at 1 and persist in
+with the version in both `CFBundleShortVersionString` and `CFBundleVersion`.
+The per-channel local counter is stored separately in `EaveBuildNumber`, so a
+new version from another machine upgrades correctly even if its counter is lower.
+Rebuilding the same version does not trigger an update. Counters start at 1 and persist in
 `~/Library/Application Support/Eave/BuildNumbers/`, outside Git and DerivedData.
 They are independent per channel and machine, survive clean builds and version
 changes, and may have gaps after failed builds. CI runners have their own local
@@ -68,9 +75,47 @@ before archiving. Downgrades, existing local version tags and existing archives
 are rejected. A failed archive leaves the requested version in place so it can
 be retried; move any partial archive before retrying.
 
-After verifying the archive, update release notes, commit the source and
-`VERSION`, and tag that exact commit `v0.1.0`. Export/sign/notarize and publish
-the verified archive as needed; this command does not upload or tag anything.
+### Signed local releases
+
+Use Python 3.9+, Xcode, `gh auth login`, your **Developer ID Application**
+certificate/private key in Keychain, and notarization credentials stored with
+`xcrun notarytool store-credentials Eave-notary` (interactive; never commit secrets).
+The Sparkle tools are in Xcode DerivedData under
+`SourcePackages/artifacts/sparkle/Sparkle/bin` after package resolution.
+
+The Eave Ed25519 key uses Keychain account `com.eave.app`. Its public key is
+committed as `SUPublicEDKey`; the private key must be kept/backed up securely.
+On another machine import the existing private key using Sparkle `generate_keys`
+following its help; do not generate a replacement for an already published app.
+
+For each release, update `VERSION` and release notes, commit and push the source,
+then prepare (this archives for you; do not run `archive` first):
+
+```sh
+python3 scripts/eave_release.py prepare 0.1.0 \
+  --identity 'Developer ID Application: YOUR NAME (TEAMID)' \
+  --team YOURTEAMID \
+  --notary-profile Eave-notary \
+  --sparkle-bin /absolute/path/to/Sparkle/bin
+```
+
+These four options also accept `EAVE_IDENTITY`, `EAVE_TEAM`,
+`EAVE_NOTARY_PROFILE`, and `EAVE_SPARKLE_BIN` environment variables.
+Preparation requires a clean working tree, verifies credentials and the public key,
+archives/exports, notarizes, staples, checks Gatekeeper acceptance, and signs the
+final ZIP. Review the app and artifacts in `build/release-0.1.0/`, then:
+
+```sh
+python3 scripts/eave_release.py publish 0.1.0 --notes /path/to/release-notes.md
+```
+
+Publishing verifies hashes and the source commit on GitHub, creates a draft,
+downloads and compares its assets, and only then marks it public/latest. Duplicate
+versions (including drafts/tags) and rollback versions are rejected. Failed uploads
+leave a draft for inspection; inspect/delete that draft before retrying. Failed
+preparation leaves build artifacts for diagnostics; move both the version's archive
+and release directory before retrying. No signing credentials are stored in GitHub.
+
 Subsequent fixes can use `0.1.1`, and feature releases `0.2.0`. Development builds
 keep the last chosen version until the next official release is prepared.
 

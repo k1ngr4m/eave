@@ -117,7 +117,7 @@ final class CodexLogStore {
     }
     private static var build: String {
         let info = Bundle.main.infoDictionary ?? [:]
-        return "\(info["CFBundleShortVersionString"] ?? "")-\(info["CFBundleVersion"] ?? "")"
+        return "\(info["CFBundleShortVersionString"] ?? "")-\(info["EaveBuildNumber"] ?? "")"
     }
     static var defaultCacheURL: URL? {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?

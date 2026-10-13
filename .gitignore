@@ -195,3 +195,6 @@ __pycache__/
 
 !tests/test_monitoring.py
 !DynamicIsland/Resources/Stats-LICENSE.txt
+
+!scripts/eave_release.py
+!tests/test_eave_updates.py

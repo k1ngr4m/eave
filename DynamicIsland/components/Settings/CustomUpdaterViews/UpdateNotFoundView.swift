@@ -95,13 +95,15 @@ struct UpdateNotFoundView: View {
             .opacity(showCheckmark ? 1.0 : 0)
             .animation(.easeIn(duration: 0.3).delay(0.5), value: showCheckmark)
 
-            Text("Eave will automatically check for updates periodically.")
+            if EaveUpdater.shared.automaticallyChecksForUpdates {
+                Text("Eave will automatically check for updates periodically.")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
                 .opacity(showCheckmark ? 1.0 : 0)
                 .animation(.easeIn(duration: 0.3).delay(0.7), value: showCheckmark)
+            }
 
             Spacer()
 

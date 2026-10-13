@@ -2,6 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>SUFeedURL</key>
+    <string>https://github.com/k1ngr4m/eave/releases/latest/download/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>X9mj6ZrquZMVQj8GP5x9z3QVsgLHFa1/5uZ2XHDdN+E=</string>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
+    <key>SUAutomaticallyUpdate</key>
+    <false/>
+    <key>SUAllowsAutomaticUpdates</key>
+    <false/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

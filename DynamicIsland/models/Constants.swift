@@ -31,7 +31,7 @@ private let availableDirectories = FileManager
     .urls(for: .documentDirectory, in: .userDomainMask)
 let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
 let bundleIdentifier = Bundle.main.bundleIdentifier!
-let appVersion = "\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""))"
+let appVersion = "\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") (\(Bundle.main.infoDictionary?["EaveBuildNumber"] as? String ?? ""))"
 
 let temporaryDirectory: URL = {
     let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
@@ -1018,7 +1018,6 @@ extension Defaults.Keys {
     static let enableDirectDisplayVolumeControl = Key<Bool>("enableDirectDisplayVolumeControl", default: false)
     static let showOnAllDisplays = Key<Bool>("showOnAllDisplays", default: false)
     static let automaticallySwitchDisplay = Key<Bool>("automaticallySwitchDisplay", default: true)
-    static let releaseName = Key<String>("releaseName", default: "Kaafu")
     static let hideDynamicIslandFromScreenCapture = Key<Bool>("hideDynamicIslandFromScreenCapture", default: false)
     
         // MARK: Behavior

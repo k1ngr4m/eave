@@ -666,6 +666,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        _ = EaveUpdater.shared
         Self.shared = self
         let userInfo: [String: Any] = [
             EaveDistributedNotifications.UserInfoKey.sourcePID: NSNumber(value: ProcessInfo.processInfo.processIdentifier)
