@@ -384,13 +384,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.animationBehavior = .none
         // collectionBehavior is configured in DynamicIslandWindow.init
 
-        window.contentView = FirstMouseHostingView(
+        let hostingView = FirstMouseHostingView(
             rootView: ContentView()
                 .environmentObject(viewModel)
                 .environmentObject(webcamManager)
                 //.moveToSky()
         )
-        
+        // AppDelegate owns the panel frame. Content-driven window sizing feeds
+        // back into safe-area/layout updates and can loop on macOS 26.
+        hostingView.sizingOptions = []
+        window.contentView = hostingView
+
         window.orderFrontRegardless()
         NotchSpaceManager.shared.notchSpace.windows.insert(window)
         //SkyLightOperator.shared.delegateWindow(window)
