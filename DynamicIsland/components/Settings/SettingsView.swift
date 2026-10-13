@@ -8059,8 +8059,6 @@ struct StatsSettings: View {
                 }
                 Section("Network") {
                     Button("Network settings…") { manager.network.showSettings() }
-                    Text("Network monitoring follows Stats settings and continues in the background while enabled.")
-                        .font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Monitoring Status") {
                     LabeledContent("Status", value: (manager.isMonitoring || manager.network.isEnabled) ? String(localized: "Active") : String(localized: "Stopped"))
