@@ -40,15 +40,12 @@ for name in ('MediaControllers/CiderTokenStore.swift', 'managers/Spotify/Spotify
              'managers/LLMUsage/NewAPIUsage.swift'):
     text = (APP / name).read_text()
     assert 'private static let service = "com.eave.app.' in text, name
-for name in ('services/Extensions/EaveDistributedNotifications.swift',
-             'managers/Extensions/ExtensionEventBridge.swift'):
-    assert 'Notification.Name("com.ebullioscopic.Atoll.' not in (APP / name).read_text(), name
-
-# The third-party SDK and wire endpoints intentionally retain their original identity.
-assert 'productName = AtollExtensionKit;' in project
-assert 'static let machServiceName = "com.ebullioscopic.Atoll.xpc"' in swift
-assert 'case "atoll.getVersion":' in swift
-assert 'static let rpcPort: UInt16 = 9020' in swift
+# Third-party extension entry points and SDK are removed.
+assert 'AtollExtensionKit' not in project
+for symbol in ('ExtensionRPCServer', 'ExtensionXPCServiceHost', 'enableThirdPartyExtensions',
+               'ExtensionNotchExperienceManager', 'ExtensionsSettingsView'):
+    assert symbol not in swift, symbol
+assert 'com.apple.security.mach-services' not in plistlib.loads((APP / 'DynamicIsland.entitlements').read_bytes())
 assert 'static let redirectURI = "atoll-spotify://oauth-callback"' in swift
 assert 'EaveNotchExperienceDescriptor' not in swift
 for path in (ROOT / 'Localizable.xcstrings', APP / 'Localizable.xcstrings'):

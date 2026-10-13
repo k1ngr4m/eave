@@ -24,6 +24,18 @@ class PrivacyConfigurationTests(unittest.TestCase):
             install_tap.index("CGEvent.tapCreate("),
         )
 
+    def test_accessibility_status_refreshes_after_system_settings(self):
+        store = (ROOT / "DynamicIsland/helpers/AccessibilityPermissionStore.swift").read_text()
+        activation = store.split("private init() {", 1)[1].split("deinit", 1)[0]
+        self.assertIn("NSApplication.didBecomeActiveNotification", activation)
+        self.assertIn("self?.refreshStatus()", activation)
+        self.assertIn("self?.beginPollingForStatusChanges()", activation)
+        open_settings = store.split("func openSystemSettings() {", 1)[1].split(
+            "private func beginPollingForStatusChanges", 1
+        )[0]
+        self.assertIn("beginPollingForStatusChanges()", open_settings)
+        self.assertNotIn("try? await Task.sleep", store)
+
     def test_camera_capture_is_explicitly_entitled(self):
         entitlements = plistlib.loads(ENTITLEMENTS.read_bytes())
 

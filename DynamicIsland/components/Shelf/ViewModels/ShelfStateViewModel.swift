@@ -127,14 +127,12 @@ final class ShelfStateViewModel: ObservableObject {
         guard !addedIDs.isEmpty else { return }
         items = merged
         invalidateURLCache()
-        ExtensionRPCServer.shared.notifyShelfItemsChanged(itemIDs: addedIDs, action: "added")
     }
 
     func remove(_ item: ShelfItem) {
         item.cleanupStoredData()
         items.removeAll { $0.id == item.id }
         invalidateURLCache()
-        ExtensionRPCServer.shared.notifyShelfItemsChanged(itemIDs: [item.id.uuidString], action: "removed")
     }
 
     /// Pass `path` whenever the caller already resolved the new bookmark —

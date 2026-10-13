@@ -2,6 +2,39 @@ import SwiftUI
 import Defaults
 import EaveNetworkStats
 
+extension MonitoringModule {
+    var widgets: StatsWidgets {
+        switch self {
+        case .cpu: return ProcessorMonitor.cpu.widgets
+        case .memory: return MemoryDiskMonitor.memory.widgets
+        case .gpu: return ProcessorMonitor.gpu.widgets
+        case .disk: return MemoryDiskMonitor.disk.widgets
+        case .network: return NetworkMonitor.shared.widgets
+        case .sensors: return SensorsMonitor.shared.widgets
+        }
+    }
+}
+
+struct MonitoringWidgetPreview: View {
+    @ObservedObject var widgets: StatsWidgets
+
+    var body: some View {
+        Group {
+            if widgets.size.width > 0 {
+                Image(nsImage: widgets.image)
+                    .resizable().scaledToFit()
+                    .frame(width: widgets.size.width, height: ClosedMonitoringWidgets.height)
+            } else {
+                Text("—").foregroundStyle(.secondary)
+            }
+        }
+        .frame(minWidth: 48, minHeight: 32)
+        .padding(8)
+        .background(.black, in: RoundedRectangle(cornerRadius: 8))
+        .accessibilityHidden(true)
+    }
+}
+
 /// Stats widgets share one row above lyrics; each module opens its own native details.
 struct ClosedMonitoringWidgets: View {
     static let height: CGFloat = 22
@@ -12,11 +45,15 @@ struct ClosedMonitoringWidgets: View {
          (.gpu, Defaults[.showGPUWidgetWhenClosed], ProcessorMonitor.gpu.widgets),
          (.network, Defaults[.showNetworkWidgetWhenClosed], NetworkMonitor.shared.widgets),
          (.sensors, Defaults[.showSensorsWidgetWhenClosed], SensorsMonitor.shared.widgets)]
-        return candidates.filter { $0.1 && $0.2.size.width > 0 }.map { ($0.0, $0.2) }
+        return MonitoringModule.ordered(Defaults[.statsModuleOrder]).compactMap { module in
+            guard let entry = candidates.first(where: { $0.0 == module }), entry.1, entry.2.size.width > 0 else { return nil }
+            return (entry.0, entry.2)
+        }
     }
     static var naturalWidth: CGFloat { entries.reduce(0) { $0 + $1.1.size.width } + CGFloat(max(0, entries.count - 1)) * 8 }
     static var minimumWidth: CGFloat { max(190, min(600, naturalWidth + 16)) }
 
+    @Default(.statsModuleOrder) private var moduleOrder
     @Default(.showMemoryWidgetWhenClosed) private var showMemory
     @Default(.showDiskWidgetWhenClosed) private var showDisk
     @ObservedObject private var memoryWidgets = MemoryDiskMonitor.memory.widgets

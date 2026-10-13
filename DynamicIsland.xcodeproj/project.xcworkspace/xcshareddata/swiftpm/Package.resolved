@@ -1,15 +1,6 @@
 {
-  "originHash" : "5d4a05ce859546446a494d2ffe2110db29ebb3975290d38c4a718411d6d300d6",
+  "originHash" : "bbb2d8f3fe5af7bf2c3796e212fdb83de2c7cfb7cc4aa7489eaaa8daaf069608",
   "pins" : [
-    {
-      "identity" : "atollextensionkit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Ebullioscopic/AtollExtensionKit",
-      "state" : {
-        "branch" : "main",
-        "revision" : "e2d30afedbbcc259bec7eeb1bea0757e52f4ca01"
-      }
-    },
     {
       "identity" : "defaults",
       "kind" : "remoteSourceControl",

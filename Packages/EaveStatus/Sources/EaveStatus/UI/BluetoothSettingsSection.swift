@@ -3,7 +3,6 @@ import SwiftUI
 
 @MainActor
 struct BluetoothSettingsSection: View {
-    @State private var previewIsDark = true
     private let controller: MenuBarStatusController
     @ObservedObject private var store: SettingsStore
     @ObservedObject private var statusStore: SystemStatusStore
@@ -31,7 +30,6 @@ struct BluetoothSettingsSection: View {
                 }
                 .onDisappear { bluetoothDevices.releaseVisibleSurface(Self.orderSurfaceToken) }
             MobileBatterySettingsSection(controller: controller)
-            previewSettings
             Section(localization.string(.settingsBluetoothDeviceListGroup)) {
                 Toggle(localization.string(.settingsBluetoothShowDeviceList), isOn: $store.showsBluetoothDeviceList)
                     .help(localization.string(.settingsBluetoothShowDeviceListDescription))
@@ -53,7 +51,6 @@ struct BluetoothSettingsSection: View {
 
     private var iconSettings: some View {
         Section(localization.string(.settingsBluetoothTitle)) {
-            iconPreview
             Toggle(localization.string(.settingsBluetoothShowInStatusPanel), isOn: showInStatusPanelBinding)
                 .help(localization.string(.settingsBluetoothShowInStatusPanelDescription))
             HStack {
@@ -97,60 +94,6 @@ struct BluetoothSettingsSection: View {
                 .help(localization.string(.settingsBluetoothNetworkErrorPriorityDescription))
             Toggle(localization.string(.settingsBluetoothBatteryLevels), isOn: $store.showsBluetoothBatteryLevels)
                 .help(localization.string(.settingsBluetoothBatteryLevelsDescription))
-        }
-    }
-
-    private var iconPreview: some View {
-        let scene = IconPresentationMapper.scene(
-            inputs: IconPresentationResourceResolver.inputs(snapshot: statusStore.snapshot),
-            configuration: IconPresentationConfiguration(
-                battery: store.batteryIconOptions, connection: store.connectionIconOptions,
-                volume: store.volumeIconOptions, bluetooth: store.bluetoothAudioIconOptions
-            )
-        )
-        return HStack {
-            Text(localization.string(.settingsPreviewHint)).font(.caption)
-            Spacer()
-            if let image = StatusIconRenderer.image(
-                scene: scene, size: store.iconSize, scale: NSScreen.main?.backingScaleFactor ?? 2,
-                appearance: NSAppearance(named: previewIsDark ? .darkAqua : .aqua)
-            ) {
-                Image(nsImage: image).accessibilityHidden(true)
-            }
-            Button {
-                previewIsDark.toggle()
-            } label: {
-                Label(localization.string(previewIsDark ? .settingsPreviewDark : .settingsPreviewLight),
-                      systemImage: previewIsDark ? "moon.fill" : "sun.max.fill")
-            }
-            .buttonStyle(.plain)
-            .help(localization.string(.settingsPreviewToggleHelp))
-        }
-        .padding(12)
-        .foregroundStyle(previewIsDark ? Color.white : Color.black)
-        .background(previewIsDark ? Color.black.opacity(0.8) : Color.white, in: RoundedRectangle(cornerRadius: 8))
-    }
-
-    private var previewSettings: some View {
-        Section(localization.string(.settingsBluetoothListeningModePreview)) {
-            Toggle(localization.string(.settingsBluetoothListeningModePreview), isOn: $store.previewsBluetoothListeningMode)
-                .help(localization.string(.settingsBluetoothListeningModePreviewDescription))
-            if store.previewsBluetoothListeningMode {
-                TextField(localization.string(.settingsBluetoothListeningModePreviewDeviceName), text: $store.bluetoothListeningModePreviewDeviceName)
-                Stepper(value: $store.bluetoothListeningModePreviewDeviceCount, in: SettingsStore.bluetoothListeningModePreviewDeviceCountRange) {
-                    HStack {
-                        Text(localization.string(.settingsBluetoothListeningModePreviewDeviceCount))
-                        Spacer()
-                        Text("\(store.bluetoothListeningModePreviewDeviceCount)").monospacedDigit()
-                    }
-                }
-                Picker(localization.string(.settingsBluetoothListeningModePreviewLanguage), selection: $store.bluetoothListeningModePreviewLanguage) {
-                    Text(localization.string(.settingsLanguageFollowSystem)).tag("")
-                    ForEach(AppLanguage.allCases) { language in
-                        Text(language.nativeName).tag(language.rawValue)
-                    }
-                }
-            }
         }
     }
 

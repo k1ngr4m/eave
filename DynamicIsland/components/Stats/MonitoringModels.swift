@@ -3,6 +3,26 @@ import Foundation
 enum MonitoringModule: String, CaseIterable, Identifiable, Sendable {
     case cpu, memory, gpu, disk, network, sensors
     var id: String { rawValue }
+
+    static func ordered(_ saved: [String]) -> [Self] {
+        var result: [Self] = []
+        for value in saved + allCases.map(\.rawValue) {
+            if let module = Self(rawValue: value), !result.contains(module) {
+                result.append(module)
+            }
+        }
+        return result
+    }
+
+    static func moving(_ source: Self, to target: Self, in saved: [String]) -> [String] {
+        var order = ordered(saved)
+        let sourceIndex = order.firstIndex(of: source)!
+        let targetIndex = order.firstIndex(of: target)!
+        order.remove(at: sourceIndex)
+        order.insert(source, at: targetIndex)
+        return order.map(\.rawValue)
+    }
+
     var title: String {
         switch self {
         case .cpu: return "CPU"

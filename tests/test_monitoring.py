@@ -45,6 +45,16 @@ assert(MonitoringUnit.temperature.string(0, fahrenheit: true) == "32.0°F")
 assert(MonitoringUnit.rate.string(nil) == "—")
 assert(MonitoringUnit.percent.string(.nan) == "—")
 assert(MonitoringModule.allCases.count == 6)
+assert(MonitoringModule.ordered([]) == MonitoringModule.allCases)
+assert(MonitoringModule.ordered(["network", "cpu", "network", "removed"]) == [.network, .cpu, .memory, .gpu, .disk, .sensors])
+let initialOrder = MonitoringModule.allCases.map(\.rawValue)
+let movedRight = MonitoringModule.moving(.cpu, to: .network, in: initialOrder)
+assert(movedRight == ["memory", "gpu", "disk", "network", "cpu", "sensors"])
+assert(MonitoringModule.moving(.cpu, to: .memory, in: movedRight) == initialOrder)
+assert(MonitoringModule.moving(.cpu, to: .cpu, in: initialOrder) == initialOrder)
+assert(MonitoringModule.moving(.sensors, to: .cpu, in: []) == ["sensors", "cpu", "memory", "gpu", "disk", "network"])
+let reverseOrder = Array(MonitoringModule.allCases.reversed())
+assert(MonitoringModule.ordered(reverseOrder.map(\.rawValue)) == reverseOrder)
 for enabled in [false, true] {
     for open in [false, true] {
         for selected in [false, true] {
@@ -106,6 +116,7 @@ let monitoringTestDefaults = UserDefaults(suiteName: suiteName)!
 extension Defaults.Keys {
     static let enableStatsFeature = Key<Bool>("enabled", default: true, suite: monitoringTestDefaults)
     static let statsStopWhenNotchCloses = Key<Bool>("stop", default: true, suite: monitoringTestDefaults)
+    static let statsModuleOrder = Key<[String]>("order", default: MonitoringModule.allCases.map(\.rawValue), suite: monitoringTestDefaults)
     static let statsUpdateInterval = Key<Double>("interval", default: 1, suite: monitoringTestDefaults)
     static let showCpuGraph = Key<Bool>("cpu", default: true, suite: monitoringTestDefaults)
     static let showMemoryGraph = Key<Bool>("ram", default: true, suite: monitoringTestDefaults)
@@ -131,6 +142,15 @@ final class DynamicIslandViewModel: ObservableObject {
 Task { @MainActor in
     EaveNetworkStats.Store.shared = Store(defaults: monitoringTestDefaults)
     let manager = StatsManager.shared
+    Defaults[.statsModuleOrder] = ["network", "cpu", "network", "removed"]
+    try await Task.sleep(for: .milliseconds(100))
+    assert(manager.enabledModules == [.network, .cpu, .memory, .gpu, .disk, .sensors])
+    Defaults[.showCpuGraph] = false
+    try await Task.sleep(for: .milliseconds(100))
+    assert(manager.enabledModules == [.network, .memory, .gpu, .disk, .sensors])
+    Defaults[.showCpuGraph] = true
+    try await Task.sleep(for: .milliseconds(100))
+    assert(manager.enabledModules == [.network, .cpu, .memory, .gpu, .disk, .sensors])
     manager.updateMonitoringState(notchIsOpen: true, currentView: "stats")
     try await Task.sleep(for: .seconds(3))
     assert(manager.isMonitoring && manager.samples.count == 6)
@@ -501,7 +521,7 @@ Task { @MainActor in
     Defaults[.showGPUWidgetWhenClosed] = true
     Defaults[.showNetworkWidgetWhenClosed] = true
     try await Task.sleep(for: .milliseconds(300))
-    assert(ClosedMonitoringWidgets.entries.count == 3)
+    assert(ClosedMonitoringWidgets.entries.map { $0.0 } == [.network, .cpu, .gpu])
     NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.willSleepNotification, object: nil)
     try await Task.sleep(for: .milliseconds(100))
     assert(!manager.cpu.isEnabled && !manager.gpu.isEnabled && !manager.network.isEnabled)

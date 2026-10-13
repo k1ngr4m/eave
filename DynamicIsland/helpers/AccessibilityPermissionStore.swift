@@ -32,7 +32,17 @@ final class AccessibilityPermissionStore: ObservableObject {
 
     private var pollingTask: Task<Void, Never>?
 
-    private init() {}
+    private var activationObserver: AnyCancellable?
+
+    private init() {
+        activationObserver = NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.refreshStatus()
+                    self?.beginPollingForStatusChanges()
+                }
+            }
+    }
 
     deinit {
         pollingTask?.cancel()
@@ -52,6 +62,7 @@ final class AccessibilityPermissionStore: ObservableObject {
     }
 
     func openSystemSettings() {
+        beginPollingForStatusChanges()
 #if os(macOS)
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
@@ -63,7 +74,11 @@ final class AccessibilityPermissionStore: ObservableObject {
         pollingTask?.cancel()
         pollingTask = Task { [weak self] in
             for _ in 0..<30 {
-                try? await Task.sleep(nanoseconds: 500_000_000)
+                do {
+                    try await Task.sleep(nanoseconds: 500_000_000)
+                } catch {
+                    return
+                }
                 let status = Self.isAccessibilityAuthorized()
                 await MainActor.run {
                     guard let self else { return }

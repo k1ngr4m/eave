@@ -110,12 +110,13 @@ final class StatsManager: ObservableObject {
             self.history[.network] = Array(self.history[.network, default: []].suffix(60))
             self.lastUpdated = now
         }.store(in: &cancellables)
-        enabledModules = MonitoringModule.allCases.filter { Defaults[$0.visibilityKey] }
+        enabledModules = MonitoringModule.ordered(Defaults[.statsModuleOrder]).filter { Defaults[$0.visibilityKey] }
         Publishers.MergeMany(MonitoringModule.allCases.map {
             Defaults.publisher($0.visibilityKey, options: []).map { _ in () }.eraseToAnyPublisher()
-        }).receive(on: DispatchQueue.main).sink { [weak self] in
+        } + [Defaults.publisher(.statsModuleOrder, options: []).map { _ in () }.eraseToAnyPublisher()])
+        .receive(on: DispatchQueue.main).sink { [weak self] in
             guard let self else { return }
-            self.enabledModules = MonitoringModule.allCases.filter { Defaults[$0.visibilityKey] }
+            self.enabledModules = MonitoringModule.ordered(Defaults[.statsModuleOrder]).filter { Defaults[$0.visibilityKey] }
             self.samples = self.samples.filter { self.enabledModules.contains($0.key) }
             self.history = self.history.filter { self.enabledModules.contains($0.key) }
             if let detail = self.detail, !self.enabledModules.contains(detail) { self.detail = nil }

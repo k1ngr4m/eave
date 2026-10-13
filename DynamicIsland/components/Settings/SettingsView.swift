@@ -25,7 +25,6 @@ private enum SettingsTabGroup: String, CaseIterable, Identifiable {
     case productivity
     case utilities
     case developer
-    case integrations
     case info
 
     var id: String { rawValue }
@@ -39,7 +38,6 @@ private enum SettingsTabGroup: String, CaseIterable, Identifiable {
         case .productivity:     return String(localized: "Productivity")
         case .utilities:        return String(localized: "Utilities")
         case .developer:        return String(localized: "Developer")
-        case .integrations:     return String(localized: "Integrations")
         case .info:             return nil
         }
     }
@@ -53,7 +51,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     case lockScreen
     case media
     case devices
-    case extensions
     case timer
     case calendar
     case hudAndOSD
@@ -83,7 +80,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .clipboard, .screenAssistant, .colorPicker, .shelf,
              .downloads, .shortcuts, .stocks:                                return .utilities
         case .llmAgents, .terminal:                                          return .developer
-        case .extensions:                                                    return .integrations
         case .about:                                                         return .info
         }
     }
@@ -97,7 +93,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .lockScreen: return String(localized: "Lock Screen")
         case .media: return String(localized: "Media")
         case .devices: return String(localized: "Devices")
-        case .extensions: return String(localized: "Extensions")
         case .timer: return String(localized: "Timer")
         case .calendar: return String(localized: "Calendar")
         case .hudAndOSD: return String(localized: "Controls")
@@ -126,7 +121,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .lockScreen: return "lock.laptopcomputer"
         case .media: return "play.laptopcomputer"
         case .devices: return "headphones"
-        case .extensions: return "puzzlepiece.extension"
         case .timer: return "timer"
         case .calendar: return "calendar"
         case .hudAndOSD: return "dial.medium.fill"
@@ -155,7 +149,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .lockScreen: return .orange
         case .media: return .green
         case .devices: return Color(red: 0.1, green: 0.11, blue: 0.12)
-        case .extensions: return Color(red: 0.557, green: 0.353, blue: 0.957)
         case .timer: return .red
         case .calendar: return .cyan
         case .hudAndOSD: return .indigo
@@ -425,14 +418,6 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .lockScreen, title: "Chip color", keywords: ["reminder chip", "color"], highlightID: SettingsTab.lockScreen.highlightID(for: "Chip color"), lockScreenSection: .widgets),
         SettingsSearchEntry(tab: .lockScreen, title: "Reminder alignment", keywords: ["reminder", "alignment", "position"], highlightID: SettingsTab.lockScreen.highlightID(for: "Reminder alignment"), lockScreenSection: .widgets),
         SettingsSearchEntry(tab: .lockScreen, title: "Reminder vertical offset", keywords: ["reminder", "offset", "position"], highlightID: SettingsTab.lockScreen.highlightID(for: "Reminder vertical offset"), lockScreenSection: .widgets),
-
-        // Extensions
-        SettingsSearchEntry(tab: .extensions, title: "Enable third-party extensions", keywords: ["extensions", "authorization", "third party"], highlightID: SettingsTab.extensions.highlightID(for: "Enable third-party extensions")),
-        SettingsSearchEntry(tab: .extensions, title: "Allow extension live activities", keywords: ["extensions", "live activities", "permissions"], highlightID: SettingsTab.extensions.highlightID(for: "Allow extension live activities")),
-        SettingsSearchEntry(tab: .extensions, title: "Allow extension lock screen widgets", keywords: ["extensions", "lock screen", "widgets"], highlightID: SettingsTab.extensions.highlightID(for: "Allow extension lock screen widgets")),
-        SettingsSearchEntry(tab: .extensions, title: "Enable extension diagnostics logging", keywords: ["extensions", "diagnostics", "logging"], highlightID: SettingsTab.extensions.highlightID(for: "Enable extension diagnostics logging")),
-        SettingsSearchEntry(tab: .extensions, title: "Manage app permissions", keywords: ["extensions", "permissions", "apps"], highlightID: SettingsTab.extensions.highlightID(for: "App permissions list")),
-        SettingsSearchEntry(tab: .extensions, title: "Browse the Marketplace", keywords: ["marketplace", "extensions", "install", "download", "store", "getatoll"], highlightID: SettingsTab.extensions.highlightID(for: "Browse the Marketplace")),
 
         // Shortcuts
         SettingsSearchEntry(tab: .shortcuts, title: "Enable global keyboard shortcuts", keywords: ["keyboard", "shortcut"], highlightID: SettingsTab.shortcuts.highlightID(for: "Enable global keyboard shortcuts")),
@@ -786,36 +771,13 @@ struct SettingsView: View {
         HStack(spacing: 10) {
             sidebarIcon(for: tab)
             Text(LocalizedStringKey(tab.title))
-            if tab == .downloads {
-                Spacer()
-                Text("BETA")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(
-                        Capsule()
-                            .fill(Color.blue)
-                    )
-            } else if tab == .extensions {
-                Spacer()
-                Text("BETA")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(
-                        Capsule()
-                            .fill(Color.blue)
-                    )
-            }
         }
         .padding(.vertical, 4)
     }
 
     private var availableTabs: [SettingsTab] {
         // Ordered to match group layout: core → media & display → system →
-        // productivity → utilities → developer → integrations → info.
+        // productivity → utilities → developer → info.
         let ordered: [SettingsTab] = [
             // Core
             .general,
@@ -845,8 +807,6 @@ struct SettingsView: View {
             // Developer
             .llmAgents,
             .terminal,
-            // Integrations
-            .extensions,
             // Info
             .about
         ]
@@ -1074,10 +1034,6 @@ struct SettingsView: View {
         case .devices:
             SettingsForm(tab: .devices) {
                 DevicesSettingsView()
-            }
-        case .extensions:
-            SettingsForm(tab: .extensions) {
-                ExtensionsSettingsView()
             }
         case .timer:
             SettingsForm(tab: .timer) {
@@ -1474,14 +1430,8 @@ struct GeneralSettings: View {
             )) {
                 Text("Last page").tag(ReopenTabSelection.lastPage)
                 ForEach(coordinator.availableTabs) { tab in
-                    Group {
-                        if tab.experienceID != nil {
-                            Text(verbatim: tab.label)
-                        } else {
-                            Text(LocalizedStringKey(tab.label))
-                        }
-                    }
-                    .tag(tab.id)
+                    Text(LocalizedStringKey(tab.label))
+                        .tag(tab.id)
                 }
             }
             .pickerStyle(.menu)
@@ -4243,49 +4193,50 @@ struct About: View {
                             .foregroundStyle(.secondary)
                     }
                     HStack {
-                        Text("Version")
-                        Spacer()
+                        HStack {
+                            Text("Version")
+                            Spacer()
 
-                        // Channel badge
-                        Text(UpdateChannel.buildChannel.displayName)
-                            .font(.caption2)
-                            .fontWeight(.semibold)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color(UpdateChannel.buildChannel.badgeColor).opacity(0.2))
-                            .foregroundStyle(Color(UpdateChannel.buildChannel.badgeColor))
-                            .clipShape(Capsule())
+                            // Channel badge
+                            Text(UpdateChannel.buildChannel.displayName)
+                                .font(.caption2)
+                                .fontWeight(.semibold)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color(UpdateChannel.buildChannel.badgeColor).opacity(0.2))
+                                .foregroundStyle(Color(UpdateChannel.buildChannel.badgeColor))
+                                .clipShape(Capsule())
 
-                        if showBuildNumber {
-                            Text("(\(Bundle.main.buildVersionNumber ?? ""))")
+                            if showBuildNumber {
+                                Text("(\(Bundle.main.buildVersionNumber ?? ""))")
+                                    .foregroundStyle(.secondary)
+                            }
+                            Text(Bundle.main.releaseVersionNumber ?? "—")
                                 .foregroundStyle(.secondary)
                         }
-                        Text(Bundle.main.releaseVersionNumber ?? "—")
-                            .foregroundStyle(.secondary)
-                    }
-                    .onTapGesture {
-                        withAnimation {
-                            showBuildNumber.toggle()
+                        .onTapGesture {
+                            withAnimation {
+                                showBuildNumber.toggle()
+                            }
                         }
+                        Button("Check for Updates…") {
+                            if UpdateChannel.buildChannel == .release {
+                                updates.checkForUpdates()
+                            } else {
+                                showDevNotice = true
+                            }
+                        }
+                        .disabled(updates.updater != nil && !updates.canCheckForUpdates)
                     }
                 } header: {
                     Text("Version info")
                 }
 
-                Section {
-                    Button("Check for Updates…") {
-                        if UpdateChannel.buildChannel == .release {
-                            updates.checkForUpdates()
-                        } else {
-                            showDevNotice = true
-                        }
-                    }
-                    .disabled(updates.updater != nil && !updates.canCheckForUpdates)
-                    if UpdateChannel.buildChannel == .release {
+                if UpdateChannel.buildChannel == .release {
+                    Section {
                         Toggle("Automatically check for updates", isOn: $updates.automaticallyChecksForUpdates)
                     }
                 }
-                Link("Eave source code", destination: URL(string: "https://github.com/k1ngr4m/eave")!)
 
             }
         }
@@ -8002,12 +7953,13 @@ private struct TimerPresetComponentControl: View {
 struct StatsSettings: View {
     @ObservedObject private var manager = StatsManager.shared
     @Default(.enableStatsFeature) private var enabled
-    @Default(.statsStopWhenNotchCloses) private var stopWhenClosed
+    @Default(.statsModuleOrder) private var moduleOrder
     @Default(.cpuTemperatureUnit) private var temperatureUnit
 
-    private let moduleSettings: [(MonitoringModule, String)] = [
-        (.cpu, "CPU Usage"), (.memory, "Memory Usage"), (.gpu, "GPU Usage"),
-        (.disk, "Disk I/O"), (.network, "Network Activity"), (.sensors, "Sensors")
+    private var modules: [MonitoringModule] { MonitoringModule.ordered(moduleOrder) }
+    private let moduleTitles: [MonitoringModule: String] = [
+        .cpu: "CPU Usage", .memory: "Memory Usage", .gpu: "GPU Usage",
+        .disk: "Disk I/O", .network: "Network Activity", .sensors: "Sensors"
     ]
 
     var body: some View {
@@ -8024,9 +7976,41 @@ struct StatsSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Modules") {
-                    ForEach(moduleSettings, id: \.0) { module, title in
-                        Defaults.Toggle(key: module.visibilityKey) { Text(LocalizedStringKey(title)) }
-                            .settingsHighlight(id: SettingsTab.stats.highlightID(for: title))
+                    ScrollView(.horizontal) {
+                        HStack(alignment: .top, spacing: 12) {
+                            ForEach(modules) { module in
+                                let title = moduleTitles[module] ?? module.title
+                                VStack(spacing: 8) {
+                                    MonitoringWidgetPreview(widgets: module.widgets)
+                                    Defaults.Toggle(key: module.visibilityKey) { Text(LocalizedStringKey(title)) }
+                                        .toggleStyle(.checkbox)
+                                        .font(.caption)
+                                }
+                                .padding(4)
+                                .contentShape(Rectangle())
+                                .draggable("eave-monitoring:" + module.rawValue)
+                                .dropDestination(for: String.self) { items, _ in
+                                    guard items.count == 1,
+                                          let source = modules.first(where: { "eave-monitoring:" + $0.rawValue == items[0] }) else { return false }
+                                    withAnimation {
+                                        moduleOrder = MonitoringModule.moving(source, to: module, in: moduleOrder)
+                                    }
+                                    return true
+                                }
+                                .accessibilityAction(named: Text("Move Up")) {
+                                    if let index = modules.firstIndex(of: module), index > 0 {
+                                        moduleOrder = MonitoringModule.moving(module, to: modules[index - 1], in: moduleOrder)
+                                    }
+                                }
+                                .accessibilityAction(named: Text("Move Down")) {
+                                    if let index = modules.firstIndex(of: module), index + 1 < modules.count {
+                                        moduleOrder = MonitoringModule.moving(module, to: modules[index + 1], in: moduleOrder)
+                                    }
+                                }
+                                .settingsHighlight(id: SettingsTab.stats.highlightID(for: title))
+                            }
+                        }
+                        .padding(.vertical, 4)
                     }
                     SettingsSegmentedPicker("Temperature unit", selection: $temperatureUnit,
                                             items: Array(LockScreenWeatherTemperatureUnit.allCases)) { $0.localizedName }

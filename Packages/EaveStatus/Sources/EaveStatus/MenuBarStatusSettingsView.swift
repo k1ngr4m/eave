@@ -1,14 +1,18 @@
+import AppKit
 import SwiftUI
 
 /// Embedded in Eave's settings window; application identity and startup remain host-owned.
 @MainActor
 public struct MenuBarStatusSettingsView: View {
+    @State private var previewIsDark = true
+    @ObservedObject private var statusStore: SystemStatusStore
     private let controller: MenuBarStatusController
     @ObservedObject private var settings: SettingsStore
     @ObservedObject private var localization: Localization
 
     public init(controller: MenuBarStatusController) {
         self.controller = controller
+        _statusStore = ObservedObject(wrappedValue: controller.store)
         _settings = ObservedObject(wrappedValue: controller.settings)
         _localization = ObservedObject(wrappedValue: controller.localization)
     }
@@ -103,9 +107,46 @@ public struct MenuBarStatusSettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            iconPreview
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(.bar)
+        }
         .environment(\.layoutDirection, localization.resolvedLanguage.layoutDirection)
         .onAppear { controller.store.setSettingsVisible(true) }
         .onDisappear { controller.store.setSettingsVisible(false) }
+    }
+
+    private var iconPreview: some View {
+        let scene = IconPresentationMapper.scene(
+            inputs: IconPresentationResourceResolver.inputs(snapshot: statusStore.snapshot),
+            configuration: IconPresentationConfiguration(
+                battery: settings.batteryIconOptions, connection: settings.connectionIconOptions,
+                volume: settings.volumeIconOptions, bluetooth: settings.bluetoothAudioIconOptions
+            )
+        )
+        return HStack {
+            Text(localization.string(.settingsPreviewHint)).font(.caption)
+            Spacer()
+            if let image = StatusIconRenderer.image(
+                scene: scene, size: settings.iconSize, scale: NSScreen.main?.backingScaleFactor ?? 2,
+                appearance: NSAppearance(named: previewIsDark ? .darkAqua : .aqua)
+            ) {
+                Image(nsImage: image).accessibilityHidden(true)
+            }
+            Button {
+                previewIsDark.toggle()
+            } label: {
+                Label(localization.string(previewIsDark ? .settingsPreviewDark : .settingsPreviewLight),
+                      systemImage: previewIsDark ? "moon.fill" : "sun.max.fill")
+            }
+            .buttonStyle(.plain)
+            .help(localization.string(.settingsPreviewToggleHelp))
+        }
+        .padding(12)
+        .foregroundStyle(previewIsDark ? Color.white : Color.black)
+        .background(previewIsDark ? Color.black.opacity(0.8) : Color.white, in: RoundedRectangle(cornerRadius: 8))
     }
 
 }

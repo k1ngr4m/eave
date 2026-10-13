@@ -36,43 +36,6 @@ enum SneakContentType: Equatable {
     case privacy
     case lockScreen
     case capsLock
-    case extensionLiveActivity(bundleID: String, activityID: String)
-}
-
-extension SneakContentType {
-    static func == (lhs: SneakContentType, rhs: SneakContentType) -> Bool {
-        switch (lhs, rhs) {
-        case (.brightness, .brightness),
-             (.volume, .volume),
-             (.backlight, .backlight),
-             (.music, .music),
-             (.mic, .mic),
-             (.battery, .battery),
-             (.download, .download),
-             (.timer, .timer),
-             (.reminder, .reminder),
-             (.recording, .recording),
-             (.doNotDisturb, .doNotDisturb),
-             (.bluetoothAudio, .bluetoothAudio),
-             (.privacy, .privacy),
-             (.lockScreen, .lockScreen),
-             (.capsLock, .capsLock):
-            return true
-        case let (.extensionLiveActivity(lb, la), .extensionLiveActivity(rb, ra)):
-            return lb == rb && la == ra
-        default:
-            return false
-        }
-    }
-}
-
-extension SneakContentType {
-    var isExtensionPayload: Bool {
-        if case .extensionLiveActivity = self {
-            return true
-        }
-        return false
-    }
 }
 
 struct sneakPeek {
@@ -99,7 +62,7 @@ class DynamicIslandViewCoordinator: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var hoverOpenSuppressedUntil: Date = .distantPast
     
-    private static let tabOrder: [NotchViews] = [.home, .shelf, .timer, .stats, .stocks, .llmUsage, .colorPicker, .notes, .clipboard, .terminal, .extensionExperience]
+    private static let tabOrder: [NotchViews] = [.home, .shelf, .timer, .stats, .stocks, .llmUsage, .colorPicker, .notes, .clipboard, .terminal]
     
     /// Direction of the most recent tab switch (true = forward/right, false = backward/left)
     @Published var tabSwitchForward: Bool = true
@@ -122,7 +85,6 @@ class DynamicIslandViewCoordinator: ObservableObject {
     @Published var codexDetailPresented = false
     @Published var statsSecondRowExpansion: CGFloat = 1
     @Published var notesLayoutState: NotesLayoutState = .list
-    @Published var selectedExtensionExperienceID: String?
     
     
     @AppStorage("firstLaunch") var firstLaunch: Bool = true
@@ -136,21 +98,18 @@ class DynamicIslandViewCoordinator: ObservableObject {
     @AppStorage("alwaysShowTabs") var alwaysShowTabs: Bool = true
 
     var availableTabs: [TabModel] {
-        TabModel.availableTabs(experiences: extensionNotchExperienceManager.activeExperiences)
+        TabModel.availableTabs()
     }
 
     func selectTabForOpening(target: NotchViews? = nil) {
         let tabs = availableTabs
-        let currentID = currentView == .extensionExperience
-            ? selectedExtensionExperienceID.map { "extension-\($0)" }
-            : "system-\(currentView.rawValue)"
+        let currentID = "system-\(currentView.rawValue)"
         let targetID = target.map { "system-\($0.rawValue)" }
         let id = ReopenTabSelection.resolve(
             preference: Defaults[.reopenTab], lastPage: currentID,
             available: tabs.map(\.id), explicitTarget: targetID
         )
         let tab = tabs.first { $0.id == id }
-        selectedExtensionExperienceID = tab?.experienceID
         currentView = tab?.view ?? .home
     }
 
@@ -166,7 +125,6 @@ class DynamicIslandViewCoordinator: ObservableObject {
     @Published var selectedScreen: String = NSScreen.main?.localizedName ?? "Unknown"
 
     @Published var optionKeyPressed: Bool = true
-    private let extensionNotchExperienceManager = ExtensionNotchExperienceManager.shared
     
     private init() {
         selectedScreen = preferredScreen
@@ -191,36 +149,6 @@ class DynamicIslandViewCoordinator: ObservableObject {
             }
             .store(in: &cancellables)
 
-        extensionNotchExperienceManager.$activeExperiences
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] experiences in
-                self?.handleExtensionExperienceSnapshot(experiences)
-            }
-            .store(in: &cancellables)
-
-        Defaults.publisher(.enableThirdPartyExtensions)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.handleExtensionFeatureToggle()
-            }
-            .store(in: &cancellables)
-
-        Defaults.publisher(.enableExtensionNotchExperiences)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.handleExtensionFeatureToggle()
-            }
-            .store(in: &cancellables)
-
-        Defaults.publisher(.enableExtensionNotchTabs)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.handleExtensionFeatureToggle()
-            }
-            .store(in: &cancellables)
-
-        handleExtensionExperienceSnapshot(extensionNotchExperienceManager.activeExperiences)
-
         // Observe all tab-affecting settings to enforce minimum notch width
         let tabChanges: [AnyPublisher<Void, Never>] = [
             Defaults.publisher(.showStandardMediaControls).map { _ in () }.eraseToAnyPublisher(),
@@ -237,10 +165,6 @@ class DynamicIslandViewCoordinator: ObservableObject {
             Defaults.publisher(.clipboardDisplayMode).map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.enableTerminalFeature).map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.enableMinimalisticUI).map { _ in () }.eraseToAnyPublisher(),
-            Defaults.publisher(.enableThirdPartyExtensions).map { _ in () }.eraseToAnyPublisher(),
-            Defaults.publisher(.enableExtensionNotchExperiences).map { _ in () }.eraseToAnyPublisher(),
-            Defaults.publisher(.enableExtensionNotchTabs).map { _ in () }.eraseToAnyPublisher(),
-            extensionNotchExperienceManager.$activeExperiences.map { _ in () }.eraseToAnyPublisher()
         ]
         Publishers.MergeMany(tabChanges)
         .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)
@@ -292,45 +216,6 @@ class DynamicIslandViewCoordinator: ObservableObject {
         }
     }
 
-    private func handleExtensionExperienceSnapshot(_ experiences: [ExtensionNotchExperiencePayload]) {
-        guard extensionTabsAllowed else {
-            selectedExtensionExperienceID = nil
-            resetExtensionViewIfNeeded()
-            return
-        }
-
-        let tabCapablePayloads = experiences.filter { $0.descriptor.tab != nil }
-        guard !tabCapablePayloads.isEmpty else {
-            selectedExtensionExperienceID = nil
-            resetExtensionViewIfNeeded()
-            return
-        }
-
-        if let currentID = selectedExtensionExperienceID,
-           tabCapablePayloads.contains(where: { $0.descriptor.id == currentID }) {
-            return
-        }
-
-        selectedExtensionExperienceID = tabCapablePayloads.first?.descriptor.id
-    }
-
-    private func handleExtensionFeatureToggle() {
-        handleExtensionExperienceSnapshot(extensionNotchExperienceManager.activeExperiences)
-    }
-
-    private func resetExtensionViewIfNeeded() {
-        guard currentView == .extensionExperience else { return }
-        withAnimation(.smooth) {
-            currentView = .home
-        }
-    }
-
-    private var extensionTabsAllowed: Bool {
-        Defaults[.enableThirdPartyExtensions]
-        && Defaults[.enableExtensionNotchExperiences]
-        && Defaults[.enableExtensionNotchTabs]
-    }
-    
     func toggleSneakPeek(
         status: Bool,
         type: SneakContentType,
@@ -349,23 +234,13 @@ class DynamicIslandViewCoordinator: ObservableObject {
             resolvedDuration = 10
         case .reminder:
             resolvedDuration = Defaults[.reminderSneakPeekDuration]
-        case .extensionLiveActivity:
-            resolvedDuration = duration
         default:
             resolvedDuration = duration
         }
         sneakPeekDuration = resolvedDuration
         let bypassedTypes: [SneakContentType] = [.music, .timer, .reminder, .bluetoothAudio]
         
-        // Check if it's an extension type
-        let isExtensionType: Bool
-        if case .extensionLiveActivity = type {
-            isExtensionType = true
-        } else {
-            isExtensionType = false
-        }
-        
-        if !isExtensionType && !bypassedTypes.contains(type) && !Defaults[.enableSystemHUD] {
+        if !bypassedTypes.contains(type) && !Defaults[.enableSystemHUD] {
             return
         }
         DispatchQueue.main.async {

@@ -36,10 +36,10 @@ def stamp(root, output, channel, counter_dir):
         temporary = counter.with_suffix(".tmp")
         temporary.write_text(f"{number}\n")
         temporary.replace(counter)
-    info.update(CFBundleShortVersionString=version, CFBundleVersion=version, EaveBuildNumber=str(number),
+    info.update(CFBundleShortVersionString=version, CFBundleVersion=version, EaveBuildNumber=f"{number:04d}",
                 EaveBuildChannel=channel)
     output.write_bytes(plistlib.dumps(info))
-    print(f"Eave {version} · {channel} ({number})")
+    print(f"Eave {version} · {channel} ({number:04d})")
 
 
 def archive(root, version, build_settings=()):

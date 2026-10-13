@@ -38,7 +38,7 @@ def check():
         source = (ROOT / "DynamicIsland/Info.plist").read_bytes()
         (root / "DynamicIsland/Info.plist").write_bytes(source)
         (root / "VERSION").write_text("0.1.0\n")
-        for channel, number in (("dev", "1"), ("dev", "2"), ("release", "1")):
+        for channel, number in (("dev", "0001"), ("dev", "0002"), ("release", "0001")):
             info = build(root, channel, channel)
             assert info["EaveBuildNumber"] == number
             assert info["CFBundleShortVersionString"] == info["CFBundleVersion"] == "0.1.0"
@@ -47,10 +47,10 @@ def check():
         assert (root / "VERSION").read_text() == "0.1.0\n"
         assert (root / "DynamicIsland/Info.plist").read_bytes() == source
         # New output directory (like Clean Build Folder) must not reset counters.
-        assert build(root, "dev", "after-clean")["EaveBuildNumber"] == "3"
+        assert build(root, "dev", "after-clean")["EaveBuildNumber"] == "0003"
         rejected(lambda: build(root, "beta", "invalid"))
         (root / "VERSION").write_text("0.1.1\n")
-        assert build(root, "dev", "new-version")["EaveBuildNumber"] == "4"
+        assert build(root, "dev", "new-version")["EaveBuildNumber"] == "0004"
         (root / "VERSION").write_text("0.1.1-beta.1\n")
         rejected(lambda: build(root, "dev", "invalid-version"))
         assert (root / "counters/dev").read_text() == "4\n"
@@ -58,6 +58,9 @@ def check():
         with ProcessPoolExecutor(max_workers=4) as pool:
             jobs = [pool.submit(build, root, "dev", str(i)) for i in range(8)]
             assert sorted(int(job.result()["EaveBuildNumber"]) for job in jobs) == list(range(5, 13))
+        (root / "counters/dev").write_text("9998\n")
+        assert build(root, "dev", "four-digits")["EaveBuildNumber"] == "9999"
+        assert build(root, "dev", "five-digits")["EaveBuildNumber"] == "10000"
         (root / "counters/dev").write_text("broken")
         rejected(lambda: build(root, "dev", "broken-counter"))
         assert (root / "counters/dev").read_text() == "broken"

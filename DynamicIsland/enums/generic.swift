@@ -81,7 +81,6 @@ public enum NotchViews: String {
     case notes
     case clipboard
     case terminal
-    case extensionExperience
 }
 
 enum NotesLayoutState: Equatable {
