@@ -16,6 +16,7 @@ sources = [
 ]
 main = r'''
 import Foundation
+import Darwin
 
 var counter = MonitoringCounter()
 assert(counter.rates(["a": (1000, 2000)], at: 10).isEmpty)
@@ -40,8 +41,6 @@ assert(MonitoringParsing.memoryProcess("1 launchd 900K")!.value == 921600)
 assert(MonitoringParsing.memoryProcess("PID COMMAND MEM") == nil)
 assert(MonitoringParsing.memoryProcess("1 foo NaNG") == nil)
 assert(MonitoringParsing.memoryProcess("1 foo -1G") == nil)
-let net = MonitoringParsing.networkProcesses(",bytes_in,bytes_out,\ncom.test.app.42,123,456,\ninvalid,1,2,\napp.0,4,5,")
-assert(net.count == 1 && net["42"]!.name == "com.test.app" && net["42"]!.sent == 456)
 assert(MonitoringUnit.temperature.string(0, fahrenheit: true) == "32.0°F")
 assert(MonitoringUnit.rate.string(nil) == "—")
 assert(MonitoringUnit.percent.string(.nan) == "—")
@@ -64,19 +63,19 @@ print("Monitoring counter, CPU rollover, process parsing, units and lifecycle ch
 
 if CommandLine.arguments.contains("--live") {
     let reader = MonitoringReader()
-    let modules = Set(MonitoringModule.allCases)
+    let modules = Set(MonitoringModule.allCases).subtracting([.network])
     _ = reader.read(modules: modules, detail: nil)
     Thread.sleep(forTimeInterval: 1)
     let samples = reader.read(modules: modules, detail: nil)
-    assert(samples.count == 6)
+    assert(samples.count == 5)
     assert(samples[.cpu]!.value != nil && (0...100).contains(samples[.cpu]!.value!))
     assert(samples[.memory]!.value != nil && (0...100).contains(samples[.memory]!.value!))
-    for module in MonitoringModule.allCases {
+    for module in modules {
         let sample = samples[module]!
         print("\(module.rawValue): \(module.unit.string(sample.value)), sections=\(sample.sections.count), rows=\(sample.sections.reduce(0) { $0 + $1.rows.count })")
         if let value = sample.value { assert(value.isFinite && value >= 0) }
     }
-    for module in [MonitoringModule.cpu, .memory, .disk, .network] {
+    for module in [MonitoringModule.cpu, .memory, .disk] {
         _ = reader.read(modules: [module], detail: module)
         Thread.sleep(forTimeInterval: 1)
         let value = reader.read(modules: [module], detail: module)[module]!
@@ -84,7 +83,7 @@ if CommandLine.arguments.contains("--live") {
         if module == .cpu || module == .memory { assert(!value.processes.isEmpty) }
     }
     assert(reader.read(modules: [], detail: nil).isEmpty)
-    print("Live six-module sampling passed.")
+    print("Live CPU, memory, GPU, disk and sensors sampling passed.")
 }
 extension Optional { var isNil: Bool { self == nil } }
 '''
@@ -99,6 +98,7 @@ ui_main = r'''
 import AppKit
 import SwiftUI
 import Defaults
+@testable import EaveNetworkStats
 
 setbuf(stdout, nil)
 let suiteName = "eave.monitoring.check.\(UUID().uuidString)"
@@ -123,6 +123,7 @@ final class DynamicIslandViewModel: ObservableObject {
 }
 
 Task { @MainActor in
+    EaveNetworkStats.Store.shared = Store(defaults: monitoringTestDefaults)
     let manager = StatsManager.shared
     manager.updateMonitoringState(notchIsOpen: true, currentView: "stats")
     try await Task.sleep(for: .seconds(3))
@@ -138,13 +139,56 @@ Task { @MainActor in
         host.cacheDisplay(in: host.bounds, to: bitmap)
         try bitmap.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: CommandLine.arguments[1]))
     }
+    manager.detail = .network
+    let networkHeight = manager.network.panelSize.height
+    let networkHost = NSHostingView(rootView: NetworkMonitoringDetailView().environment(\.colorScheme, .dark).background(Color(nsColor: .windowBackgroundColor)))
+    let networkWindow = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 280, height: networkHeight), styleMask: .borderless, backing: .buffered, defer: false)
+    networkWindow.appearance = NSAppearance(named: .darkAqua)
+    networkWindow.contentView = networkHost
+    networkWindow.alphaValue = 0
+    networkWindow.orderFront(nil)
+    networkHost.frame = NSRect(x: 0, y: 0, width: 280, height: networkHeight)
+    networkHost.layoutSubtreeIfNeeded()
+    try await Task.sleep(for: .seconds(5))
+    assert(manager.network.isEnabled && manager.network.usageReader.value?.interface?.BSDName != nil)
+    assert(manager.network.processReader.value?.isEmpty == false)
+    let totals = manager.network.usageReader.value!.total
+    print("Stats interface: \(manager.network.usageReader.value!.interface!.BSDName), totals: \(totals.download)/\(totals.upload)")
+    if let bitmap = networkHost.bitmapImageRepForCachingDisplay(in: networkHost.bounds) {
+        networkHost.cacheDisplay(in: networkHost.bounds, to: bitmap)
+        let url = URL(fileURLWithPath: CommandLine.arguments[1]).deletingLastPathComponent().appendingPathComponent("network.png")
+        try bitmap.representation(using: .png, properties: [:])!.write(to: url)
+    }
+    manager.network.showSettings()
+    try await Task.sleep(for: .milliseconds(500))
+    let settingsWindow = NSApp.windows.first { $0.contentView is NSTabView }!
+    settingsWindow.appearance = NSAppearance(named: .darkAqua)
+    let tabs = settingsWindow.contentView as! NSTabView
+    assert(tabs.numberOfTabViewItems == 4)
+    for (index, name) in ["settings", "popup-settings", "notifications", "preview"].enumerated() {
+        tabs.selectTabViewItem(at: index)
+        settingsWindow.contentView!.layoutSubtreeIfNeeded()
+        try await Task.sleep(for: .milliseconds(150))
+        let url = URL(fileURLWithPath: CommandLine.arguments[1]).deletingLastPathComponent().appendingPathComponent(name + ".png")
+        let capture = Process()
+        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        capture.arguments = ["-x", "-o", "-l", String(settingsWindow.windowNumber), url.path]
+        try capture.run()
+        capture.waitUntilExit()
+        assert(capture.terminationStatus == 0)
+    }
+    settingsWindow.close()
+    networkWindow.orderOut(nil)
+    networkWindow.contentView = nil
+    manager.network.setVisible(false)
     manager.detail = .memory
     try await Task.sleep(for: .milliseconds(1200))
     manager.updateMonitoringState(notchIsOpen: false, currentView: "stats")
     assert(!manager.isMonitoring)
     manager.clearHistory()
     try await Task.sleep(for: .seconds(6))
-    assert(manager.samples.isEmpty && manager.history.isEmpty && manager.lastUpdated == nil)
+    assert(manager.samples[.cpu] == nil && manager.history[.cpu] == nil)
+    assert(manager.network.isEnabled && !manager.history[.network, default: []].isEmpty)
     manager.updateMonitoringState(notchIsOpen: true, currentView: "stats")
     for _ in 0..<50 {
         if manager.samples[.cpu]?.value != nil { break }
@@ -155,7 +199,10 @@ Task { @MainActor in
     assert(!manager.isMonitoring)
     Defaults[.enableStatsFeature] = false
     manager.updateMonitoringState(notchIsOpen: true, currentView: "stats")
-    assert(!manager.isMonitoring)
+    assert(!manager.isMonitoring && !manager.network.isEnabled)
+    manager.clearHistory()
+    try await Task.sleep(for: .seconds(2))
+    assert(manager.samples.isEmpty && manager.history.isEmpty)
     Defaults[.enableStatsFeature] = true
     try await Task.sleep(for: .milliseconds(300))
     assert(manager.isMonitoring)
@@ -164,13 +211,15 @@ Task { @MainActor in
     assert(manager.isMonitoring)
     NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.willSleepNotification, object: nil)
     try await Task.sleep(for: .milliseconds(100))
-    assert(!manager.isMonitoring)
+    assert(!manager.isMonitoring && !manager.network.isEnabled)
     NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.didWakeNotification, object: nil)
     try await Task.sleep(for: .milliseconds(100))
-    assert(manager.isMonitoring)
+    assert(manager.isMonitoring && manager.network.isEnabled)
     for module in MonitoringModule.allCases { Defaults[module.visibilityKey] = false }
     try await Task.sleep(for: .milliseconds(100))
-    assert(!manager.isMonitoring)
+    assert(!manager.isMonitoring && !manager.network.isEnabled)
+    manager.network.usageReader.terminate()
+    manager.network.connectivityReader.terminate()
     monitoringTestDefaults.removePersistentDomain(forName: suiteName)
     print("Manager stop, in-flight discard, restart, feature toggle, sleep/wake, module toggles and overview render passed.")
     exit(0)
@@ -183,12 +232,30 @@ if '--ui' in sys.argv:
     with tempfile.TemporaryDirectory(prefix='eave-monitoring-ui-') as directory:
         directory = Path(directory)
         (directory / 'main.swift').write_text(ui_main)
+        import plistlib
+        import shutil
+        executable = directory / 'Checks.app/Contents/MacOS/checks'
+        executable.parent.mkdir(parents=True)
+        (executable.parent.parent / 'Info.plist').write_bytes(plistlib.dumps({
+            'CFBundleIdentifier': 'app.eave.monitoring-checks', 'CFBundleExecutable': 'checks',
+            'CFBundlePackageType': 'APPL', 'NSLocationUsageDescription': 'Network integration checks',
+        }))
         subprocess.run(['swiftc', '-profile-generate', '-swift-version', '5', '-I', str(products),
-                        '-o', str(directory / 'checks'), str(directory / 'main.swift'),
+                        '-o', str(executable), str(directory / 'main.swift'),
                         *[str(root / 'DynamicIsland' / source) for source in sources],
                         str(root / 'DynamicIsland/managers/StatsManager.swift'),
                         str(root / 'DynamicIsland/components/Notch/NotchStatsView.swift'),
-                        str(products / 'Defaults.o')], check=True)
+                        str(root / 'DynamicIsland/components/Notch/NetworkMonitoringDetailView.swift'),
+                        str(products / 'Defaults.o'), str(products / 'EaveNetworkStats.o')], check=True)
+        resources = executable.parent.parent / 'Resources'
+        resources.mkdir()
+        shutil.copytree(products / 'EaveNetworkStats_EaveNetworkStats.bundle', resources / 'EaveNetworkStats_EaveNetworkStats.bundle')
         import os
-        subprocess.run([str(directory / 'checks'), str(directory / 'overview.png')], check=True,
+        subprocess.run([str(executable), str(directory / 'overview.png')], check=True,
                        env={**os.environ, 'LLVM_PROFILE_FILE': str(directory / 'checks.profraw')}, timeout=90)
+
+        if destination := os.environ.get('EAVE_MONITORING_SNAPSHOT_DIR'):
+            import shutil
+            Path(destination).mkdir(parents=True, exist_ok=True)
+            for name in ['overview.png', 'network.png', 'settings.png', 'popup-settings.png', 'notifications.png', 'preview.png']:
+                shutil.copy2(directory / name, Path(destination) / name)

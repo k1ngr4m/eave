@@ -999,6 +999,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self, selector: #selector(onScreenUnlocked(_:)),
             name: NSNotification.Name(rawValue: "com.apple.screenIsUnlocked"), object: nil)
 
+        StatsManager.shared.network.shortcutHandler = { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                let manager = StatsManager.shared
+                var activeVM = self.vm
+                if Defaults[.showOnAllDisplays],
+                   let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }),
+                   let screenVM = self.viewModels[screen] { activeVM = screenVM }
+                self.cancelPendingNotchAutoClose()
+                if manager.detail == .network {
+                    manager.networkDetailRequested = false
+                } else {
+                    manager.networkDetailViewModel = activeVM
+                    manager.networkDetailRequested = true
+                    activeVM.open(target: .stats)
+                }
+            }
+        }
+
         KeyboardShortcuts.onKeyDown(for: .toggleSneakPeek) { [weak self] in
             guard let self = self else { return }
             guard Defaults[.enableShortcuts] else { return }

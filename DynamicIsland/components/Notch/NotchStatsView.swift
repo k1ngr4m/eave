@@ -46,7 +46,11 @@ struct NotchStatsView: View {
                             .buttonStyle(.plain)
                             .accessibilityLabel(module.title + ": " + module.unit.string(manager.samples[module]?.value, fahrenheit: temperatureUnit == .fahrenheit))
                             .popover(isPresented: Binding(get: { selected == module }, set: { if !$0 { selected = nil } })) {
-                                MonitoringDetailView(module: module)
+                                if module == .network {
+                                    NetworkMonitoringDetailView()
+                                } else {
+                                    MonitoringDetailView(module: module)
+                                }
                             }
                     }
                 }
@@ -54,15 +58,30 @@ struct NotchStatsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { manager.updateMonitoringState(notchIsOpen: vm.notchState == .open, currentView: "stats") }
+        .onAppear {
+            manager.updateMonitoringState(notchIsOpen: vm.notchState == .open, currentView: "stats")
+            if manager.networkDetailRequested && manager.networkDetailViewModel === vm { selected = .network }
+        }
+        .onChange(of: manager.networkDetailRequested) { _, requested in
+            if requested && manager.networkDetailViewModel === vm {
+                selected = .network
+            } else if selected == .network { selected = nil }
+        }
         .onChange(of: selected) { _, value in
             vm.isStatsPopoverActive = value != nil
             manager.detail = value
+            if value == .network {
+                manager.networkDetailViewModel = vm
+                manager.networkDetailRequested = true
+            } else if manager.networkDetailViewModel === vm { manager.networkDetailRequested = false }
         }
         .onChange(of: manager.enabledModules) { _, modules in
             if let selected, !modules.contains(selected) { self.selected = nil }
         }
-        .onDisappear { selected = nil; manager.detail = nil; vm.isStatsPopoverActive = false }
+        .onDisappear {
+            selected = nil; manager.detail = nil; vm.isStatsPopoverActive = false
+            if manager.networkDetailViewModel === vm { manager.networkDetailRequested = false }
+        }
     }
 
     private func tile(_ module: MonitoringModule) -> some View {
@@ -75,14 +94,14 @@ struct NotchStatsView: View {
                 Image(systemName: "chevron.right").font(.system(size: 8, weight: .semibold)).foregroundStyle(.secondary)
             }
             .font(.system(size: 11))
-            Text(module.unit.string(sample?.value, fahrenheit: temperatureUnit == .fahrenheit))
+            Text(module == .network ? manager.network.formattedSpeed(sample?.value ?? 0) : module.unit.string(sample?.value, fahrenheit: temperatureUnit == .fahrenheit))
                 .font(.system(size: 19, weight: .semibold, design: .rounded)).monospacedDigit()
                 .lineLimit(1).minimumScaleFactor(0.7)
             HStack(spacing: 3) {
                 Text(module.primaryLabel)
                 if module == .disk || module == .network {
                     Spacer(minLength: 0)
-                    Text(module.secondaryLabel + " " + module.unit.string(sample?.secondary))
+                    Text(module.secondaryLabel + " " + (module == .network ? manager.network.formattedSpeed(sample?.secondary ?? 0) : module.unit.string(sample?.secondary)))
                 }
             }
             .font(.system(size: 9)).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)

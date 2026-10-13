@@ -128,17 +128,6 @@ enum MonitoringParsing {
         guard let value = Double(number), value.isFinite, value >= 0 else { return nil }
         return MonitoringRow(parts.dropFirst().dropLast().filter { $0 != "*" }.joined(separator: " "), value * scale, .bytes, id: String(pid))
     }
-    static func networkProcesses(_ output: String) -> [String: (name: String, received: UInt64, sent: UInt64)] {
-        var result: [String: (String, UInt64, UInt64)] = [:]
-        for line in output.split(separator: "\n") {
-            let fields = line.split(separator: ",", omittingEmptySubsequences: false)
-            guard fields.count >= 3, let dot = fields[0].lastIndex(of: "."),
-                  let pid = Int32(fields[0][fields[0].index(after: dot)...]), pid > 0,
-                  let received = UInt64(fields[1]), let sent = UInt64(fields[2]) else { continue }
-            result[String(pid)] = (String(fields[0][..<dot]), received, sent)
-        }
-        return result
-    }
 }
 
 enum MonitoringActivity {

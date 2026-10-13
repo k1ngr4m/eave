@@ -1,0 +1,1655 @@
+//
+//  helpers.swift
+//  Kit
+//
+//  Created by Serhiy Mytrovtsiy on 29/09/2020.
+//  Using Swift 5.0.
+//  Running on macOS 10.15.
+//
+//  Copyright © 2020 Serhiy Mytrovtsiy. All rights reserved.
+//
+// swiftlint:disable file_length
+
+import Cocoa
+import ServiceManagement
+import UserNotifications
+import WebKit
+import Metal
+import IOKit.pwr_mgt
+import WidgetKit
+
+public let machHostPort: mach_port_t = mach_host_self()
+public protocol KeyValue_p {
+    var key: String { get }
+    var value: String { get }
+}
+
+public struct KeyValue_t: KeyValue_p, Codable {
+    public let key: String
+    public let value: String
+    public let additional: Any?
+    
+    private enum CodingKeys: String, CodingKey {
+        case key, value
+    }
+    
+    public init(key: String, value: String, additional: Any? = nil) {
+        self.key = key
+        self.value = value
+        self.additional = additional
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.key = try container.decode(String.self, forKey: .key)
+        self.value = try container.decode(String.self, forKey: .value)
+        self.additional = nil
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(key, forKey: .key)
+        try container.encode(value, forKey: .value)
+    }
+}
+
+public struct Units {
+    public let bytes: Int64
+    
+    public init(bytes: Int64) {
+        self.bytes = bytes
+    }
+    
+    public var kilobytes: Double {
+        return Double(bytes) / 1_000
+    }
+    public var megabytes: Double {
+        return kilobytes / 1_000
+    }
+    public var gigabytes: Double {
+        return megabytes / 1_000
+    }
+    public var terabytes: Double {
+        return gigabytes / 1_000
+    }
+    
+    public func getReadableTuple(base: DataSizeBase = .byte, unit: String = NetworkSpeedUnitAuto) -> (String, String) {
+        let stringBase = base == .byte ? "B" : "b"
+        let multiplier: Double = base == .byte ? 1 : 8
+        
+        if let fixedUnit = networkSpeedSizeUnit(from: unit), let speedPrefix = networkSpeedPrefix(from: unit) {
+            let value = self.toUnit(fixedUnit) * multiplier
+            return (self.formatSpeedValue(value), "\(speedPrefix)\(stringBase)/s")
+        }
+        
+        let value: Double = Double(bytes) * multiplier
+        switch value {
+        case ..<1_000:
+            return ("0", "K\(stringBase)/s")
+        case 1_000..<1_000_000:
+            return (String(format: "%.0f", value/1_000), "K\(stringBase)/s")
+        case 1_000_000..<100_000_000:
+            return (String(format: "%.1f", value/1_000_000), "M\(stringBase)/s")
+        case 100_000_000..<1_000_000_000:
+            return (String(format: "%.0f", value/1_000_000), "M\(stringBase)/s")
+        case 1_000_000_000..<1_000_000_000_000:
+            return (String(format: "%.1f", value/1_000_000_000), "G\(stringBase)/s")
+        default:
+            return (String(format: "%.1f", value/1_000_000_000_000), "T\(stringBase)/s")
+        }
+    }
+    
+    public func getReadableSpeed(base: DataSizeBase = .byte, unit: String = NetworkSpeedUnitAuto, omitUnits: Bool = false) -> String {
+        let readable = self.getReadableTuple(base: base, unit: unit)
+        return omitUnits ? readable.0 : "\(readable.0) \(readable.1)"
+    }
+    
+    public func getReadableMemory(style: ByteCountFormatter.CountStyle = .file) -> String {
+        var value = FormatterCache.shared.readableMemory(Int64(self.bytes), style: style)
+        if let idx = value.lastIndex(of: ",") {
+            value.replaceSubrange(idx...idx, with: ".")
+        }
+        
+        return value
+    }
+    
+    public func toUnit(_ unit: SizeUnit) -> Double {
+        switch unit {
+        case .KB: return self.kilobytes
+        case .MB: return self.megabytes
+        case .GB: return self.gigabytes
+        case .TB: return self.terabytes
+        default: return Double(self.bytes)
+        }
+    }
+    
+    private func formatSpeedValue(_ value: Double) -> String {
+        let maximumFractionDigits: Int
+        switch value {
+        case 0:
+            maximumFractionDigits = 0
+        case ..<10:
+            maximumFractionDigits = 2
+        case ..<100:
+            maximumFractionDigits = 1
+        default:
+            maximumFractionDigits = 0
+        }
+        
+        return FormatterCache.shared.decimal(value, maximumFractionDigits: maximumFractionDigits) ?? String(format: "%.2f", value)
+    }
+}
+
+public struct DiskSize {
+    public let value: Int64
+    
+    public init(_ size: Int64) {
+        self.value = size
+    }
+    
+    public var kilobytes: Double {
+        return Double(value) / 1_000
+    }
+    public var megabytes: Double {
+        return kilobytes / 1_000
+    }
+    public var gigabytes: Double {
+        return megabytes / 1_000
+    }
+    public var terabytes: Double {
+        return gigabytes / 1_000
+    }
+    
+    public func getReadableMemory() -> String {
+        switch value {
+        case 0..<1_000:
+            return "0 KB"
+        case 1_000..<(1_000 * 1_000):
+            return String(format: "%.0f KB", kilobytes)
+        case 1_000..<(1_000 * 1_000 * 1_000):
+            return String(format: "%.0f MB", megabytes)
+        case 1_000..<(1_000 * 1_000 * 1_000 * 1_000):
+            return String(format: "%.1f GB", gigabytes)
+        case (1_000 * 1_000 * 1_000 * 1_000)...Int64.max:
+            return String(format: "%.1f TB", terabytes)
+        default:
+            return String(format: "%.0f KB", kilobytes)
+        }
+    }
+}
+
+public class LabelField: NSTextField {
+    public init(frame: NSRect = NSRect.zero, _ label: String = "", size: CGFloat = 12) {
+        super.init(frame: frame)
+        
+        self.isEditable = false
+        self.isSelectable = false
+        self.isBezeled = false
+        self.wantsLayer = true
+        self.backgroundColor = .clear
+        self.canDrawSubviewsIntoLayer = true
+        
+        self.stringValue = label
+        self.textColor = .secondaryLabelColor
+        self.alignment = .natural
+        self.font = NSFont.systemFont(ofSize: size, weight: .regular)
+        
+        self.cell?.truncatesLastVisibleLine = true
+        self.cell?.usesSingleLineMode = true
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
+public class ValueField: NSTextField {
+    public init(frame: NSRect = NSRect.zero, _ value: String = "") {
+        super.init(frame: frame)
+        
+        self.isEditable = false
+        self.isSelectable = false
+        self.isBezeled = false
+        self.wantsLayer = true
+        self.backgroundColor = .clear
+        self.canDrawSubviewsIntoLayer = true
+        
+        self.stringValue = value
+        self.textColor = .textColor
+        self.alignment = .trailing
+        self.font = NSFont.systemFont(ofSize: 13, weight: .regular)
+        
+        self.cell?.usesSingleLineMode = true
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
+public class StatusBadgeView: NSStackView {
+    private var status: Bool?
+    private let ok: String
+    private let notOk: String
+    private let labelField: NSTextField = LabelField("")
+    
+    public override var intrinsicContentSize: CGSize {
+        return CGSize(width: self.bounds.width, height: self.bounds.height)
+    }
+    
+    private var color: CGColor {
+        if let status {
+            return status ? NSColor.systemGreen.cgColor : NSColor.systemRed.cgColor
+        }
+        return NSColor.secondaryLabelColor.cgColor
+    }
+    private var label: String {
+        if let status {
+            return status ? localizedString(self.ok) : localizedString(self.notOk)
+        }
+        return ""
+    }
+    
+    public init(frame: NSRect = NSRect(origin: .zero, size: NSSize(width: 50, height: 14)), _ status: Bool? = nil, ok: String = "UP", notOk: String = "DOWN") {
+        self.status = status
+        self.ok = ok
+        self.notOk = notOk
+        
+        super.init(frame: frame)
+        
+        self.orientation = .horizontal
+        self.distribution = .fill
+        self.spacing = 0
+        self.wantsLayer = true
+        self.layer?.cornerRadius = 4
+        self.layer?.backgroundColor = self.color
+        
+        self.labelField.autoresizingMask = [.width, .height]
+        self.labelField.alignment = .center
+        self.labelField.textColor = .white
+        self.labelField.stringValue = self.label
+        self.labelField.font = NSFont.systemFont(ofSize: 11, weight: .light)
+        
+        self.addArrangedSubview(self.labelField)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public func setStatus(_ value: Bool?) {
+        guard self.status != value else { return }
+        self.status = value
+        self.labelField.stringValue = self.label
+        self.layer?.backgroundColor = self.color
+    }
+}
+
+public var isRTL: Bool {
+    NSApp.userInterfaceLayoutDirection == .rightToLeft
+}
+
+public extension NSTextAlignment {
+    static var trailing: NSTextAlignment {
+        isRTL ? .left : .right
+    }
+}
+
+public extension NSBezierPath {
+    func addArrow(start: CGPoint, end: CGPoint, pointerLineLength: CGFloat, arrowAngle: CGFloat) {
+        self.move(to: start)
+        self.line(to: end)
+        
+        let startEndAngle = atan((end.y - start.y) / (end.x - start.x)) + ((end.x - start.x) < 0 ? CGFloat(Double.pi) : 0)
+        let arrowLine1 = CGPoint(
+            x: end.x + pointerLineLength * cos(CGFloat(Double.pi) - startEndAngle + arrowAngle),
+            y: end.y - pointerLineLength * sin(CGFloat(Double.pi) - startEndAngle + arrowAngle)
+        )
+        let arrowLine2 = CGPoint(
+            x: end.x + pointerLineLength * cos(CGFloat(Double.pi) - startEndAngle - arrowAngle),
+            y: end.y - pointerLineLength * sin(CGFloat(Double.pi) - startEndAngle - arrowAngle)
+        )
+        
+        self.line(to: arrowLine1)
+        self.move(to: end)
+        self.line(to: arrowLine2)
+    }
+}
+
+public func separatorView(_ title: String, origin: NSPoint = NSPoint(x: 0, y: 0), width: CGFloat = 0, rightInset: CGFloat = 0) -> NSView {
+    let view: NSView = NSView(frame: NSRect(x: origin.x, y: origin.y, width: width, height: 30))
+    view.heightAnchor.constraint(equalToConstant: view.bounds.height).isActive = true
+    
+    let labelView: NSTextField = NSTextField(labelWithString: "")
+    labelView.translatesAutoresizingMaskIntoConstraints = false
+    labelView.alignment = .center
+    labelView.isBezeled = false
+    labelView.isEditable = false
+    labelView.drawsBackground = false
+    labelView.attributedStringValue = NSAttributedString(string: title.uppercased(), attributes: [
+        .font: NSFont.systemFont(ofSize: 10, weight: .semibold),
+        .foregroundColor: NSColor.tertiaryLabelColor,
+        .kern: 1.0
+    ])
+    labelView.setContentHuggingPriority(.required, for: .horizontal)
+    labelView.setContentCompressionResistancePriority(.required, for: .horizontal)
+    
+    let leftLine: NSView = NSView()
+    leftLine.translatesAutoresizingMaskIntoConstraints = false
+    leftLine.wantsLayer = true
+    leftLine.layer?.backgroundColor = NSColor.separatorColor.cgColor
+    
+    let rightLine: NSView = NSView()
+    rightLine.translatesAutoresizingMaskIntoConstraints = false
+    rightLine.wantsLayer = true
+    rightLine.layer?.backgroundColor = NSColor.separatorColor.cgColor
+    
+    view.addSubview(leftLine)
+    view.addSubview(labelView)
+    view.addSubview(rightLine)
+    
+    let gap: CGFloat = 8
+    NSLayoutConstraint.activate([
+        labelView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+        labelView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+        
+        leftLine.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+        leftLine.trailingAnchor.constraint(equalTo: labelView.leadingAnchor, constant: -gap),
+        leftLine.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+        leftLine.heightAnchor.constraint(equalToConstant: 1),
+        
+        rightLine.leadingAnchor.constraint(equalTo: labelView.trailingAnchor, constant: gap),
+        rightLine.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -rightInset),
+        rightLine.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+        rightLine.heightAnchor.constraint(equalToConstant: 1)
+    ])
+    
+    return view
+}
+
+public func popupBadgeRow(_ view: NSView? = nil, title: String, status: Bool? = nil, ok: String = "UP", notOk: String = "DOWN") -> (LabelField, StatusBadgeView, NSView) {
+    let width = view?.frame.width ?? 0
+    let height: CGFloat = 22
+    let rowView: NSView = NSView(frame: NSRect(x: 0, y: 0, width: width, height: height))
+    
+    let labelWidth = title.widthOfString(usingFont: .systemFont(ofSize: 12, weight: .regular)) + 4
+    let labelView: LabelField = LabelField(frame: NSRect(x: isRTL ? width - labelWidth : 0, y: (height-16)/2, width: labelWidth, height: 16), title)
+    
+    let badgeView = StatusBadgeView(frame: NSRect(x: isRTL ? 0 : rowView.frame.width - 50, y: (height-14)/2, width: 50, height: 14), status, ok: ok, notOk: notOk)
+    badgeView.autoresizingMask = isRTL ? [.maxXMargin] : [.minXMargin]
+    
+    rowView.addSubview(labelView)
+    rowView.addSubview(badgeView)
+    
+    if let view = view as? NSStackView {
+        rowView.heightAnchor.constraint(equalToConstant: rowView.bounds.height).isActive = true
+        view.addArrangedSubview(rowView)
+    } else if let view {
+        view.addSubview(rowView)
+    }
+    
+    return (labelView, badgeView, rowView)
+}
+
+public func popupRow(_ view: NSView? = nil, title: String, value: String, multiline: Bool = false) -> (LabelField, ValueField, NSView) {
+    let lines: CGFloat = CGFloat(multiline ? value.filter { $0 == "\n" }.count + 1 : 1)
+    let width = view?.frame.width ?? 0
+    let height = multiline ? ((lines*16) + (22-16)): 22
+    
+    let rowView: NSView = NSView(frame: NSRect(x: 0, y: 0, width: width, height: height))
+    
+    let labelWidth = title.widthOfString(usingFont: .systemFont(ofSize: 12, weight: .regular)) + 4
+    let labelView: LabelField = LabelField(frame: NSRect(x: isRTL ? width - labelWidth : 0, y: ((22-16)/2) + ((lines-1)*16), width: labelWidth, height: 16), title)
+    let valueView: ValueField = ValueField(frame: NSRect(x: isRTL ? 0 : labelWidth, y: (22-16)/2, width: rowView.frame.width - labelWidth, height: multiline ? 16*lines : 16), value)
+    
+    if multiline {
+        valueView.cell?.usesSingleLineMode = false
+    }
+    
+    rowView.addSubview(labelView)
+    rowView.addSubview(valueView)
+    
+    if let view = view as? NSStackView {
+        rowView.heightAnchor.constraint(equalToConstant: rowView.bounds.height).isActive = true
+        view.addArrangedSubview(rowView)
+    } else if let view {
+        view.addSubview(rowView)
+    }
+    
+    return (labelView, valueView, rowView)
+}
+
+public func portalRow(_ v: NSStackView, title: String, value: String = "", isSelectable: Bool = false) -> (LabelField, ValueField, NSStackView) {
+    let view: NSStackView = NSStackView()
+    view.orientation = .horizontal
+    view.distribution = .fillProportionally
+    view.spacing = 1
+    
+    let labelView: LabelField = LabelField(title)
+    labelView.font = NSFont.systemFont(ofSize: 11, weight: .regular)
+    
+    let valueView: ValueField = ValueField(value)
+    valueView.isSelectable = isSelectable
+    valueView.font = NSFont.systemFont(ofSize: 12, weight: .regular)
+    
+    view.addArrangedSubview(labelView)
+    view.addArrangedSubview(NSView())
+    view.addArrangedSubview(valueView)
+    
+    v.addArrangedSubview(view)
+    
+    view.widthAnchor.constraint(equalTo: v.widthAnchor).isActive = true
+    
+    return (labelView, valueView, view)
+}
+
+public func popupWithColorRow(_ view: NSView, color: NSColor, title: String, value: String) -> (ColorBlock, LabelField, ValueField) {
+    let rowView: NSView = NSView(frame: NSRect(x: 0, y: 0, width: view.frame.width, height: 22))
+    
+    let width = rowView.frame.width
+    let colorView: ColorBlock = ColorBlock(frame: NSRect(x: isRTL ? width - 13 : 3, y: 6, width: 10, height: 10), color: color)
+    let labelWidth = min(180, title.widthOfString(usingFont: .systemFont(ofSize: 13, weight: .regular)) + 5)
+    let labelView: LabelField = LabelField(frame: NSRect(x: isRTL ? width - 18 - labelWidth : 18, y: (22-16)/2, width: labelWidth, height: 16), title)
+    let valueView: ValueField = ValueField(frame: NSRect(x: isRTL ? 0 : 18 + labelWidth, y: (22-16)/2, width: width - labelWidth - 18, height: 16), value)
+    
+    rowView.addSubview(colorView)
+    rowView.addSubview(labelView)
+    rowView.addSubview(valueView)
+    
+    if let view = view as? NSStackView {
+        rowView.heightAnchor.constraint(equalToConstant: rowView.bounds.height).isActive = true
+        view.addArrangedSubview(rowView)
+    } else {
+        view.addSubview(rowView)
+    }
+    
+    return (colorView, labelView, valueView)
+}
+
+public func portalWithColorRow(_ v: NSStackView, color: NSColor, title: String) -> (NSView, ValueField) {
+    let view: NSStackView = NSStackView()
+    view.orientation = .horizontal
+    view.distribution = .fillProportionally
+    view.spacing = 1
+    
+    let colorView: ColorBlock = ColorBlock(frame: NSRect(x: 3, y: 6, width: 10, height: 10), color: color)
+    
+    let labelView: LabelField = LabelField(title)
+    labelView.font = NSFont.systemFont(ofSize: 11, weight: .regular)
+    
+    let valueView: ValueField = ValueField()
+    valueView.font = NSFont.systemFont(ofSize: 12, weight: .regular)
+    
+    view.addArrangedSubview(colorView)
+    view.addArrangedSubview(labelView)
+    view.addArrangedSubview(NSView())
+    view.addArrangedSubview(valueView)
+    
+    v.addArrangedSubview(view)
+    
+    view.widthAnchor.constraint(equalTo: v.widthAnchor).isActive = true
+    
+    return (colorView, valueView)
+}
+
+public func previewBadgeRow(_ view: NSStackView?, title: String, status: Bool? = nil) -> StatusBadgeView {
+    let row: NSStackView = NSStackView(frame: NSRect.zero)
+    row.heightAnchor.constraint(equalToConstant: 22).isActive = true
+    row.orientation = .horizontal
+    row.distribution = .fill
+    row.spacing = 1
+    
+    let labelView: LabelField = LabelField(title)
+    labelView.font = NSFont.systemFont(ofSize: 11, weight: .regular)
+    
+    let badgeView = StatusBadgeView(status)
+    
+    row.addArrangedSubview(labelView)
+    row.addArrangedSubview(NSView())
+    row.addArrangedSubview(badgeView)
+    
+    if let view {
+        view.addArrangedSubview(row)
+    }
+    
+    return badgeView
+}
+
+public func previewRow(_ view: NSStackView?, space: Bool = true, color: NSColor? = nil, title: String = "", value: String = "") -> ValueField {
+    let row: NSStackView = NSStackView(frame: NSRect.zero)
+    row.heightAnchor.constraint(equalToConstant: 22).isActive = true
+    row.orientation = .horizontal
+    row.distribution = .fill
+    row.spacing = 1
+    
+    if let color {
+        let colorView: NSView = NSView()
+        colorView.widthAnchor.constraint(equalToConstant: 10).isActive = true
+        colorView.heightAnchor.constraint(equalToConstant: 10).isActive = true
+        colorView.wantsLayer = true
+        colorView.layer?.backgroundColor = color.cgColor
+        colorView.layer?.cornerRadius = 2
+        
+        row.addArrangedSubview(colorView)
+    }
+    
+    let labelView: LabelField = LabelField(title)
+    labelView.font = NSFont.systemFont(ofSize: 11, weight: .regular)
+    let valueView: ValueField = ValueField(value)
+    valueView.font = NSFont.systemFont(ofSize: 12, weight: .regular)
+    
+    row.addArrangedSubview(labelView)
+    if space {
+        row.addArrangedSubview(NSView())
+    }
+    row.addArrangedSubview(valueView)
+    
+    if let view {
+        view.addArrangedSubview(row)
+    }
+    
+    return valueView
+}
+
+public extension Array where Element: Hashable {
+    func difference(from other: [Element]) -> [Element] {
+        let thisSet = Set(self)
+        let otherSet = Set(other)
+        return Array(thisSet.symmetricDifference(otherSet))
+    }
+}
+
+public func toggleNSControlState(_ control: NSControl?, state: NSControl.StateValue) {
+    if let checkbox = control as? NSSwitch {
+        checkbox.state = state
+    }
+}
+
+public func syncShell(_ args: String) -> String {
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: "/bin/sh")
+    task.arguments = ["-c", args]
+    let pipe = Pipe()
+    
+    task.standardOutput = pipe
+    do {
+        try task.run()
+    } catch let err {
+        error("syncShell: \(err.localizedDescription)")
+        return ""
+    }
+    task.waitUntilExit()
+    
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    let output = String(data: data, encoding: .utf8) ?? ""
+    
+    return output
+}
+
+public class ColorView: NSView {
+    public var inactiveColor: NSColor = NSColor.lightGray.withAlphaComponent(0.75)
+    
+    private var color: NSColor
+    private var state: Bool
+    
+    public init(frame: NSRect = NSRect.zero, color: NSColor, state: Bool = false, radius: CGFloat = 2) {
+        self.color = color
+        self.state = state
+        
+        super.init(frame: frame)
+        
+        self.wantsLayer = true
+        self.layer?.backgroundColor = (state ? self.color : inactiveColor).cgColor
+        self.layer?.cornerRadius = radius
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public func setState(_ newState: Bool) {
+        if newState != state {
+            self.layer?.backgroundColor = (newState ? self.color : inactiveColor).cgColor
+            self.state = newState
+        }
+    }
+    
+    public func setColor(_ newColor: NSColor) {
+        guard self.color != newColor else { return }
+        self.color = newColor
+        self.layer?.backgroundColor = newColor.cgColor
+    }
+}
+
+public func localizedString(_ key: String, _ params: String..., comment: String = "") -> String {
+    var string = NSLocalizedString(key, bundle: .module, comment: comment)
+    if !params.isEmpty {
+        for (index, param) in params.enumerated() {
+            string = string.replacingOccurrences(of: "%\(index)", with: param)
+        }
+    }
+    return string
+}
+
+public extension UnitTemperature {
+    private static let systemLock = NSLock()
+    private static var systemCache: UnitTemperature? = nil
+    private static let localeObserver: NSObjectProtocol = NotificationCenter.default.addObserver(forName: NSLocale.currentLocaleDidChangeNotification, object: nil, queue: nil) { _ in
+        UnitTemperature.systemLock.lock()
+        UnitTemperature.systemCache = nil
+        UnitTemperature.systemLock.unlock()
+    }
+    
+    static var system: UnitTemperature {
+        _ = self.localeObserver
+        self.systemLock.lock()
+        defer { self.systemLock.unlock() }
+        if let cached = self.systemCache {
+            return cached
+        }
+        let measureFormatter = MeasurementFormatter()
+        let measurement = Measurement(value: 0, unit: UnitTemperature.celsius)
+        let unit: UnitTemperature = measureFormatter.string(from: measurement).hasSuffix("C") ? .celsius : .fahrenheit
+        self.systemCache = unit
+        return unit
+    }
+    
+    static var current: UnitTemperature {
+        let stringUnit: String = Store.shared.string(key: "temperature_units", defaultValue: "system")
+        var unit = UnitTemperature.system
+        if stringUnit != "system" {
+            if let value = TemperatureUnits.first(where: { $0.key == stringUnit }), let temperatureUnit = value.additional as? UnitTemperature {
+                unit = temperatureUnit
+            }
+        }
+        return unit
+    }
+}
+
+public func temperature(_ value: Double, defaultUnit: UnitTemperature = UnitTemperature.celsius, fractionDigits: Int = 0) -> String {
+    var measurement = Measurement(value: value, unit: defaultUnit)
+    measurement.convert(to: UnitTemperature.current)
+    
+    return FormatterCache.shared.temperature(measurement, fractionDigits: fractionDigits)
+}
+
+public func sysctlByName(_ name: String) -> Int64 {
+    var num: Int64 = 0
+    var size = MemoryLayout<Int64>.size
+    
+    if sysctlbyname(name, &num, &size, nil, 0) != 0 {
+        print(POSIXError.Code(rawValue: errno).map { POSIXError($0) } ?? CocoaError(.fileReadUnknown))
+    }
+    
+    return num
+}
+
+internal class WidgetLabelView: NSView {
+    private var title: String
+    
+    internal init(_ title: String, height: CGFloat) {
+        self.title = title
+        
+        super.init(frame: NSRect(
+            x: 0,
+            y: 0,
+            width: 6,
+            height: height
+        ))
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        
+        let style = NSMutableParagraphStyle()
+        style.alignment = .center
+        let stringAttributes = [
+            NSAttributedString.Key.font: NSFont.systemFont(ofSize: 7, weight: .regular),
+            NSAttributedString.Key.foregroundColor: NSColor.textColor,
+            NSAttributedString.Key.paragraphStyle: style
+        ]
+        
+        let title = String(self.title.prefix(3)).uppercased().reversed()
+        let letterHeight = self.frame.height / 3
+        let letterWidth: CGFloat = self.frame.height / CGFloat(title.count)
+        
+        var yMargin: CGFloat = 0
+        for char in title {
+            let rect = CGRect(x: 0, y: yMargin, width: letterWidth, height: letterHeight-1)
+            let str = NSAttributedString.init(string: "\(char)", attributes: stringAttributes)
+            str.draw(with: rect)
+            yMargin += letterHeight
+        }
+    }
+}
+
+public func process(path: String, arguments: [String]) -> String? {
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: path)
+    task.arguments = arguments
+    
+    let outputPipe = Pipe()
+    defer {
+        outputPipe.fileHandleForReading.closeFile()
+    }
+    task.standardOutput = outputPipe
+    
+    do {
+        try task.run()
+    } catch let error {
+        debug("system_profiler SPMemoryDataType: \(error.localizedDescription)")
+        return nil
+    }
+    
+    let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+    let output = String(data: outputData, encoding: .utf8)
+    guard let output, !output.isEmpty else { return nil }
+    
+    return output
+}
+
+public func process(path: String, arguments: [String], environment: [String: String]? = nil, timeout: TimeInterval) -> String? {
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: path)
+    task.arguments = arguments
+    if let environment {
+        task.environment = environment
+    }
+    
+    let inputPipe = Pipe()
+    let outputPipe = Pipe()
+    let errorPipe = Pipe()
+    task.standardInput = inputPipe
+    task.standardOutput = outputPipe
+    task.standardError = errorPipe
+    
+    let exited = DispatchGroup()
+    exited.enter()
+    task.terminationHandler = { _ in exited.leave() }
+    
+    do {
+        try task.run()
+    } catch let err {
+        task.terminationHandler = nil
+        exited.leave()
+        debug("\(path): \(err.localizedDescription)")
+        return nil
+    }
+    
+    var outputData = Data()
+    let drained = DispatchGroup()
+    drained.enter()
+    DispatchQueue.global(qos: .utility).async {
+        outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        drained.leave()
+    }
+    drained.enter()
+    DispatchQueue.global(qos: .utility).async {
+        _ = errorPipe.fileHandleForReading.readDataToEndOfFile()
+        drained.leave()
+    }
+    
+    var timedOut = false
+    if exited.wait(timeout: .now() + timeout) == .timedOut {
+        timedOut = true
+        task.terminate()
+        if exited.wait(timeout: .now() + 2) == .timedOut {
+            kill(task.processIdentifier, SIGKILL)
+            _ = exited.wait(timeout: .now() + 2)
+        }
+    }
+    
+    inputPipe.fileHandleForWriting.closeFile()
+    guard drained.wait(timeout: .now() + 2) == .success else {
+        error("\(path) did not exit within \(Int(timeout))s and could not be killed")
+        return nil
+    }
+    outputPipe.fileHandleForReading.closeFile()
+    errorPipe.fileHandleForReading.closeFile()
+    
+    if timedOut {
+        error("\(path) did not exit within \(Int(timeout))s, terminated")
+        return nil
+    }
+    
+    let output = String(data: outputData, encoding: .utf8)
+    guard let output, !output.isEmpty else { return nil }
+    
+    return output
+}
+
+public class SettingsContainerView: NSStackView {
+    public init() {
+        super.init(frame: NSRect.zero)
+        self.translatesAutoresizingMaskIntoConstraints = false
+        self.orientation = .vertical
+        self.spacing = Constants.Settings.margin
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
+internal func grayscaleImage(_ image: NSImage) -> NSImage? {
+    let scale = NSScreen.main?.backingScaleFactor ?? 2
+    guard let bitmap = NSBitmapImageRep(
+        bitmapDataPlanes: nil,
+        pixelsWide: Int(ceil(image.size.width * scale)),
+        pixelsHigh: Int(ceil(image.size.height * scale)),
+        bitsPerSample: 8,
+        samplesPerPixel: 4,
+        hasAlpha: true,
+        isPlanar: false,
+        colorSpaceName: .deviceRGB,
+        bytesPerRow: 0,
+        bitsPerPixel: 0
+    ), let context = NSGraphicsContext(bitmapImageRep: bitmap) else {
+        return nil
+    }
+    bitmap.size = image.size
+    
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = context
+    context.cgContext.scaleBy(x: CGFloat(bitmap.pixelsWide) / image.size.width, y: CGFloat(bitmap.pixelsHigh) / image.size.height)
+    image.draw(in: NSRect(origin: .zero, size: image.size))
+    NSGraphicsContext.restoreGraphicsState()
+    
+    guard let grayscale = bitmap.converting(to: .genericGray, renderingIntent: .default) else {
+        return nil
+    }
+    grayscale.size = image.size
+    let greyImage = NSImage(size: image.size)
+    greyImage.addRepresentation(grayscale)
+    
+    return greyImage
+}
+
+public class ViewCopy: CALayer {
+    public init(_ view: NSView) {
+        super.init()
+        
+        guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        
+        frame = view.frame
+        contents = bitmap.cgImage
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
+public class EmptyView: NSStackView {
+    public init(height: CGFloat = 120, isHidden: Bool = false, msg: String) {
+        super.init(frame: NSRect())
+        
+        if height != 0 {
+            self.heightAnchor.constraint(equalToConstant: height).isActive = true
+        }
+        
+        self.translatesAutoresizingMaskIntoConstraints = true
+        self.orientation = .vertical
+        self.distribution = .fillEqually
+        self.isHidden = isHidden
+        self.identifier = NSUserInterfaceItemIdentifier(rawValue: "emptyView")
+        
+        let textView: NSTextView = NSTextView()
+        if height != 0 {
+            textView.heightAnchor.constraint(equalToConstant: ((height)/2)+6).isActive = true
+        }
+        textView.alignment = .center
+        textView.isEditable = false
+        textView.isSelectable = false
+        textView.drawsBackground = false
+        textView.string = msg
+        
+        self.addArrangedSubview(NSView())
+        self.addArrangedSubview(textView)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
+public func controlState(_ sender: NSControl) -> Bool {
+    let state: NSControl.StateValue = sender is NSSwitch ? (sender as! NSSwitch).state : .off
+    return state == .on
+}
+
+public enum IconScale {
+    case small, medium, large, xlarge
+}
+
+public func iconFromSymbol(name: String, scale: IconScale) -> NSImage {
+    let config: NSImage.SymbolConfiguration
+    switch scale {
+    case .small:
+        config = NSImage.SymbolConfiguration(textStyle: .body, scale: .small)
+    case .medium:
+        config = NSImage.SymbolConfiguration(textStyle: .body, scale: .medium)
+    case .large:
+        config = NSImage.SymbolConfiguration(textStyle: .body, scale: .large)
+    case .xlarge:
+        config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular, scale: .large)
+    }
+    if let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil), let icon = symbol.withSymbolConfiguration(config) {
+        return icon
+    }
+    return NSImage()
+}
+
+public func showAlert(_ message: String, _ information: String? = nil, _ style: NSAlert.Style = .informational) {
+    let show = {
+        let alert = NSAlert()
+        alert.messageText = message
+        if let information = information {
+            alert.informativeText = information
+        }
+        alert.addButton(withTitle: "OK")
+        alert.alertStyle = style
+        alert.runModal()
+    }
+    if Thread.isMainThread {
+        show()
+    } else {
+        DispatchQueue.main.async(execute: show)
+    }
+}
+
+var isDarkMode: Bool {
+    switch NSAppearance.currentDrawing().name {
+    case .darkAqua, .vibrantDark, .accessibilityHighContrastDarkAqua, .accessibilityHighContrastVibrantDark:
+        return true
+    default:
+        return false
+    }
+}
+
+public class PreferencesSection: NSStackView {
+    private let container: NSStackView = NSStackView()
+    private var subtitleField: NSTextField?
+
+    public init(title: String = "", subtitle: String = "", id: String? = nil, _ components: [NSView] = []) {
+        super.init(frame: .zero)
+        
+        self.orientation = .vertical
+        self.spacing = 0
+        if let id {
+            self.identifier = NSUserInterfaceItemIdentifier(id)
+        }
+        
+        if title != "" || subtitle != "" {
+            self.addHeader(title: title, subtitle: subtitle)
+        }
+        
+        self.container.orientation = .vertical
+        self.container.wantsLayer = true
+        self.container.layer?.backgroundColor = NSColor.quaternaryLabelColor.withAlphaComponent(0.025).cgColor
+        self.container.layer?.cornerRadius = Constants.Settings.margin
+        self.container.edgeInsets = NSEdgeInsets(
+            top: Constants.Settings.margin/1.25,
+            left: Constants.Settings.margin,
+            bottom: Constants.Settings.margin/1.25,
+            right: Constants.Settings.margin
+        )
+        self.container.spacing = Constants.Settings.margin/1.25
+        self.addArrangedSubview(self.container)
+        
+        for item in components {
+            self.add(item)
+        }
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public override func updateLayer() {
+        self.container.layer?.backgroundColor = NSColor.quaternaryLabelColor.withAlphaComponent(0.025).cgColor
+    }
+    
+    private func addHeader(title: String, subtitle: String) {
+        let view = NSStackView()
+        view.heightAnchor.constraint(equalToConstant: 26).isActive = true
+        
+        let space = NSView()
+        space.widthAnchor.constraint(equalToConstant: 4).isActive = true
+        
+        let firstField: NSTextField = TextView()
+        firstField.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        firstField.stringValue = title
+        
+        let secondField: NSTextField = TextView()
+        secondField.font = NSFont.systemFont(ofSize: 11, weight: .regular)
+        secondField.textColor = .placeholderTextColor
+        secondField.stringValue = subtitle
+        self.subtitleField = secondField
+        
+        view.addArrangedSubview(space)
+        view.addArrangedSubview(firstField)
+        view.addArrangedSubview(NSView())
+        view.addArrangedSubview(secondField)
+        
+        self.addArrangedSubview(view)
+    }
+    
+    public func setSubtitle(_ value: String) {
+        self.subtitleField?.stringValue = value
+    }
+    
+    public func add(_ view: NSView) {
+        if !self.container.subviews.isEmpty {
+            self.container.addArrangedSubview(PreferencesSeparator())
+        }
+        self.container.addArrangedSubview(view)
+    }
+    
+    public func delete(_ id: String) {
+        let views = self.container.subviews
+        views.enumerated().forEach { (i, v) in
+            guard v.identifier?.rawValue == id else { return }
+            if self.container.subviews.indices.contains(i-1) {
+                let prev = self.container.subviews[i-1]
+                if prev.identifier?.rawValue == "PreferencesSeparator" {
+                    prev.removeFromSuperview()
+                }
+            }
+            v.removeFromSuperview()
+        }
+    }
+    
+    public func contains(_ id: String) -> Bool {
+        self.container.subviews.contains(where: { $0.identifier?.rawValue == id })
+    }
+    
+    public func setRowVisibility(_ at: Int, newState: Bool) {
+        if at == 0 {
+            self.container.subviews[0].isHidden = !newState
+            if self.container.subviews.count > 1 {
+                self.container.subviews[1].isHidden = !newState
+            }
+            return
+        }
+        for i in self.container.subviews.indices where i/2 == at && Double(i).remainder(dividingBy: 2) == 0 {
+            self.container.subviews[i-1].isHidden = !newState
+            self.container.subviews[i].isHidden = !newState
+        }
+    }
+    public func setRowVisibility(_ id: String, newState: Bool) {
+        guard let at = self.container.subviews.firstIndex(where: { $0.identifier?.rawValue == id }) else { return }
+        self.setRowVisibility(at/2, newState: newState)
+    }
+    public func setRowVisibility(_ row: PreferencesRow, newState: Bool) {
+        guard let at = self.container.subviews.firstIndex(where: { $0 == row }) else { return }
+        self.setRowVisibility(at/2, newState: newState)
+    }
+    
+    public func findRow(_ id: String) -> PreferencesRow? {
+        let rows: [PreferencesRow] = self.container.subviews.filter({ $0 is PreferencesRow }).compactMap({ $0 as? PreferencesRow })
+        return rows.first(where: { $0.identifier?.rawValue == id })
+    }
+}
+
+private class PreferencesSeparator: NSView {
+    public init() {
+        super.init(frame: .zero)
+        self.wantsLayer = true
+        self.layer?.backgroundColor = NSColor.separatorColor.withAlphaComponent(0.05).cgColor
+        self.heightAnchor.constraint(equalToConstant: 1).isActive = true
+        self.identifier = NSUserInterfaceItemIdentifier("PreferencesSeparator")
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public override func updateLayer() {
+        self.layer?.backgroundColor = NSColor.separatorColor.withAlphaComponent(0.05).cgColor
+    }
+}
+
+public class PreferencesRow: NSStackView {
+    private var helpCallback: (() -> Void)?
+    
+    public init(_ title: String? = nil, _ description: String? = nil, id: String? = nil, component: NSView, help: (() -> Void)? = nil) {
+        self.helpCallback = help
+        
+        super.init(frame: .zero)
+        
+        self.orientation = .horizontal
+        self.distribution = .fill
+        self.alignment = .centerY
+        self.edgeInsets = NSEdgeInsets(top: Constants.Settings.margin/2, left: 0, bottom: (Constants.Settings.margin/2) - 1, right: 0)
+        self.spacing = 0
+        if let id {
+            self.identifier = NSUserInterfaceItemIdentifier(id)
+        }
+        
+        self.addArrangedSubview(self.text(title, description))
+        if help != nil {
+            let helpBtn = NSButton()
+            helpBtn.bezelStyle = .helpButton
+            helpBtn.controlSize = .small
+            helpBtn.title = ""
+            helpBtn.action = #selector(self.help)
+            helpBtn.target = self
+            let space = NSView()
+            space.widthAnchor.constraint(equalToConstant: 5).isActive = true
+            self.addArrangedSubview(space)
+            self.addArrangedSubview(helpBtn)
+        }
+        self.addArrangedSubview(NSView())
+        self.addArrangedSubview(component)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public func replaceComponent(with view: NSView) {
+        self.subviews.removeLast()
+        self.addArrangedSubview(view)
+    }
+    
+    fileprivate func text(_ title: String? = nil, _ description: String? = nil) -> NSView {
+        let view: NSStackView = NSStackView()
+        view.orientation = .vertical
+        view.spacing = 0
+        
+        if let title {
+            let field: NSTextField = TextView()
+            field.font = NSFont.systemFont(ofSize: 12, weight: .regular)
+            field.stringValue = title
+            view.addArrangedSubview(field)
+        }
+        
+        if let description {
+            let field: NSTextField = TextView()
+            field.font = NSFont.systemFont(ofSize: 12, weight: .regular)
+            field.textColor = .secondaryLabelColor
+            field.stringValue = description
+            view.addArrangedSubview(field)
+            view.addArrangedSubview(NSView())
+            view.alignment = .leading
+        }
+        
+        return view
+    }
+    
+    @objc private func help() {
+        self.helpCallback?()
+    }
+}
+
+public class StepperInput: NSStackView, NSTextFieldDelegate, PreferencesSwitchWith_p {
+    private var callback: ((Int) -> Void)
+    private var unitCallback: ((KeyValue_p) -> Void)
+    
+    private let valueView: NSTextField = NSTextField()
+    private let stepperView: NSStepper = NSStepper()
+    private var symbolView: NSTextField? = nil
+    private var unitsView: NSPopUpButton? = nil
+    
+    private let range: NSRange?
+    private var units: [KeyValue_p]? = nil
+    
+    private var _isEnabled: Bool = true
+    public var isEnabled: Bool {
+        get { self._isEnabled }
+        set {
+            self.valueView.isEnabled = newValue
+            self.stepperView.isEnabled = newValue
+            self.symbolView?.isEnabled = newValue
+            self.unitsView?.isEnabled = newValue
+            self._isEnabled = newValue
+        }
+    }
+    
+    public init(
+        _ value: Int,
+        range: NSRange = NSRange(location: 1, length: 99),
+        unit: String = "%",
+        visibileUnit: Bool = true,
+        units: [KeyValue_p]? = nil,
+        callback: @escaping (Int) -> Void = {_ in },
+        unitCallback: @escaping (KeyValue_p) -> Void = {_ in }
+    ) {
+        self.range = range
+        self.callback = callback
+        self.unitCallback = unitCallback
+        
+        super.init(frame: .zero)
+        
+        self.orientation = .horizontal
+        self.spacing = 2
+        
+        self.valueView.font = NSFont.systemFont(ofSize: 12, weight: .regular)
+        self.valueView.textColor = .textColor
+        self.valueView.isEditable = true
+        self.valueView.isSelectable = true
+        self.valueView.usesSingleLineMode = true
+        self.valueView.maximumNumberOfLines = 1
+        self.valueView.focusRingType = .none
+        self.valueView.delegate = self
+        self.valueView.stringValue = "\(value)"
+        self.valueView.translatesAutoresizingMaskIntoConstraints = false
+        self.valueView.widthAnchor.constraint(greaterThanOrEqualToConstant: 35).isActive = true
+        
+        self.stepperView.font = NSFont.systemFont(ofSize: 12, weight: .regular)
+        self.stepperView.doubleValue = Double(value)/100
+        self.stepperView.minValue = Double(range.lowerBound)/100
+        self.stepperView.maxValue = Double(range.upperBound)/100
+        self.stepperView.increment = 0.01
+        self.stepperView.valueWraps = false
+        self.stepperView.target = self
+        self.stepperView.action = #selector(self.onStepperChange)
+        
+        self.addArrangedSubview(self.valueView)
+        self.addArrangedSubview(self.stepperView)
+        
+        if units == nil {
+            if unit == "%" {
+                self.widthAnchor.constraint(equalToConstant: 80).isActive = true
+            }
+            if visibileUnit {
+                let symbol: NSTextField = LabelField(unit)
+                symbol.textColor = .textColor
+                self.addArrangedSubview(symbol)
+                self.symbolView = symbol
+            }
+        } else if let units {
+            self.units = units
+            self.unitsView = selectView(
+                action: #selector(self.onUnitChange),
+                items: units,
+                selected: unit
+            )
+            self.addArrangedSubview(self.unitsView!)
+            self.widthAnchor.constraint(equalToConstant: 124).isActive = true
+        }
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public func controlTextDidChange(_ obj: Notification) {
+        guard let field = obj.object as? NSTextField else { return }
+        let filtered = field.stringValue.filter{"0123456789".contains($0)}
+        if filtered != field.stringValue {
+            field.stringValue = filtered
+        }
+        guard var v = Int(field.stringValue) else { return }
+        
+        if let range = self.range {
+            if v > range.upperBound {
+                field.stringValue = "\(range.upperBound)"
+                v = range.upperBound
+            } else if v < range.lowerBound {
+                field.stringValue = "\(range.lowerBound)"
+                v = range.lowerBound
+            }
+        }
+        
+        self.callback(v)
+    }
+    
+    @objc private func onStepperChange(_ sender: NSStepper) {
+        let value = Int((sender.doubleValue*100).rounded())
+        self.valueView.stringValue = "\(value)"
+        self.callback(value)
+    }
+    
+    @objc private func onUnitChange(_ sender: NSMenuItem) {
+        guard let key = sender.representedObject as? String, let units = self.units,
+              let value = units.first(where: { $0.key == key }) else { return }
+        self.unitCallback(value)
+    }
+}
+
+public protocol PreferencesSwitchWith_p: NSView {
+    var isEnabled: Bool { get set }
+}
+extension NSPopUpButton: PreferencesSwitchWith_p {}
+extension NSTextField: PreferencesSwitchWith_p {}
+public class PreferencesSwitch: NSStackView {
+    private let action: (_ sender: NSControl) -> Void
+    private let with: PreferencesSwitchWith_p
+    
+    public init(action: @escaping (_ sender: NSControl) -> Void, state: Bool, with: PreferencesSwitchWith_p) {
+        self.action = action
+        self.with = with
+        
+        super.init(frame: .zero)
+        
+        self.orientation = .horizontal
+        self.alignment = .centerY
+        self.spacing = Constants.Settings.margin
+        
+        let btn = switchView(action: #selector(self.callback), state: state)
+        with.isEnabled = state
+        
+        self.addArrangedSubview(NSView())
+        self.addArrangedSubview(btn)
+        self.addArrangedSubview(with)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    @objc func callback(_ sender: NSControl) {
+        self.action(sender)
+        self.with.isEnabled = controlState(sender)
+    }
+}
+
+public class HelpHUD: NSPanel {
+    private let text: String
+
+    public init(_ text: String, origin: CGPoint = CGPoint(x: 0, y: 0), size: CGSize = CGSize(width: 420, height: 300)) {
+        self.text = text
+        super.init(
+            contentRect: NSRect(origin: origin, size: size),
+            styleMask: [.hudWindow, .utilityWindow, .titled, .closable],
+            backing: .buffered, defer: false
+        )
+        self.isFloatingPanel = true
+        self.isMovableByWindowBackground = true
+        self.level = .floating
+        self.title = "Help"
+    }
+    
+    public func show() {
+        if self.contentView as? WKWebView == nil {
+            let webView = WKWebView()
+            webView.underPageBackgroundColor = .clear
+            let style = """
+            :root { color-scheme: light dark; }
+            body {
+                margin: 10px;
+                font-family: -apple-system, 'Helvetica Neue', sans-serif;
+                color: #000000;
+            }
+            @media (prefers-color-scheme: dark) {
+                body { color: #ffffff; }
+            }
+            """
+            webView.loadHTMLString("<html><head><style>\(style)</style></head><body>\(self.text)</body></html>", baseURL: nil)
+            self.contentView = webView
+        }
+        
+        self.makeKeyAndOrderFront(self)
+        self.center()
+    }
+}
+
+public class VerticallyCenteredTextFieldCell: NSTextFieldCell {
+    public override func titleRect(forBounds rect: NSRect) -> NSRect {
+        var titleRect = super.titleRect(forBounds: rect)
+        let textSize = self.attributedStringValue.size()
+        let verticalOffset = (rect.size.height - textSize.height) / 2.0
+        titleRect.origin.y += verticalOffset
+        return titleRect
+    }
+    
+    public override func drawInterior(withFrame cellFrame: NSRect, in controlView: NSView) {
+        let titleRect = self.titleRect(forBounds: cellFrame)
+        self.attributedStringValue.draw(in: titleRect)
+    }
+}
+
+public func countryFlag(_ code: String) -> String? {
+    let uppercased = code.uppercased()
+    guard uppercased.count == 2 else { return nil }
+    let scalars = uppercased.unicodeScalars.compactMap { UnicodeScalar(127397 + $0.value) }
+    return scalars.count == 2 ? String(String.UnicodeScalarView(scalars)) : nil
+}
+
+public class DotView: NSView {
+    private let size: CGFloat
+    
+    public init(color: NSColor, size: CGFloat = 8) {
+        self.size = size
+        super.init(frame: NSRect(x: 0, y: 0, width: size, height: size))
+        
+        self.translatesAutoresizingMaskIntoConstraints = false
+        self.widthAnchor.constraint(equalToConstant: size).isActive = true
+        
+        let height = self.heightAnchor.constraint(equalToConstant: size)
+        height.priority = .defaultHigh
+        height.isActive = true
+        
+        self.wantsLayer = true
+        self.layer?.cornerRadius = size / 2
+        self.layer?.backgroundColor = color.cgColor
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public func setColor(_ color: NSColor) {
+        self.layer?.backgroundColor = color.cgColor
+    }
+}
+
+public class LinkButton: NSButton {
+    private var url: URL
+    
+    public init(_ url: URL, size: CGFloat = 14) {
+        self.url = url
+        
+        super.init(frame: .zero)
+        self.target = self
+        self.action = #selector(self.openURL)
+        
+        self.image = NSImage(systemSymbolName: "arrow.up.right.square", accessibilityDescription: localizedString("Open in browser"))
+        self.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 11, weight: .regular)
+        self.imagePosition = .imageOnly
+        self.isBordered = false
+        self.bezelStyle = .accessoryBar
+        self.contentTintColor = .secondaryLabelColor
+        self.toolTip = url.absoluteString
+        self.translatesAutoresizingMaskIntoConstraints = false
+        
+        self.widthAnchor.constraint(equalToConstant: size).isActive = true
+        self.heightAnchor.constraint(equalToConstant: size).isActive = true
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    @objc private func openURL() {
+        NSWorkspace.shared.open(self.url)
+    }
+    
+    public override func resetCursorRects() {
+        self.addCursorRect(self.bounds, cursor: .pointingHand)
+    }
+}
+
+public class ColorBlock: NSView {
+    public init(frame: CGRect? = nil, toolTip: String? = nil, color: NSColor? = nil) {
+        super.init(frame: frame != nil ? frame! : NSRect(x: 0, y: 0, width: 10, height: 10))
+        
+        self.wantsLayer = true
+        self.layer?.backgroundColor = (color != nil ? color! : NSColor.lightGray.withAlphaComponent(0.75)).cgColor
+        self.layer?.cornerRadius = 3
+        
+        if let toolTip {
+            self.toolTip = toolTip
+        }
+        
+        self.widthAnchor.constraint(equalToConstant: 10).isActive = true
+        self.heightAnchor.constraint(equalToConstant: 10).isActive = true
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public func set(color: NSColor? = nil) {
+        let resolved = color ?? .lightGray.withAlphaComponent(0.75)
+        self.effectiveAppearance.performAsCurrentDrawingAppearance {
+            self.layer?.backgroundColor = resolved.cgColor
+        }
+    }
+    
+    public func set(toolTip: String? = nil) {
+        self.toolTip = toolTip
+    }
+}
+
+public class PopupButton: NSButton {
+    private var callback: (() -> Void)?
+    
+    public var currentState: Bool? = nil
+    
+    public init(toolTip: String? = nil, state: Bool? = nil, icon: String = "slider.horizontal.3", action: (() -> Void)? = nil) {
+        self.callback = action
+        self.currentState = state
+        
+        super.init(frame: NSRect(x: 0, y: 0, width: 20, height: 16))
+        
+        self.translatesAutoresizingMaskIntoConstraints = false
+        self.wantsLayer = true
+        self.layer?.cornerRadius = Constants.Popup.radius
+        self.contentTintColor = .lightGray
+        self.layer?.backgroundColor = NSColor.clear.cgColor
+        
+        self.bezelStyle = .regularSquare
+        self.isBordered = false
+        self.imageScaling = .scaleProportionallyDown
+        self.image = iconFromSymbol(name: icon, scale: .medium)
+        
+        self.action = #selector(self.click)
+        self.target = self
+        if let toolTip {
+            self.toolTip = toolTip
+        }
+        
+        self.updateAppearance()
+        
+        self.widthAnchor.constraint(equalToConstant: self.frame.width).isActive = true
+        self.heightAnchor.constraint(equalToConstant: self.frame.height).isActive = true
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    @objc private func click() {
+        self.callback?()
+        if self.currentState != nil {
+            self.currentState = !self.currentState!
+        }
+        self.updateAppearance()
+    }
+    
+    private func updateAppearance() {
+        guard let currentState else { return }
+        
+        if currentState {
+            self.contentTintColor = .white
+            self.layer?.backgroundColor = NSColor.controlAccentColor.cgColor
+        } else {
+            self.contentTintColor = .lightGray
+            self.layer?.backgroundColor = NSColor.clear.cgColor
+        }
+    }
+}
+
+public class SeparatorView: NSStackView {
+    public init(label: String, button: NSView? = nil) {
+        super.init(frame: NSRect(x: 0, y: 0, width: 0, height: Constants.Popup.separatorHeight))
+        
+        self.orientation = .horizontal
+        self.alignment = .centerY
+        self.distribution = .fill
+        self.spacing = Constants.Popup.margins
+        self.translatesAutoresizingMaskIntoConstraints = false
+        
+        let labelView: NSTextField = NSTextField(labelWithString: "")
+        labelView.alignment = .center
+        labelView.isBezeled = false
+        labelView.isEditable = false
+        labelView.drawsBackground = false
+        labelView.attributedStringValue = NSAttributedString(string: label.uppercased(), attributes: [
+            .font: NSFont.systemFont(ofSize: 10, weight: .semibold),
+            .foregroundColor: NSColor.tertiaryLabelColor,
+            .kern: 1.0
+        ])
+        labelView.setContentHuggingPriority(.required, for: .horizontal)
+        labelView.setContentCompressionResistancePriority(.required, for: .horizontal)
+        
+        let leftLine = self.line()
+        let rightLine = self.line()
+        
+        self.addArrangedSubview(leftLine)
+        self.addArrangedSubview(labelView)
+        self.addArrangedSubview(rightLine)
+        
+        if let button {
+            self.addArrangedSubview(button)
+        }
+        
+        NSLayoutConstraint.activate([
+            self.heightAnchor.constraint(equalToConstant: Constants.Popup.separatorHeight),
+            labelView.centerXAnchor.constraint(equalTo: self.centerXAnchor),
+            labelView.centerYAnchor.constraint(equalTo: self.centerYAnchor)
+        ])
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func line() -> NSView {
+        let view: NSView = NSView()
+        view.wantsLayer = true
+        view.layer?.backgroundColor = NSColor.separatorColor.cgColor
+        view.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        view.heightAnchor.constraint(equalToConstant: 1).isActive = true
+        return view
+    }
+}
+
+public func showNotification(title: String, subtitle: String? = nil, userInfo: [AnyHashable: Any] = [:], delegate: UNUserNotificationCenterDelegate? = nil) -> String {
+    let id = UUID().uuidString
+    
+    let content = UNMutableNotificationContent()
+    content.title = title
+    if let value = subtitle {
+        content.subtitle = value
+    }
+    content.userInfo = userInfo
+    content.sound = UNNotificationSound.default
+    
+    let request = UNNotificationRequest(identifier: id, content: content, trigger: nil)
+    let center = UNUserNotificationCenter.current()
+    center.delegate = delegate
+    
+    center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+    center.add(request) { (error: Error?) in
+        if let err = error {
+            print(err)
+        }
+    }
+    
+    return id
+}
+
+public func removeNotification(_ id: String) {
+    let center = UNUserNotificationCenter.current()
+    center.removeDeliveredNotifications(withIdentifiers: [id])
+}
+

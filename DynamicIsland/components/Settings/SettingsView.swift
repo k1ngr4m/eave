@@ -8057,11 +8057,17 @@ struct StatsSettings: View {
                                             items: Array(LockScreenWeatherTemperatureUnit.allCases)) { $0.localizedName }
                         .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Temperature unit"))
                 }
+                Section("Network") {
+                    Button("Network settings…") { manager.network.showSettings() }
+                    Text("Network monitoring follows Stats settings and continues in the background while enabled.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 Section("Monitoring Status") {
-                    LabeledContent("Status", value: manager.isMonitoring ? String(localized: "Active") : String(localized: "Stopped"))
+                    LabeledContent("Status", value: (manager.isMonitoring || manager.network.isEnabled) ? String(localized: "Active") : String(localized: "Stopped"))
                     ForEach(manager.enabledModules) { module in
-                        LabeledContent(module.title, value: module.unit.string(manager.samples[module]?.value,
-                                                                              fahrenheit: temperatureUnit == .fahrenheit))
+                        LabeledContent(module.title, value: module == .network
+                                       ? manager.network.formattedSpeed(manager.samples[module]?.value ?? 0)
+                                       : module.unit.string(manager.samples[module]?.value, fahrenheit: temperatureUnit == .fahrenheit))
                     }
                     if let date = manager.lastUpdated {
                         HStack { Text("Last Updated"); Spacer(); Text(date, style: .time).foregroundStyle(.secondary) }

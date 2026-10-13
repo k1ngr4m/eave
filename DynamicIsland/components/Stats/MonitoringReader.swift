@@ -4,7 +4,6 @@
 import Foundation
 import IOKit
 import IOKit.graphics
-import SystemConfiguration
 import Darwin
 
 // Confined to StatsManager's serial utility queue. No UI, database or menu-bar dependency.
@@ -13,9 +12,7 @@ final class MonitoringReader: @unchecked Sendable {
     private var cpuTicks: [UInt32] = []
     private var coreTicks: [[UInt32]] = []
     private var diskCounter = MonitoringCounter()
-    private var networkCounter = MonitoringCounter()
     private var diskProcessCounter = MonitoringCounter()
-    private var networkProcessCounter = MonitoringCounter()
     private var lastDetail: MonitoringModule?
     private var lastModules: Set<MonitoringModule> = []
     private lazy var cpuSensors = CPUSensorCollector()
@@ -26,8 +23,8 @@ final class MonitoringReader: @unchecked Sendable {
 
     func reset() {
         cpuTicks = []; coreTicks = []
-        diskCounter = MonitoringCounter(); networkCounter = MonitoringCounter()
-        diskProcessCounter = MonitoringCounter(); networkProcessCounter = MonitoringCounter()
+        diskCounter = MonitoringCounter()
+        diskProcessCounter = MonitoringCounter()
         lastDetail = nil; lastModules = []
     }
 
@@ -36,9 +33,8 @@ final class MonitoringReader: @unchecked Sendable {
             cpuTicks = []; coreTicks = []; cpuSensors.resetFrequencySampling()
         }
         if !lastModules.contains(.disk) { diskCounter = MonitoringCounter() }
-        if !lastModules.contains(.network) { networkCounter = MonitoringCounter() }
         if detail != lastDetail {
-            diskProcessCounter = MonitoringCounter(); networkProcessCounter = MonitoringCounter()
+            diskProcessCounter = MonitoringCounter()
         }
         lastDetail = detail; lastModules = modules
         var result: [MonitoringModule: MonitoringSample] = [:]
@@ -48,7 +44,7 @@ final class MonitoringReader: @unchecked Sendable {
             case .memory: result[module] = readMemory(detail: detail == module)
             case .gpu: result[module] = readGPU()
             case .disk: result[module] = readDisk(detail: detail == module)
-            case .network: result[module] = readNetwork(detail: detail == module)
+            case .network: break // Stats' original network readers run independently.
             case .sensors: result[module] = readSensors()
             }
         }
@@ -225,57 +221,6 @@ final class MonitoringReader: @unchecked Sendable {
         return result
     }
 
-    private func readNetwork(detail: Bool) -> MonitoringSample {
-        var result = MonitoringSample()
-        var pointer: UnsafeMutablePointer<ifaddrs>?
-        guard getifaddrs(&pointer) == 0 else { return result }
-        defer { if let pointer { freeifaddrs(pointer) } }
-        var counters: [String: (UInt64, UInt64)] = [:]
-        var addresses: [String: String] = [:]
-        var current = pointer
-        while let item = current {
-            defer { current = item.pointee.ifa_next }
-            let interface = item.pointee
-            let name = String(cString: interface.ifa_name)
-            guard let address = interface.ifa_addr, interface.ifa_flags & UInt32(IFF_LOOPBACK) == 0,
-                  interface.ifa_flags & UInt32(IFF_UP) != 0 else { continue }
-            if Int32(address.pointee.sa_family) == AF_LINK, let data = interface.ifa_data?.assumingMemoryBound(to: if_data.self) {
-                counters[name] = (UInt64(data.pointee.ifi_ibytes), UInt64(data.pointee.ifi_obytes))
-            } else if Int32(address.pointee.sa_family) == AF_INET {
-                var buffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                if getnameinfo(address, socklen_t(address.pointee.sa_len), &buffer, socklen_t(buffer.count), nil, 0, NI_NUMERICHOST) == 0 { addresses[name] = String(cString: buffer) }
-            }
-        }
-        let rates = networkCounter.rates(counters, at: ProcessInfo.processInfo.systemUptime)
-        let store = SCDynamicStoreCreate(nil, "Eave monitoring" as CFString, nil, nil)
-        let global = SCDynamicStoreCopyValue(store, "State:/Network/Global/IPv4" as CFString) as? [String: Any]
-        let global6 = SCDynamicStoreCopyValue(store, "State:/Network/Global/IPv6" as CFString) as? [String: Any]
-        let primary = global?["PrimaryInterface"] as? String ?? global6?["PrimaryInterface"] as? String
-        // One primary interface avoids counting the same bytes again through a VPN/bridge.
-        if let primary, let rate = rates[primary] { result.value = rate.0; result.secondary = rate.1 }
-        let interfaces = SCNetworkInterfaceCopyAll() as? [SCNetworkInterface] ?? []
-        for name in counters.keys.sorted() where addresses[name] != nil || name == primary {
-            let interface = interfaces.first { (SCNetworkInterfaceGetBSDName($0) as String?) == name }
-            let display = interface.flatMap { SCNetworkInterfaceGetLocalizedDisplayName($0) as String? } ?? name
-            let counter = counters[name]!
-            result.sections.append(.init(display + " · " + name + (name == primary ? " ★" : ""), rows: [
-                .init("IPv4", text: addresses[name] ?? "—"),
-                .init(String(localized: "Download"), rates[name]?.0, .rate),
-                .init(String(localized: "Upload"), rates[name]?.1, .rate),
-                .init(String(localized: "Received since interface start"), Double(counter.0), .bytes),
-                .init(String(localized: "Sent since interface start"), Double(counter.1), .bytes)
-            ], id: name))
-        }
-        if detail {
-            if let output = command("/usr/bin/nettop", ["-P", "-L", "1", "-n", "-J", "bytes_in,bytes_out"]) {
-                let entries = MonitoringParsing.networkProcesses(output)
-                let rates = networkProcessCounter.rates(entries.mapValues { ($0.received, $0.sent) }, at: ProcessInfo.processInfo.systemUptime)
-                result.processes = processRows(rates, names: entries.mapValues(\.name))
-            } else { result.processStatus = String(localized: "Process data unavailable") }
-        }
-        return result
-    }
-
     private func readSensors() -> MonitoringSample {
         if sensorDefinitions == nil {
             let available = Set(smc.getAllKeys())
@@ -335,7 +280,7 @@ final class MonitoringReader: @unchecked Sendable {
 
     private func processRows(_ rates: [String: (Double, Double)], names: [String: String]) -> [MonitoringRow] {
         rates.sorted { $0.value.0 + $0.value.1 > $1.value.0 + $1.value.1 }.prefix(8).map { key, rate in
-            var row = MonitoringRow(names[key] ?? key, rate.0 + rate.1, .rate, id: key)
+            var row = MonitoringRow(names[key] ?? key, rate.0, .rate, id: key)
             row.text = MonitoringUnit.rate.string(rate.0) + " / " + MonitoringUnit.rate.string(rate.1)
             return row
         }

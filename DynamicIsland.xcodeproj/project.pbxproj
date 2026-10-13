@@ -58,6 +58,7 @@
 		F3E4D5C6B7A8E9F0A1B2C3D4 /* Contents/Helpers/NowPlayingTestClient in CopyFiles */ = {isa = PBXBuildFile; fileRef = F2E3D4C5B6A7E8F9A0B1C2D3 /* Contents/Helpers/NowPlayingTestClient */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F5A6B7C8D9E0F1A2B3C4D5E6 /* NewAPIUsageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6B7C8D9E0F1A2B3C4D5E6F7 /* NewAPIUsageTests.swift */; };
 		F910B9C812C7AEFE2293F7D2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 47C39E67B09152F6665ED683 /* Cocoa.framework */; };
+		EA7E57A70000000000000011 /* EaveNetworkStats in Frameworks */ = {isa = PBXBuildFile; productRef = EA7E57A70000000000000012 /* EaveNetworkStats */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -190,6 +191,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EA7E57A70000000000000001 /* EaveStatus in Frameworks */,
+				EA7E57A70000000000000011 /* EaveNetworkStats in Frameworks */,
 				7EF19C172F577040005B9929 /* SwiftTerm in Frameworks */,
 				7EF10C122F817ECF004229A0 /* Accelerate.framework in Frameworks */,
 				7E1ADF1D2EA209B1001DA867 /* SkyLightWindow in Frameworks */,
@@ -388,6 +390,7 @@
 			name = DynamicIsland;
 			packageProductDependencies = (
 				EA7E57A70000000000000002 /* EaveStatus */,
+				EA7E57A70000000000000012 /* EaveNetworkStats */,
 				14D032192C68F32E0096E6A1 /* LaunchAtLogin */,
 				14D0321C2C68F3350096E6A1 /* Sparkle */,
 				B18654382C6F4990000B926A /* KeyboardShortcuts */,
@@ -435,6 +438,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				EA7E57A70000000000000003 /* XCLocalSwiftPackageReference "Packages/EaveStatus" */,
+				EA7E57A70000000000000013 /* XCLocalSwiftPackageReference "Packages/EaveNetworkStats" */,
 				F54407082CD4A23F00C7AFD9 /* XCRemoteSwiftPackageReference "swift-collections" */,
 				14D032182C68F32E0096E6A1 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
 				14D0321B2C68F3350096E6A1 /* XCRemoteSwiftPackageReference "Sparkle" */,
@@ -494,18 +498,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		EA7E57A70000000000000008 /* Embed Mobile Battery Helper */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = ();
-			inputPaths = ();
-			outputPaths = ();
-			name = "Embed Mobile Battery Helper";
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/bash;
-			shellScript = "/bin/bash \"$SRCROOT/scripts/embed-mobile-battery-helper.sh\"";
-		};
 		7EFAA8AA2F6F12F3000A99E8 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -523,6 +515,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if [ \"$CONFIGURATION\" != \"Release\" ] || [ \"$ACTION\" != \"install\" ]; then\n\texit 0\nfi\n\nAPP=\"$CODESIGNING_FOLDER_PATH\"\nSPARKLE=\"$APP/Contents/Frameworks/Sparkle.framework\"\nXPC_DIR=\"$SPARKLE/Versions/Current/XPCServices\"\n\nif [ ! -d \"$XPC_DIR\" ]; then\n\texit 0\nfi\n\nfor xpc in \"$XPC_DIR\"/*.xpc; do\n\t/usr/bin/codesign --force --sign \"$EXPANDED_CODE_SIGN_IDENTITY\" --timestamp --options runtime --preserve-metadata=identifier,entitlements \"$xpc\"\ndone\n\n/usr/bin/codesign --force --sign \"$EXPANDED_CODE_SIGN_IDENTITY\" --timestamp --options runtime --preserve-metadata=identifier,entitlements \"$SPARKLE\"\n";
+		};
+		EA7E57A70000000000000008 /* Embed Mobile Battery Helper */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Embed Mobile Battery Helper";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "/bin/bash \"$SRCROOT/scripts/embed-mobile-battery-helper.sh\"";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -994,6 +1001,7 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/EaveStatus;
 		};
+		EA7E57A70000000000000013 /* XCLocalSwiftPackageReference "Packages/EaveNetworkStats" */ = {isa = XCLocalSwiftPackageReference; relativePath = Packages/EaveNetworkStats; };
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1164,6 +1172,7 @@
 			package = EA7E57A70000000000000003 /* XCLocalSwiftPackageReference "Packages/EaveStatus" */;
 			productName = EaveStatus;
 		};
+		EA7E57A70000000000000012 /* EaveNetworkStats */ = {isa = XCSwiftPackageProductDependency; package = EA7E57A70000000000000013 /* XCLocalSwiftPackageReference "Packages/EaveNetworkStats" */; productName = EaveNetworkStats; };
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F54406DF2CD4987A00C7AFD9 /* Project object */;
