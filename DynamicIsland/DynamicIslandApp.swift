@@ -816,6 +816,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Observe stats settings changes - use debounced updates
         Defaults.publisher(.enableStatsFeature, options: []).sink { [weak self] _ in
             self?.debouncedUpdateWindowSize()
+            Task { @MainActor [weak self] in
+                self?.updateFeatureShortcutAvailability()
+            }
         }.store(in: &cancellables)
         
         Defaults.publisher(.showCpuGraph, options: []).sink { [weak self] _ in
@@ -1438,6 +1441,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard !optionalShortcutHandlersRegistered else { return }
         optionalShortcutHandlersRegistered = true
 
+        KeyboardShortcuts.onKeyDown(for: .openMonitoring) { [weak self] in
+            guard let self else { return }
+            guard Defaults[.enableShortcuts], Defaults[.enableStatsFeature] else { return }
+
+            var activeVM = vm
+            if Defaults[.showOnAllDisplays],
+               let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }),
+               let screenVM = viewModels[screen] { activeVM = screenVM }
+            cancelPendingNotchAutoClose()
+            if activeVM.notchState == .closed {
+                activeVM.open(target: .stats)
+            } else {
+                coordinator.currentView = .stats
+            }
+        }
+
         KeyboardShortcuts.onKeyDown(for: .startDemoTimer) {
             guard Defaults[.enableShortcuts], Defaults[.enableTimerFeature] else { return }
             TimerManager.shared.startDemoTimer(duration: 300)
@@ -1561,6 +1580,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func updateFeatureShortcutAvailability() {
+        updateShortcut(.openMonitoring, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableStatsFeature])
         updateShortcut(.startDemoTimer, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableTimerFeature])
         updateShortcut(.clipboardHistoryPanel, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableClipboardManager])
         updateShortcut(.colorPickerPanel, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableColorPickerFeature])

@@ -59184,6 +59184,28 @@
         }
       }
     },
+    "Open Monitoring:" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Monitoring:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开监视："
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開監視："
+          }
+        }
+      }
+    },
     "Open network details" : {
       "localizations" : {
         "zh-Hans" : {

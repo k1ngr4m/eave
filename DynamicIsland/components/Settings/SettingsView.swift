@@ -7194,6 +7194,8 @@ struct Shortcuts: View {
                 Section {
                     KeyboardShortcuts.Recorder("Toggle Notch Open:", name: .toggleNotchOpen)
                         .disabled(!enableShortcuts)
+                    KeyboardShortcuts.Recorder("Open Monitoring:", name: .openMonitoring)
+                        .disabled(!enableStatsFeature)
                 } header: {
                     Text("Navigation")
                 } footer: {
