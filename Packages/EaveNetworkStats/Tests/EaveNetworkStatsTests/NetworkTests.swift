@@ -99,6 +99,78 @@ final class NetworkTests: XCTestCase {
         XCTAssertEqual(overdue.usage.total.download, 0)
     }
 
+    func testOriginalWidgetsEditingAndPersistence() throws {
+        let suite = "app.eave.widget.tests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        Store.shared = Store(defaults: defaults)
+        defer { defaults.removePersistentDomain(forName: suite) }
+        _ = NSApplication.shared
+        let widgets = NetworkWidgets()
+        drain()
+        XCTAssertEqual(widgets.size.height, 22)
+        XCTAssertEqual(widgets.items.count, 6)
+        XCTAssertEqual(widgets.active.map(\.type), [.speed])
+        XCTAssertGreaterThan(widgets.image.size.width, 0)
+        let speed = widgets.active[0].item as! SpeedWidget
+        let speedSettings = speed.settings()
+        let originalWidth = widgets.size.width
+        choose(speedSettings, action: "changeDisplayMode:", key: "oneRow")
+        drain()
+        XCTAssertGreaterThan(widgets.size.width, originalWidth)
+        XCTAssertEqual(Store.shared.string(key: "Network_speed_mode", defaultValue: ""), "oneRow")
+        choose(speedSettings, action: "toggleIcon:", key: "arrows")
+        var selectionChanges = 0
+        let selector = widgets.selector { selectionChanges += 1 }
+        for type in [widget_t.label, .networkChart, .state, .text, .icon] {
+            let button = descendants(selector).first { $0.identifier?.rawValue == type.rawValue }!
+            XCTAssertTrue(button.accessibilityPerformPress())
+        }
+        XCTAssertEqual(selectionChanges, 5)
+        XCTAssertEqual(widgets.active.count, 6)
+        let chartItem = widgets.items.first { $0.type == .networkChart }!
+        chartItem.position = -1
+        var usage = Network_Usage(bandwidth: Bandwidth(upload: 1024, download: 2048), total: Bandwidth(upload: 5000, download: 6000))
+        usage.laddr.v4 = "192.168.1.9"
+        widgets.receive(usage)
+        widgets.receive(Network_Connectivity(status: true, latency: 42))
+        drain()
+        XCTAssertEqual(widgets.active.first?.type, .networkChart)
+        let chart = chartItem.item as! NetworkChart
+        let points: [(Double, Double)] = field(chart, "points")
+        XCTAssertEqual(points.last?.0, 1024)
+        XCTAssertEqual(points.last?.1, 2048)
+        choose(chart.settings(), action: "toggleHistoryCount:", key: "120")
+        drain()
+        let resized: [(Double, Double)] = field(chart, "points")
+        XCTAssertEqual(resized.count, 120)
+        XCTAssertEqual(resized.last?.1, 2048)
+        let width = widgets.size.width
+        Store.shared.set(key: "Network_oneView", value: true)
+        drain()
+        XCTAssertEqual(widgets.size.width, width - 40)
+        Store.shared.set(key: "Network_textWidgetValue", value: "$addr.privateV4 / $icmp.latency / $download.total")
+        drain()
+        XCTAssertEqual(widgets.textValue(usage, connectivity: Network_Connectivity(status: true, latency: 42)), "192.168.1.9 / 42 ms / " + Units(bytes: 6000).getReadableMemory())
+        XCTAssertGreaterThan(width, 0)
+        Store.shared.set(key: "Network_widgetActivationThresholdState", value: true)
+        Store.shared.set(key: "Network_widgetActivationThreshold", value: 1)
+        widgets.receive(usage)
+        drain()
+        let thresholdPoints: [(Double, Double)] = field(chart, "points")
+        XCTAssertEqual(thresholdPoints.last?.0, 0)
+        XCTAssertEqual(thresholdPoints.last?.1, 0)
+        Store.shared = Store(defaults: defaults)
+        let reloaded = NetworkWidgets()
+        drain()
+        XCTAssertEqual(reloaded.active.map(\.type), widgets.active.map(\.type))
+        let reloadedSpeed = reloaded.items.first { $0.type == .speed }!.item
+        let mode: String = field(reloadedSpeed, "modeState")
+        XCTAssertEqual(mode, "oneRow")
+        for widget in widgets.items { widget.toggle(false) }
+        drain()
+        XCTAssertEqual(widgets.size, .zero)
+    }
+
     private func drain() { RunLoop.main.run(until: Date().addingTimeInterval(0.2)) }
     private func field<T>(_ object: Any, _ name: String) -> T {
         Mirror(reflecting: object).children.first { $0.label == name }!.value as! T

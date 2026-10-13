@@ -28,6 +28,7 @@ import KeyboardShortcuts
 import SwiftUI
 import SwiftUIIntrospect
 import AtollExtensionKit
+import EaveNetworkStats
 #if canImport(AppKit)
 import AppKit
 #elseif canImport(UIKit)
@@ -53,6 +54,7 @@ struct ContentView: View {
     @ObservedObject var reminderManager = ReminderLiveActivityManager.shared
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var statsManager = StatsManager.shared
+    @ObservedObject private var networkWidgets = NetworkMonitor.shared.widgets
     @ObservedObject var recordingManager = ScreenRecordingManager.shared
     @ObservedObject var privacyManager = PrivacyIndicatorManager.shared
     @ObservedObject var doNotDisturbManager = DoNotDisturbManager.shared
@@ -2494,7 +2496,7 @@ struct ContentView: View {
     }
     
     private var closedNetworkWidgetVisible: Bool {
-        showNetworkWidgetWhenClosed && enableStatsFeature && vm.notchState == .closed
+        networkWidgets.size.width > 0 && showNetworkWidgetWhenClosed && enableStatsFeature && vm.notchState == .closed
             && !vm.hideOnClosed && !lockScreenManager.isLocked && !coordinator.firstLaunch
     }
 

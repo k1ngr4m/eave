@@ -33,6 +33,11 @@ public class Store {
     }
     
     private func setValue(_ value: Any?, for key: String) {
+        defer {
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .networkPreferencesChanged, object: self, userInfo: ["key": key])
+            }
+        }
         self.cacheQueue.async(flags: .barrier) {
             self.cache[key] = value
         }

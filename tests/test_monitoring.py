@@ -162,13 +162,27 @@ Task { @MainActor in
     }
     manager.network.showSettings()
     try await Task.sleep(for: .milliseconds(500))
-    let settingsWindow = NSApp.windows.first { $0.contentView is NSTabView }!
+    let settingsWindow = NSApp.windows.first { $0.contentView?.subviews.contains { $0 is NSTabView } == true }!
     settingsWindow.appearance = NSAppearance(named: .darkAqua)
-    let tabs = settingsWindow.contentView as! NSTabView
-    assert(tabs.numberOfTabViewItems == 4)
-    for (index, name) in ["settings", "popup-settings", "notifications", "preview"].enumerated() {
+    let tabs = settingsWindow.contentView!.subviews.first { $0 is NSTabView } as! NSTabView
+    assert(tabs.numberOfTabViewItems == 5)
+    @MainActor func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
+    for type in [widget_t.label, .networkChart, .state, .text, .icon] {
+        let button = descendants(settingsWindow.contentView!).first { $0.identifier?.rawValue == type.rawValue }!
+        assert(button.accessibilityPerformPress())
+    }
+    try await Task.sleep(for: .milliseconds(200))
+    assert(manager.network.widgets.active.count == 6)
+    assert(manager.network.widgets.size.width > 100)
+
+    for (index, name) in ["settings", "widgets", "popup-settings", "notifications", "preview"].enumerated() {
         tabs.selectTabViewItem(at: index)
         settingsWindow.contentView!.layoutSubtreeIfNeeded()
+        assert(tabs.frame.width >= 540 && tabs.frame.height > 400)
+        if index == 1 {
+            let preview = descendants(tabs).first { $0.identifier?.rawValue == "NetworkWidgetsPreview" }!
+            assert(preview.frame.width >= 500)
+        }
         try await Task.sleep(for: .milliseconds(150))
         let url = URL(fileURLWithPath: CommandLine.arguments[1]).deletingLastPathComponent().appendingPathComponent(name + ".png")
         let capture = Process()
@@ -176,7 +190,17 @@ Task { @MainActor in
         capture.arguments = ["-x", "-o", "-l", String(settingsWindow.windowNumber), url.path]
         try capture.run()
         capture.waitUntilExit()
-        assert(capture.terminationStatus == 0)
+        if capture.terminationStatus != 0 {
+            // Offscreen fallback when the login session denies WindowServer screenshots.
+            let view = settingsWindow.contentView!
+            let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds)!
+            view.cacheDisplay(in: view.bounds, to: bitmap)
+            if let context = NSGraphicsContext(bitmapImageRep: bitmap), let layer = view.layer {
+                context.cgContext.clear(view.bounds)
+                layer.render(in: context.cgContext)
+            }
+            try bitmap.representation(using: .png, properties: [:])!.write(to: url)
+        }
     }
     settingsWindow.close()
     networkWindow.orderOut(nil)
@@ -296,5 +320,5 @@ if '--ui' in sys.argv:
         if destination := os.environ.get('EAVE_MONITORING_SNAPSHOT_DIR'):
             import shutil
             Path(destination).mkdir(parents=True, exist_ok=True)
-            for name in ['overview.png', 'network.png', 'settings.png', 'popup-settings.png', 'notifications.png', 'preview.png', 'closed-network.png']:
+            for name in ['overview.png', 'network.png', 'settings.png', 'widgets.png', 'popup-settings.png', 'notifications.png', 'preview.png', 'closed-network.png']:
                 shutil.copy2(directory / name, Path(destination) / name)

@@ -9,6 +9,7 @@ public final class NetworkMonitor: NSObject, ObservableObject, NSWindowDelegate 
     @Published public private(set) var panelSize = NSSize(width: 280, height: 800)
     public var shortcutHandler: (() -> Void)?
 
+    public let widgets = NetworkWidgets()
     let popup = Popup(.network)
     private lazy var settings = Settings(.network)
     private lazy var notifications = Notifications(.network)
@@ -46,6 +47,7 @@ public final class NetworkMonitor: NSObject, ObservableObject, NSWindowDelegate 
             self.popup.connectivityCallback(value)
             self.notifications.connectivityCallback(value)
             self.preview.connectivityCallback(value)
+            self.widgets.receive(value)
         }
     }
 
@@ -104,12 +106,8 @@ public final class NetworkMonitor: NSObject, ObservableObject, NSWindowDelegate 
         popup.usageCallback(value)
         notifications.usageCallback(value)
         preview.usageCallback(value)
-        var bandwidth = value.bandwidth
-        if Store.shared.bool(key: "Network_widgetActivationThresholdState", defaultValue: false) {
-            let size = SizeUnit.fromString(Store.shared.string(key: "Network_widgetActivationThresholdSize", defaultValue: "MB"))
-            let threshold = size.toBytes(Store.shared.int(key: "Network_widgetActivationThreshold", defaultValue: 0))
-            if bandwidth.upload < threshold && bandwidth.download < threshold { bandwidth = Bandwidth() }
-        }
+        widgets.receive(value)
+        let bandwidth = widgets.bandwidth(value.bandwidth)
         rates = (Double(bandwidth.download), Double(bandwidth.upload))
     }
 
@@ -131,9 +129,9 @@ public final class NetworkMonitor: NSObject, ObservableObject, NSWindowDelegate 
             return
         }
         configureSettings()
-        settings.load(widgets: [.networkChart, .speed])
+        settings.load(widgets: widgets.active.map(\.type))
         let tabs = NSTabView(frame: NSRect(x: 0, y: 0, width: 580, height: 650))
-        let panes: [(String, NSView)] = [("Module", settings), ("Popup", popup.settings()!), ("Notifications", notifications), ("Overview", preview)]
+        let panes: [(String, NSView)] = [("Module", settings), ("Widgets", widgets.settings()), ("Popup", popup.settings()!), ("Notifications", notifications), ("Overview", preview)]
         for (name, pane) in panes {
             let scroll = ScrollableStackView()
             scroll.stackView.edgeInsets = NSEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
@@ -147,7 +145,24 @@ public final class NetworkMonitor: NSObject, ObservableObject, NSWindowDelegate 
         }
         let window = NSWindow(contentRect: tabs.frame, styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
         window.title = localizedString("Network") + " — " + localizedString("Settings")
-        window.contentView = tabs
+        let content = NSView(frame: tabs.frame)
+        let selector = widgets.selector { [weak self] in
+            guard let self else { return }
+            self.settings.load(widgets: self.widgets.active.map(\.type))
+        }
+        tabs.translatesAutoresizingMaskIntoConstraints = false
+        content.addSubview(selector)
+        content.addSubview(tabs)
+        NSLayoutConstraint.activate([
+            selector.topAnchor.constraint(equalTo: content.topAnchor, constant: 10),
+            selector.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 10),
+            selector.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -10),
+            tabs.topAnchor.constraint(equalTo: selector.bottomAnchor, constant: 8),
+            tabs.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 10),
+            tabs.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -10),
+            tabs.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -10)
+        ])
+        window.contentView = content
         window.minSize = NSSize(width: 580, height: 480)
         window.isReleasedWhenClosed = false
         window.delegate = self
@@ -175,6 +190,7 @@ public final class NetworkMonitor: NSObject, ObservableObject, NSWindowDelegate 
             self.popup.connectivityCallback(value)
             self.notifications.connectivityCallback(value)
             self.preview.connectivityCallback(value)
+            self.widgets.receive(value)
         }
         settings.setInterval = { [weak self] value in self?.connectivityReader.setInterval(value) }
         settings.publicIPRefreshIntervalCallback = { [weak self] in self?.setIPUpdater() }

@@ -437,7 +437,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func calculateRequiredNotchSize() -> CGSize {
         var size = calculateRequiredNotchBaseSize()
-        if vm.notchState == .closed, Defaults[.enableStatsFeature], Defaults[.showNetworkWidgetWhenClosed] {
+        if vm.notchState == .closed, Defaults[.enableStatsFeature], Defaults[.showNetworkWidgetWhenClosed], StatsManager.shared.network.widgets.size.width > 0 {
             size.height += ClosedNetworkWidget.height
             size.width = max(size.width, ClosedNetworkWidget.minimumWidth + 24)
         }
@@ -829,6 +829,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.debouncedUpdateWindowSize()
         }.store(in: &cancellables)
         
+        StatsManager.shared.network.widgets.$size.removeDuplicates().dropFirst().sink { [weak self] _ in
+            self?.debouncedUpdateWindowSize()
+        }.store(in: &cancellables)
+
         Defaults.publisher(.showNetworkWidgetWhenClosed, options: []).sink { [weak self] _ in
             self?.debouncedUpdateWindowSize()
         }.store(in: &cancellables)

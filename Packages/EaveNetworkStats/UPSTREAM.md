@@ -3,7 +3,7 @@
 Vendored from exelban/stats at `0c0e551e199938a92af963c25a15a3ca1aef7764` (MIT; see LICENSE).
 The network popup, settings, notifications, preview, readers, charts, formatting and shared AppKit controls come from the upstream implementation.
 
-Eave owns the host window, enable/sleep lifecycle and overview tile. Shared helper files are restricted to network dependencies. Stats remote telemetry, app updater, menu-bar widgets and fan helper are not part of this network-detail integration.
+Eave owns the host window, enable/sleep lifecycle and overview tile. Shared helper files are restricted to network dependencies. Stats remote telemetry, app updater, system status-item ownership and fan helper are excluded.
 Settings and last reader snapshots are isolated in Eave's `app.eave.network-monitoring` defaults suite. Latest snapshots use native Codable/UserDefaults storage instead of adding Stats' LevelDB binary. The network readers do not request the database's time-series feature; popup histories retain their original buffers.
 Localization resolves through the package resource bundle.
 
@@ -25,7 +25,14 @@ Localization resolves through the package resource bundle.
 - `Upstream/NetNotifications.swift` ← `Modules/Net/notifications.swift`
 - `Upstream/NetPreview.swift` ← `Modules/Net/preview.swift`
 
+- `Upstream/Widget{Speed,NetworkChart,Text,Label,Icon,Dot}.swift` ← the corresponding `Kit/Widgets/*.swift` files
+- `Upstream/WidgetEditor.swift` ← the selector, draggable previews and settings sections in `Kit/module/window.swift`
+- `Upstream/KitContracts.swift` ← the network widget factory, wrapper and preferences from `Kit/module/widget.swift`, plus settings/preview contracts
+- `Resources/NetworkWidgets.plist` ← `Modules/Net/config.plist`
+
 ## Host adaptations
+- `NetworkWidgets` supplies the original six widget views and their original editors. The selector retains click-to-enable and drag-to-order, with keyboard/VoiceOver press support added. Speed and graph samples use the original activation threshold; text substitutions and connection colors come from `Modules/Net/main.swift`. Widget selections, ordering and styles use the isolated defaults suite.
+- Widget height is fixed to Eave's 22-point row instead of the system menu-bar height. The original views render a shared dark-appearance vector image for Eave's closed row, so multiple displays can show identical content without reparenting an AppKit view. One/two-row speed styles retain their original layout inside this row. Merge combines widgets with Stats' compact spacing; separate widgets use wider spacing in the same row. The row grows up to 600 points and scales longer content to fit. All-disabled hides the row; clicking opens network details and the context menu opens settings. A live preview is included in the widget editor.
 - `NetworkMonitor` routes the original popup/header/settings actions into Eave, runs network readers in the background while enabled, pauses on sleep and exposes the original shortcut through Eave's monitor tab.
 - `PopupView` reports its original screen-clamped size to SwiftUI rather than resizing the enclosing Eave window.
 - A dedicated CoreWLAN event client avoids sharing the delegate with Eave's existing Wi-Fi controls. Public IP queries use the original endpoint and parsers with bounded subprocess timeouts.
