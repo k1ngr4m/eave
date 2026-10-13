@@ -75,6 +75,8 @@ struct ContentView: View {
     @Default(.showMemoryGraph) var showMemoryGraph
     @Default(.showGpuGraph) var showGpuGraph
     @Default(.showNetworkGraph) var showNetworkGraph
+    @Default(.showNetworkWidgetWhenClosed) private var showNetworkWidgetWhenClosed
+    @State private var isHoveringNetworkWidget = false
     @Default(.showDiskGraph) var showDiskGraph
     @Default(.showSensorsGraph) var showSensorsGraph
     @Default(.enableReminderLiveActivity) var enableReminderLiveActivity
@@ -749,7 +751,7 @@ struct ContentView: View {
                         handleHover(hovering)
                     }
                     .onTapGesture {
-                        guard !isConnectivityHUDVisible else { return }
+                        guard !isConnectivityHUDVisible, !isHoveringNetworkWidget, !vm.isStatsPopoverActive else { return }
                         guard !recordingOpenGestureLocked else { return }
                         if handleClosedMusicWaveformTapIfNeeded() {
                             return
@@ -783,7 +785,10 @@ struct ContentView: View {
             // the actual notch content, not the shadow clearance below it.
             .padding(.bottom, notchBottomPadding)
             .offset(y: shouldHideUntilHover && !isHovering
-                ? -(vm.closedNotchSize.height + pillTopOffset + currentShadowPadding + 10)
+                ? -(vm.closedNotchSize.height + closedNetworkWidgetHeight
+                     + PinnedLyricsView.reservedHeight(isEligible: pinnedLyricsVisible,
+                         availability: musicManager.lyricsAvailability, context: pinnedLyricContext)
+                     + pillTopOffset + currentShadowPadding + 10)
                 : 0
             )
             .onAppear(perform: {
@@ -889,7 +894,7 @@ struct ContentView: View {
         }
         .frame(
             maxWidth: (dynamicNotchSize.width + (vm.notchState == .open ? 24 : 0) + (isDynamicIslandMode ? dynamicIslandShadowInset * 2 : 0)).rounded(),
-            maxHeight: (dynamicNotchSize.height + (vm.notchState == .open ? 12 : 0) + (isIslandMode ? 0 : notchTopScreenBleedAmount) + (isDynamicIslandMode ? dynamicIslandTopOffset + dynamicIslandShadowInset * 2 : currentShadowPadding)).rounded(),
+            maxHeight: (dynamicNotchSize.height + closedNetworkWidgetHeight + (vm.notchState == .open ? 12 : 0) + (isIslandMode ? 0 : notchTopScreenBleedAmount) + (isDynamicIslandMode ? dynamicIslandTopOffset + dynamicIslandShadowInset * 2 : currentShadowPadding)).rounded(),
             alignment: .top
         )
         .animation(nil, value: vm.notchState)
@@ -1296,6 +1301,18 @@ struct ContentView: View {
                   view
                       .fixedSize()
               }
+              .frame(minWidth: closedNetworkWidgetVisible ? ClosedNetworkWidget.minimumWidth : nil)
+              .padding(.bottom, closedNetworkWidgetHeight)
+              .overlay(alignment: .bottom) {
+                  if closedNetworkWidgetVisible {
+                      ClosedNetworkWidget { hovering in
+                          isHoveringNetworkWidget = hovering
+                          if hovering { hoverTask?.cancel() }
+                          else if isHovering { handleHover(true) }
+                      }
+                  }
+              }
+              .animation(.smooth(duration: 0.28), value: closedNetworkWidgetVisible)
               .background {
                   GeometryReader { geo in
                       Color.clear
@@ -2251,7 +2268,7 @@ struct ContentView: View {
                 guard let vm, let lockScreenManager else { return }
                 guard !lockScreenManager.isLocked else { return }
                 guard vm.notchState == .closed else { return }
-                guard !self.isConnectivityHUDVisible else { return }
+                guard !self.isConnectivityHUDVisible, !self.isHoveringNetworkWidget, !vm.isStatsPopoverActive else { return }
                 guard !self.recordingOpenGestureLocked else { return }
                 guard !self.coordinator.isHoverOpenSuppressed else { return }
                 guard self.isHovering else { return }
@@ -2369,6 +2386,8 @@ struct ContentView: View {
             guard vm.notchState == .closed,
                 !isSneakPeekVisibleOnCurrentScreen,
                 !isConnectivityHUDVisible,
+                !isHoveringNetworkWidget,
+                !vm.isStatsPopoverActive,
                 !recordingLiveActivityVisibleOnClosedNotch,
                 (Defaults[.openNotchOnHover] || canHoverOpenActiveTimer) else { return }
 
@@ -2377,7 +2396,7 @@ struct ContentView: View {
                 guard !Task.isCancelled else { return }
 
                 await MainActor.run {
-                    guard self.vm.notchState == .closed,
+                    guard self.vm.notchState == .closed, !self.isHoveringNetworkWidget, !self.vm.isStatsPopoverActive,
                           self.isHovering,
                           !self.recordingManager.isRecording,
                           !self.recordingLiveActivityVisibleOnClosedNotch,
@@ -2443,10 +2462,10 @@ struct ContentView: View {
             closedNotchSize: vm.closedNotchSize,
             effectiveClosedNotchHeight: vm.effectiveClosedNotchHeight
         )
-        let height = max(closedHeight, recordingSize?.height ?? 0) + 6
+        let height = max(closedHeight, recordingSize?.height ?? 0) + 6 + closedNetworkWidgetHeight
             + PinnedLyricsView.reservedHeight(isEligible: pinnedLyricsVisible,
                 availability: musicManager.lyricsAvailability, context: pinnedLyricContext)
-        let width = max(closedWidth, recordingSize?.width ?? 0) + 24
+        let width = max(closedWidth, recordingSize?.width ?? 0, closedNetworkWidgetVisible ? ClosedNetworkWidget.minimumWidth : 0) + 24
         // Same shift the content is drawn with, so the hit area stays under it.
         let minX = screen.frame.midX - width / 2 + menuBarClearanceOffset
         let minY = screen.frame.maxY - height
@@ -2474,6 +2493,15 @@ struct ContentView: View {
             && point.y >= frame.minY && point.y <= frame.maxY
     }
     
+    private var closedNetworkWidgetVisible: Bool {
+        showNetworkWidgetWhenClosed && enableStatsFeature && vm.notchState == .closed
+            && !vm.hideOnClosed && !lockScreenManager.isLocked && !coordinator.firstLaunch
+    }
+
+    private var closedNetworkWidgetHeight: CGFloat {
+        closedNetworkWidgetVisible ? ClosedNetworkWidget.height : 0
+    }
+
     /// Track-level reservation. A sneak peek hides only the overlaid words.
     private var pinnedLyricsVisible: Bool {
         PinnedLyricsView.shouldReserve(

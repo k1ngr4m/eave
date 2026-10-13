@@ -15,7 +15,7 @@ assert(SettingsTab.stats.group == .system)
 assert(SettingsTab.llmAgents.group == .developer)
 private let expected: [(SettingsTab, [String])] = [
     (.stats, ["Enable system stats monitoring", "Stop monitoring after closing the notch",
-              "CPU Usage", "Temperature unit", "Memory Usage", "GPU Usage", "Network Activity", "Disk I/O"]),
+              "CPU Usage", "Temperature unit", "Memory Usage", "GPU Usage", "Network Activity", "Disk I/O", "Show network widget when collapsed"]),
     (.llmAgents, ["Enable LLM Usage Monitor", "Claude Provider", "Codex Provider", "Cursor Provider",
                   "Antigravity Provider", "New API Provider", "New API Accounts"])
 ]

@@ -54,11 +54,11 @@
 		EA7E57A70000000000000001 /* EaveStatus in Frameworks */ = {isa = PBXBuildFile; productRef = EA7E57A70000000000000002 /* EaveStatus */; };
 		EA7E57A70000000000000004 /* MenuBarStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7E57A70000000000000005 /* MenuBarStatusTests.swift */; };
 		EA7E57A70000000000000006 /* SharedNetworkHUDTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7E57A70000000000000007 /* SharedNetworkHUDTests.swift */; };
+		EA7E57A70000000000000011 /* EaveNetworkStats in Frameworks */ = {isa = PBXBuildFile; productRef = EA7E57A70000000000000012 /* EaveNetworkStats */; };
 		F1E2D3C4B5A6E7F8A9B0C1D2 /* JSONLUsageParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D6E7F8A9B0C1D2 /* JSONLUsageParserTests.swift */; };
 		F3E4D5C6B7A8E9F0A1B2C3D4 /* Contents/Helpers/NowPlayingTestClient in CopyFiles */ = {isa = PBXBuildFile; fileRef = F2E3D4C5B6A7E8F9A0B1C2D3 /* Contents/Helpers/NowPlayingTestClient */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F5A6B7C8D9E0F1A2B3C4D5E6 /* NewAPIUsageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6B7C8D9E0F1A2B3C4D5E6F7 /* NewAPIUsageTests.swift */; };
 		F910B9C812C7AEFE2293F7D2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 47C39E67B09152F6665ED683 /* Cocoa.framework */; };
-		EA7E57A70000000000000011 /* EaveNetworkStats in Frameworks */ = {isa = PBXBuildFile; productRef = EA7E57A70000000000000012 /* EaveNetworkStats */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1001,7 +1001,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/EaveStatus;
 		};
-		EA7E57A70000000000000013 /* XCLocalSwiftPackageReference "Packages/EaveNetworkStats" */ = {isa = XCLocalSwiftPackageReference; relativePath = Packages/EaveNetworkStats; };
+		EA7E57A70000000000000013 /* XCLocalSwiftPackageReference "Packages/EaveNetworkStats" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/EaveNetworkStats;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1172,7 +1175,11 @@
 			package = EA7E57A70000000000000003 /* XCLocalSwiftPackageReference "Packages/EaveStatus" */;
 			productName = EaveStatus;
 		};
-		EA7E57A70000000000000012 /* EaveNetworkStats */ = {isa = XCSwiftPackageProductDependency; package = EA7E57A70000000000000013 /* XCLocalSwiftPackageReference "Packages/EaveNetworkStats" */; productName = EaveNetworkStats; };
+		EA7E57A70000000000000012 /* EaveNetworkStats */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EA7E57A70000000000000013 /* XCLocalSwiftPackageReference "Packages/EaveNetworkStats" */;
+			productName = EaveNetworkStats;
+		};
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F54406DF2CD4987A00C7AFD9 /* Project object */;

@@ -436,6 +436,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func calculateRequiredNotchSize() -> CGSize {
+        var size = calculateRequiredNotchBaseSize()
+        if vm.notchState == .closed, Defaults[.enableStatsFeature], Defaults[.showNetworkWidgetWhenClosed] {
+            size.height += ClosedNetworkWidget.height
+            size.width = max(size.width, ClosedNetworkWidget.minimumWidth + 24)
+        }
+        return size
+    }
+
+    private func calculateRequiredNotchBaseSize() -> CGSize {
         if NetworkConnectivityHUDMetrics.isPresented(
             state: networkConnectivityManager.hudState,
             notchState: vm.notchState,
@@ -820,6 +829,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.debouncedUpdateWindowSize()
         }.store(in: &cancellables)
         
+        Defaults.publisher(.showNetworkWidgetWhenClosed, options: []).sink { [weak self] _ in
+            self?.debouncedUpdateWindowSize()
+        }.store(in: &cancellables)
+
         Defaults.publisher(.showNetworkGraph, options: []).sink { [weak self] _ in
             self?.debouncedUpdateWindowSize()
         }.store(in: &cancellables)

@@ -72,6 +72,8 @@ final class StatsManager: ObservableObject {
             Defaults.publisher(.enableStatsFeature, options: []).map { _ in () },
             Defaults.publisher(.statsStopWhenNotchCloses, options: []).map { _ in () }
         ).receive(on: DispatchQueue.main).sink { [weak self] in self?.reconcile() }.store(in: &cancellables)
+        Defaults.publisher(.showNetworkWidgetWhenClosed, options: []).receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.reconcile() }.store(in: &cancellables)
         Defaults.publisher(.statsUpdateInterval, options: []).receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.delayTask?.cancel() }.store(in: &cancellables)
         NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.willSleepNotification)
@@ -91,7 +93,7 @@ final class StatsManager: ObservableObject {
     }
 
     private func reconcile() {
-        network.setEnabled(Defaults[.enableStatsFeature] && enabledModules.contains(.network) && !sleeping)
+        network.setEnabled(Defaults[.enableStatsFeature] && (enabledModules.contains(.network) || Defaults[.showNetworkWidgetWhenClosed]) && !sleeping)
         if MonitoringActivity.shouldRun(enabled: Defaults[.enableStatsFeature], hasModules: !enabledModules.isEmpty,
                                         sleeping: sleeping, notchIsOpen: notchIsOpen, statsSelected: currentView == "stats",
                                         stopWhenClosed: Defaults[.statsStopWhenNotchCloses]) {

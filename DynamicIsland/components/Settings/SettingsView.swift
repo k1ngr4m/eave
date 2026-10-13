@@ -468,6 +468,7 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .stats, title: "Temperature unit", keywords: ["cpu", "temperature", "celsius", "fahrenheit"], highlightID: SettingsTab.stats.highlightID(for: "Temperature unit")),
         SettingsSearchEntry(tab: .stats, title: "Memory Usage", keywords: ["memory", "ram"], highlightID: SettingsTab.stats.highlightID(for: "Memory Usage")),
         SettingsSearchEntry(tab: .stats, title: "GPU Usage", keywords: ["gpu", "graphics"], highlightID: SettingsTab.stats.highlightID(for: "GPU Usage")),
+        SettingsSearchEntry(tab: .stats, title: "Show network widget when collapsed", keywords: ["network", "speed", "widget", "collapsed", "网络", "网速", "小组件", "收起"], highlightID: SettingsTab.stats.highlightID(for: "Show network widget when collapsed")),
         SettingsSearchEntry(tab: .stats, title: "Network Activity", keywords: ["network", "graph"], highlightID: SettingsTab.stats.highlightID(for: "Network Activity")),
         SettingsSearchEntry(tab: .stats, title: "Disk I/O", keywords: ["disk", "io"], highlightID: SettingsTab.stats.highlightID(for: "Disk I/O")),
 
@@ -8058,6 +8059,8 @@ struct StatsSettings: View {
                         .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Temperature unit"))
                 }
                 Section("Network") {
+                    Defaults.Toggle(key: .showNetworkWidgetWhenClosed) { Text("Show network widget when collapsed") }
+                        .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Show network widget when collapsed"))
                     Button("Network settings…") { manager.network.showSettings() }
                 }
                 Section("Monitoring Status") {

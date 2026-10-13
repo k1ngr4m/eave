@@ -1330,6 +1330,7 @@ extension Defaults.Keys {
     static let showMemoryGraph = Key<Bool>("showMemoryGraph", default: true)
     static let showGpuGraph = Key<Bool>("showGpuGraph", default: true)
     static let showNetworkGraph = Key<Bool>("showNetworkGraph", default: true)
+    static let showNetworkWidgetWhenClosed = Key<Bool>("showNetworkWidgetWhenClosed", default: false)
     static let showDiskGraph = Key<Bool>("showDiskGraph", default: true)
     static let showSensorsGraph = Key<Bool>("showSensorsGraph", default: true)
     static let cpuTemperatureUnit = Key<LockScreenWeatherTemperatureUnit>("cpuTemperatureUnit", default: .matchingSystemPreference)

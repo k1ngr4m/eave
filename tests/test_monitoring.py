@@ -112,6 +112,7 @@ extension Defaults.Keys {
     static let showGpuGraph = Key<Bool>("gpu", default: true, suite: monitoringTestDefaults)
     static let showDiskGraph = Key<Bool>("disk", default: true, suite: monitoringTestDefaults)
     static let showNetworkGraph = Key<Bool>("network", default: true, suite: monitoringTestDefaults)
+    static let showNetworkWidgetWhenClosed = Key<Bool>("closedNetwork", default: false, suite: monitoringTestDefaults)
     static let showSensorsGraph = Key<Bool>("sensors", default: true, suite: monitoringTestDefaults)
     static let cpuTemperatureUnit = Key<LockScreenWeatherTemperatureUnit>("temp", default: .celsius, suite: monitoringTestDefaults)
 }
@@ -218,6 +219,43 @@ Task { @MainActor in
     for module in MonitoringModule.allCases { Defaults[module.visibilityKey] = false }
     try await Task.sleep(for: .milliseconds(100))
     assert(!manager.isMonitoring && !manager.network.isEnabled)
+    // The closed widget samples even when the overview's network card is hidden.
+    Defaults[.showNetworkWidgetWhenClosed] = true
+    try await Task.sleep(for: .milliseconds(300))
+    assert(manager.network.isEnabled && !manager.isMonitoring)
+    let widgetVM = DynamicIslandViewModel()
+    widgetVM.notchState = .closed
+    let widgetHost = NSHostingView(rootView: ClosedNetworkWidget().environmentObject(widgetVM)
+        .frame(width: ClosedNetworkWidget.minimumWidth).background(Color.black))
+    let widgetWindow = NSWindow(contentRect: NSRect(x: 500, y: 500, width: ClosedNetworkWidget.minimumWidth,
+        height: ClosedNetworkWidget.height), styleMask: .borderless, backing: .buffered, defer: false)
+    widgetWindow.contentView = widgetHost
+    widgetWindow.makeKeyAndOrderFront(nil)
+    widgetHost.layoutSubtreeIfNeeded()
+    try await Task.sleep(for: .milliseconds(500))
+    assert(abs(widgetHost.fittingSize.height - ClosedNetworkWidget.height) < 1)
+    if let bitmap = widgetHost.bitmapImageRepForCachingDisplay(in: widgetHost.bounds) {
+        widgetHost.cacheDisplay(in: widgetHost.bounds, to: bitmap)
+        let url = URL(fileURLWithPath: CommandLine.arguments[1]).deletingLastPathComponent().appendingPathComponent("closed-network.png")
+        try bitmap.representation(using: .png, properties: [:])!.write(to: url)
+    }
+    for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+        let event = NSEvent.mouseEvent(with: type, location: NSPoint(x: 95, y: 11), modifierFlags: [],
+            timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: widgetWindow.windowNumber,
+            context: nil, eventNumber: 0, clickCount: 1, pressure: 1)!
+        widgetWindow.sendEvent(event)
+    }
+    try await Task.sleep(for: .milliseconds(600))
+    assert(widgetVM.isStatsPopoverActive && widgetVM.notchState == .closed)
+    assert(manager.network.panel.window?.isVisible == true && manager.network.processReader.active)
+    widgetWindow.orderOut(nil)
+    widgetWindow.contentView = nil
+    try await Task.sleep(for: .milliseconds(300))
+    assert(!widgetVM.isStatsPopoverActive)
+    Defaults[.showNetworkWidgetWhenClosed] = false
+    try await Task.sleep(for: .milliseconds(300))
+    assert(!manager.network.isEnabled)
+    print("Closed network widget: independent sampling, fixed height, click-to-open and dismissal passed.")
     manager.network.usageReader.terminate()
     manager.network.connectivityReader.terminate()
     monitoringTestDefaults.removePersistentDomain(forName: suiteName)
@@ -246,6 +284,7 @@ if '--ui' in sys.argv:
                         str(root / 'DynamicIsland/managers/StatsManager.swift'),
                         str(root / 'DynamicIsland/components/Notch/NotchStatsView.swift'),
                         str(root / 'DynamicIsland/components/Notch/NetworkMonitoringDetailView.swift'),
+                        str(root / 'DynamicIsland/components/Notch/ClosedNetworkWidget.swift'),
                         str(products / 'Defaults.o'), str(products / 'EaveNetworkStats.o')], check=True)
         resources = executable.parent.parent / 'Resources'
         resources.mkdir()
@@ -257,5 +296,5 @@ if '--ui' in sys.argv:
         if destination := os.environ.get('EAVE_MONITORING_SNAPSHOT_DIR'):
             import shutil
             Path(destination).mkdir(parents=True, exist_ok=True)
-            for name in ['overview.png', 'network.png', 'settings.png', 'popup-settings.png', 'notifications.png', 'preview.png']:
+            for name in ['overview.png', 'network.png', 'settings.png', 'popup-settings.png', 'notifications.png', 'preview.png', 'closed-network.png']:
                 shutil.copy2(directory / name, Path(destination) / name)
