@@ -4,19 +4,23 @@ set -euo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 TEST_ROOT="$(mktemp -d)"
 trap 'rm -rf "$TEST_ROOT"' EXIT
+# Reproduce CI launchers that pass an ignored SIGPIPE to their children.
+trap '' PIPE
 
 cat > "$TEST_ROOT/clang" <<'CLANG'
-#!/bin/bash
-set -euo pipefail
-trap - PIPE
-printf 'Apple clang version fixture\n'
-if [[ "${PRODUCER_STATUS:-0}" != 0 ]]; then
-    exit "$PRODUCER_STATUS"
-fi
-payload="$(printf '%4096s' '')"
-for ((line = 0; line < 1024; line++)); do
-    printf '%s\n' "$payload"
-done
+#!/usr/bin/env python3
+import os
+import signal
+import sys
+
+# Unlike Bash, Python can reset a signal ignored at process startup.
+signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+os.write(1, b'Apple clang version fixture\n')
+status = int(os.environ.get('PRODUCER_STATUS', '0'))
+if status:
+    sys.exit(status)
+for _ in range(1024):
+    os.write(1, b' ' * 4096 + b'\n')
 CLANG
 chmod +x "$TEST_ROOT/clang"
 
