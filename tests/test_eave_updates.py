@@ -95,6 +95,61 @@ with tempfile.TemporaryDirectory() as directory:
         rejected(lambda: release.publish(args))
         assert not calls
 
+# Local preparation must require only the Sparkle key, not Apple credentials.
+with tempfile.TemporaryDirectory() as directory:
+    import shutil
+    root = Path(directory)
+    (root / 'DynamicIsland').mkdir()
+    (root / 'VERSION').write_text('0.1.0')
+    for name in ('Info.plist', 'DynamicIsland.entitlements'):
+        shutil.copy2(ROOT / 'DynamicIsland' / name, root / 'DynamicIsland' / name)
+    public_key = plistlib.loads((root / 'DynamicIsland/Info.plist').read_bytes())['SUPublicEDKey']
+    commands = []
+    settings = []
+    args = argparse.Namespace(version='0.1.0', signing='local', sparkle_bin='/sparkle/bin',
+                              identity=None, team=None, notary_profile=None)
+
+    def fake_archive(repo, version, build_settings):
+        settings.extend(build_settings)
+        app = repo / f'build/Eave-{version}.xcarchive/Products/Applications/Eave.app'
+        (app / 'Contents').mkdir(parents=True)
+        (app / 'Contents/Info.plist').write_bytes(plistlib.dumps({
+            'CFBundleIdentifier': release.ACCOUNT, 'EaveBuildChannel': 'release',
+            'CFBundleVersion': version, 'CFBundleShortVersionString': version,
+            'SUPublicEDKey': public_key, 'SUFeedURL': release.FEED,
+            'LSMinimumSystemVersion': '14.6'}))
+
+    def fake_prepare_run(*command, **kwargs):
+        commands.append(tuple(map(str, command)))
+        if command[:3] == ('git', 'rev-parse', 'HEAD'):
+            return 'b' * 40
+        if str(command[0]).endswith('/generate_keys'):
+            return public_key
+        if str(command[0]).endswith('/sign_update'):
+            return 'fixture-signature'
+        if command[0] == 'ditto':
+            if command[1] == '-c':
+                Path(command[-1]).write_bytes(b'signed app archive')
+            else:
+                shutil.copytree(command[1], command[2])
+        return ''
+
+    with patch.object(release, 'ROOT', root), patch.object(release, 'run', side_effect=fake_prepare_run), \
+            patch.object(release, 'archive', side_effect=fake_archive), patch.object(release, 'check_remote'):
+        release.prepare(args)
+        assert 'CODE_SIGN_IDENTITY=-' in settings
+        assert 'CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO' in settings
+        assert not any('notarytool' in c or 'stapler' in c or '-exportArchive' in c or c[0] == 'security' for c in commands)
+        entitlements = plistlib.loads((root / 'build/release-0.1.0/LocalSigning.entitlements').read_bytes())
+        assert 'com.apple.security.mach-services' not in entitlements
+        assert entitlements['com.apple.security.personal-information.calendars'] is True
+        assert 'com.apple.security.mach-services' in plistlib.loads((root / 'DynamicIsland/DynamicIsland.entitlements').read_bytes())
+        manifest = json.loads((root / 'build/release-0.1.0/release.json').read_text())
+        assert manifest['signing'] == 'local'
+        assert any('--verify' in c and c[0].endswith('/sign_update') for c in commands)
+        args.signing = 'notarized'
+        rejected(lambda: release.prepare(args))  # Explicit notarization still requires credentials.
+
 print('Cross-machine version ordering, feed metadata, rollback and draft integrity checks passed.')
 
 # Optional native checks, required in CI after Xcode has resolved Sparkle.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare a signed/notarized Eave release locally, then explicitly publish it."""
+"""Prepare an ad-hoc signed Eave release (optionally notarized), then publish it."""
 import argparse
 import hashlib
 import json
@@ -78,30 +78,48 @@ def prepare(args):
         raise ValueError('Set VERSION to the intended release and commit it before preparing')
     if run('git', 'status', '--porcelain', '--untracked-files=normal'):
         raise ValueError('Commit source changes before preparing a release')
-    for name in ('identity', 'team', 'notary_profile', 'sparkle_bin'):
-        if not getattr(args, name):
-            raise ValueError(f'Missing --{name.replace("_", "-")} (see --help)')
-    if not args.identity.startswith('Developer ID Application:') or not re.fullmatch(r'[A-Z0-9]{10}', args.team):
-        raise ValueError('A Developer ID Application identity and 10-character team ID are required')
-    if f'({args.team})' not in args.identity or args.identity not in run('security', 'find-identity', '-v', '-p', 'codesigning'):
-        raise ValueError('Developer ID identity is missing or does not match the team')
+    if not args.sparkle_bin:
+        raise ValueError('Missing --sparkle-bin (or EAVE_SPARKLE_BIN)')
+    if args.signing == 'notarized':
+        for name in ('identity', 'team', 'notary_profile'):
+            if not getattr(args, name):
+                raise ValueError(f'Missing --{name.replace("_", "-")} for notarized signing')
+        if not args.identity.startswith('Developer ID Application:') or not re.fullmatch(r'[A-Z0-9]{10}', args.team):
+            raise ValueError('A Developer ID Application identity and 10-character team ID are required')
+        if f'({args.team})' not in args.identity or args.identity not in run('security', 'find-identity', '-v', '-p', 'codesigning'):
+            raise ValueError('Developer ID identity is missing or does not match the team')
     binaries = Path(args.sparkle_bin).expanduser()
     public_key = run(binaries / 'generate_keys', '--account', ACCOUNT, '-p')
     source_info = plistlib.loads((ROOT / 'DynamicIsland/Info.plist').read_bytes())
     if public_key != source_info['SUPublicEDKey']:
         raise ValueError('The Eave Keychain signing key does not match SUPublicEDKey')
-    run('xcrun', 'notarytool', 'history', '--keychain-profile', args.notary_profile, '--output-format', 'json')
+    if args.signing == 'notarized':
+        run('xcrun', 'notarytool', 'history', '--keychain-profile', args.notary_profile, '--output-format', 'json')
     check_remote(args.version)
     output = ROOT / 'build' / f'release-{args.version}'
     output.mkdir(parents=True, exist_ok=False)
     commit = run('git', 'rev-parse', 'HEAD')
-    archive(ROOT, args.version, [f'DEVELOPMENT_TEAM={args.team}', f'CODE_SIGN_IDENTITY={args.identity}'])
-    options = output / 'ExportOptions.plist'
-    options.write_bytes(plistlib.dumps({'method': 'developer-id', 'teamID': args.team,
-        'signingStyle': 'manual', 'signingCertificate': args.identity}))
-    run('xcodebuild', '-exportArchive', '-archivePath', ROOT / 'build' / f'Eave-{args.version}.xcarchive',
-        '-exportPath', output / 'export', '-exportOptionsPlist', options)
     app = output / 'export/Eave.app'
+    if args.signing == 'local':
+        # amfid rejects this restricted entitlement on ad-hoc signed apps.
+        entitlements = plistlib.loads((ROOT / 'DynamicIsland/DynamicIsland.entitlements').read_bytes())
+        entitlements.pop('com.apple.security.mach-services', None)
+        entitlements_path = output / 'LocalSigning.entitlements'
+        entitlements_path.write_bytes(plistlib.dumps(entitlements))
+        archive(ROOT, args.version, [
+            'CODE_SIGN_IDENTITY=-', 'CODE_SIGN_STYLE=Manual', 'DEVELOPMENT_TEAM=',
+            'CODE_SIGNING_ALLOWED=YES', 'CODE_SIGNING_REQUIRED=NO',
+            'ENABLE_HARDENED_RUNTIME=NO', 'CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO',
+            f'CODE_SIGN_ENTITLEMENTS={entitlements_path}',
+        ])
+        run('ditto', ROOT / 'build' / f'Eave-{args.version}.xcarchive/Products/Applications/Eave.app', app)
+    else:
+        archive(ROOT, args.version, [f'DEVELOPMENT_TEAM={args.team}', f'CODE_SIGN_IDENTITY={args.identity}'])
+        options = output / 'ExportOptions.plist'
+        options.write_bytes(plistlib.dumps({'method': 'developer-id', 'teamID': args.team,
+            'signingStyle': 'manual', 'signingCertificate': args.identity}))
+        run('xcodebuild', '-exportArchive', '-archivePath', ROOT / 'build' / f'Eave-{args.version}.xcarchive',
+            '-exportPath', output / 'export', '-exportOptionsPlist', options)
     info = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
     expected = {'CFBundleIdentifier': ACCOUNT, 'EaveBuildChannel': 'release',
         'CFBundleVersion': args.version, 'CFBundleShortVersionString': args.version,
@@ -109,23 +127,24 @@ def prepare(args):
     if any(info.get(key) != value for key, value in expected.items()):
         raise ValueError('Exported app identity/version/update configuration does not match')
     run('codesign', '--verify', '--deep', '--strict', app)
-    submission = output / 'notarization.zip'
-    run('ditto', '-c', '-k', '--keepParent', app, submission)
-    result = json.loads(run('xcrun', 'notarytool', 'submit', submission, '--keychain-profile', args.notary_profile,
-                           '--wait', '--output-format', 'json'))
-    (output / 'notarization.json').write_text(json.dumps(result, indent=2) + '\n')
-    if result.get('status') != 'Accepted':
-        raise ValueError(f'Notarization failed; inspect {output / "notarization.json"}')
-    run('xcrun', 'stapler', 'staple', app)
-    run('xcrun', 'stapler', 'validate', app)
-    run('spctl', '--assess', '--type', 'execute', app)
+    if args.signing == 'notarized':
+        submission = output / 'notarization.zip'
+        run('ditto', '-c', '-k', '--keepParent', app, submission)
+        result = json.loads(run('xcrun', 'notarytool', 'submit', submission, '--keychain-profile', args.notary_profile,
+                               '--wait', '--output-format', 'json'))
+        (output / 'notarization.json').write_text(json.dumps(result, indent=2) + '\n')
+        if result.get('status') != 'Accepted':
+            raise ValueError(f'Notarization failed; inspect {output / "notarization.json"}')
+        run('xcrun', 'stapler', 'staple', app)
+        run('xcrun', 'stapler', 'validate', app)
+        run('spctl', '--assess', '--type', 'execute', app)
     package = output / f'Eave-{args.version}.zip'
     run('ditto', '-c', '-k', '--keepParent', app, package)
     signature = run(binaries / 'sign_update', '--account', ACCOUNT, '-p', package)
     run(binaries / 'sign_update', '--account', ACCOUNT, '--verify', package, signature)
     feed = output / 'appcast.xml'
     feed.write_bytes(appcast(args.version, package, signature, info['LSMinimumSystemVersion']))
-    (output / 'release.json').write_text(json.dumps({'version': args.version, 'commit': commit,
+    (output / 'release.json').write_text(json.dumps({'version': args.version, 'commit': commit, 'signing': args.signing,
         'sha256': {p.name: digest(p) for p in (package, feed)}}, indent=2) + '\n')
     print(f'Ready: {output}. Review artifacts, then use publish with a release notes file.')
 
@@ -166,6 +185,8 @@ def main():
     commands = parser.add_subparsers(dest='command', required=True)
     prep = commands.add_parser('prepare')
     prep.add_argument('version')
+    prep.add_argument('--signing', choices=('local', 'notarized'), default='local',
+                      help='local: ad-hoc signing without Apple credentials (default)')
     for name in ('identity', 'team', 'notary-profile', 'sparkle-bin'):
         prep.add_argument(f'--{name}', default=os.environ.get('EAVE_' + name.upper().replace('-', '_')))
     pub = commands.add_parser('publish')
