@@ -146,7 +146,7 @@ internal class Settings: NSStackView, Settings_v, NSTextFieldDelegate {
         let interfaces = selectView(
             action: #selector(self.handleSelection),
             items: [],
-            selected: ""
+            selected: "", menuItemAction: false
         )
         let selectedInterface = Store.shared.string(key: "\(self.title)_interface", defaultValue: "")
         let menu = NSMenu()

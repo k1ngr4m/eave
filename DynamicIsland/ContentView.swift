@@ -54,6 +54,16 @@ struct ContentView: View {
     @ObservedObject var reminderManager = ReminderLiveActivityManager.shared
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var statsManager = StatsManager.shared
+    @Default(.showCPUWidgetWhenClosed) private var showCPUWidgetWhenClosed
+    @Default(.showGPUWidgetWhenClosed) private var showGPUWidgetWhenClosed
+    @Default(.showMemoryWidgetWhenClosed) private var showMemoryWidgetWhenClosed
+    @Default(.showDiskWidgetWhenClosed) private var showDiskWidgetWhenClosed
+    @ObservedObject private var memoryWidgets = MemoryDiskMonitor.memory.widgets
+    @Default(.showSensorsWidgetWhenClosed) private var showSensorsWidgetWhenClosed
+    @ObservedObject private var sensorsWidgets = SensorsMonitor.shared.widgets
+    @ObservedObject private var diskWidgets = MemoryDiskMonitor.disk.widgets
+    @ObservedObject private var cpuWidgets = ProcessorMonitor.cpu.widgets
+    @ObservedObject private var gpuWidgets = ProcessorMonitor.gpu.widgets
     @ObservedObject private var networkWidgets = NetworkMonitor.shared.widgets
     @ObservedObject var recordingManager = ScreenRecordingManager.shared
     @ObservedObject var privacyManager = PrivacyIndicatorManager.shared
@@ -1303,11 +1313,11 @@ struct ContentView: View {
                   view
                       .fixedSize()
               }
-              .frame(minWidth: closedNetworkWidgetVisible ? ClosedNetworkWidget.minimumWidth : nil)
+              .frame(minWidth: closedNetworkWidgetVisible ? ClosedMonitoringWidgets.minimumWidth : nil)
               .padding(.bottom, closedNetworkWidgetHeight)
               .overlay(alignment: .bottom) {
                   if closedNetworkWidgetVisible {
-                      ClosedNetworkWidget { hovering in
+                      ClosedMonitoringWidgets { hovering in
                           isHoveringNetworkWidget = hovering
                           if hovering { hoverTask?.cancel() }
                           else if isHovering { handleHover(true) }
@@ -2467,7 +2477,7 @@ struct ContentView: View {
         let height = max(closedHeight, recordingSize?.height ?? 0) + 6 + closedNetworkWidgetHeight
             + PinnedLyricsView.reservedHeight(isEligible: pinnedLyricsVisible,
                 availability: musicManager.lyricsAvailability, context: pinnedLyricContext)
-        let width = max(closedWidth, recordingSize?.width ?? 0, closedNetworkWidgetVisible ? ClosedNetworkWidget.minimumWidth : 0) + 24
+        let width = max(closedWidth, recordingSize?.width ?? 0, closedNetworkWidgetVisible ? ClosedMonitoringWidgets.minimumWidth : 0) + 24
         // Same shift the content is drawn with, so the hit area stays under it.
         let minX = screen.frame.midX - width / 2 + menuBarClearanceOffset
         let minY = screen.frame.maxY - height
@@ -2496,12 +2506,12 @@ struct ContentView: View {
     }
     
     private var closedNetworkWidgetVisible: Bool {
-        networkWidgets.size.width > 0 && showNetworkWidgetWhenClosed && enableStatsFeature && vm.notchState == .closed
+        !ClosedMonitoringWidgets.entries.isEmpty && enableStatsFeature && vm.notchState == .closed
             && !vm.hideOnClosed && !lockScreenManager.isLocked && !coordinator.firstLaunch
     }
 
     private var closedNetworkWidgetHeight: CGFloat {
-        closedNetworkWidgetVisible ? ClosedNetworkWidget.height : 0
+        closedNetworkWidgetVisible ? ClosedMonitoringWidgets.height : 0
     }
 
     /// Track-level reservation. A sneak peek hides only the overlaid words.

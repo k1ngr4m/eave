@@ -570,3 +570,5 @@
 "Login to System Stats to see your devices" = "登入 System Stats 以查看您的裝置"; // qwen3.8:27b
 "Monitor HTTP, ICMP and custom endpoints" = "監控 HTTP、ICMP 及自訂端點"; // qwen3.8:27b
 "Monitor and control your Macs from anywhere. Sign in to your System Stats account to see all your devices and hosts in one place." = "從任何地方監控並控制您的 Mac。登入您的 System Stats 帳戶，即可在同一處查看所有裝置和主機。"; // qwen3.8:27b
+
+"No readable data on this Mac." = "此 Mac 上沒有可讀取的資料。";

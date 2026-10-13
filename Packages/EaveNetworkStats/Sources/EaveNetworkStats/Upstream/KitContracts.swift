@@ -37,6 +37,27 @@ public enum widget_t: String {
         var item: widget_p? = nil
 
         switch self {
+        case .mini:
+            preview = Mini(title: module, config: widgetConfig, preview: true)
+            item = Mini(title: module, config: widgetConfig, preview: false)
+        case .lineChart:
+            preview = LineChart(title: module, config: widgetConfig, preview: true)
+            item = LineChart(title: module, config: widgetConfig, preview: false)
+        case .barChart:
+            preview = BarChart(title: module, config: widgetConfig, preview: true)
+            item = BarChart(title: module, config: widgetConfig, preview: false)
+        case .pieChart:
+            preview = PieChart(title: module, config: widgetConfig, preview: true)
+            item = PieChart(title: module, config: widgetConfig, preview: false)
+        case .tachometer:
+            preview = Tachometer(title: module, preview: true)
+            item = Tachometer(title: module, preview: false)
+        case .stack:
+            preview = StackWidget(title: module, config: widgetConfig, preview: true)
+            item = StackWidget(title: module, config: widgetConfig, preview: false)
+        case .memory:
+            preview = MemoryWidget(title: module, config: widgetConfig, preview: true)
+            item = MemoryWidget(title: module, config: widgetConfig, preview: false)
         case .networkChart:
             preview = NetworkChart(title: module, config: widgetConfig, preview: true)
             item = NetworkChart(title: module, config: widgetConfig, preview: false)

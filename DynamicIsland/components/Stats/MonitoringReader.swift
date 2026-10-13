@@ -17,7 +17,6 @@ final class MonitoringReader: @unchecked Sendable {
     private var lastModules: Set<MonitoringModule> = []
     private lazy var cpuSensors = CPUSensorCollector()
     private lazy var smc = SMC()
-    private var sensorDefinitions: [MonitoringSensorDefinition]?
 
     deinit { mach_port_deallocate(mach_task_self_, host) }
 
@@ -45,7 +44,7 @@ final class MonitoringReader: @unchecked Sendable {
             case .gpu: result[module] = readGPU()
             case .disk: result[module] = readDisk(detail: detail == module)
             case .network: break // Stats' original network readers run independently.
-            case .sensors: result[module] = readSensors()
+            case .sensors: break // SensorsMonitor owns sensor sampling.
             }
         }
         return result
@@ -219,45 +218,6 @@ final class MonitoringReader: @unchecked Sendable {
             result.processes = processRows(rates, names: names)
         }
         return result
-    }
-
-    private func readSensors() -> MonitoringSample {
-        if sensorDefinitions == nil {
-            let available = Set(smc.getAllKeys())
-            let platform = AppleHardwareInfo.shared.platform?.rawValue ?? "unknown"
-            var definitions: [String: MonitoringSensorDefinition] = [:]
-            for definition in monitoringSensorCatalog where definition.supports(platform) {
-                for index in 0..<(definition.key.contains("%") ? 10 : 1) {
-                    var sensor = definition
-                    sensor.key = sensor.key.replacingOccurrences(of: "%", with: "\(index)")
-                    sensor.name = sensor.name.replacingOccurrences(of: "%", with: "\(index + 1)")
-                    if available.contains(sensor.key) { definitions[sensor.key] = sensor }
-                }
-            }
-            for index in 0..<min(10, max(0, Int(smc.getValue("FNum") ?? 0))) {
-                let key = "F\(index)Ac"
-                if available.contains(key) { definitions[key] = .init(key: key, name: String(localized: "Fan") + " \(index + 1)", group: "Fans", unit: .fan, platforms: "all") }
-            }
-            sensorDefinitions = definitions.values.sorted { $0.key < $1.key }
-        }
-        var groups: [String: [MonitoringRow]] = [:]
-        var temperatures: [Double] = []
-        for sensor in sensorDefinitions ?? [] {
-            guard let value = smc.getValue(sensor.key), value.isFinite, value >= 0 else { continue }
-            if sensor.unit == .temperature && (value < 1 || value > 120) { continue }
-            if sensor.unit == .current && value > 100 { continue }
-            if sensor.unit == .temperature { temperatures.append(value) }
-            let group: String
-            switch sensor.unit {
-            case .temperature: group = String(localized: "Temperature")
-            case .voltage: group = String(localized: "Voltage")
-            case .power: group = String(localized: "Power")
-            case .current: group = String(localized: "monitoring_sensor_current", defaultValue: "Current")
-            default: group = String(localized: "Fans")
-            }
-            groups[group, default: []].append(.init(sensor.name, value, sensor.unit, id: sensor.key))
-        }
-        return MonitoringSample(value: temperatures.max(), sections: groups.keys.sorted().map { .init($0, rows: groups[$0]!) })
     }
 
     private func services(_ name: String) -> [(String, [String: Any])] {

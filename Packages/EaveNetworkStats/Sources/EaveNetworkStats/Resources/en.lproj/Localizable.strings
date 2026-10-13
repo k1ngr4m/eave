@@ -570,3 +570,5 @@
 "Login to System Stats to see your devices" = "Login to System Stats to see your devices";
 "Monitor HTTP, ICMP and custom endpoints" = "Monitor HTTP, ICMP and custom endpoints";
 "Monitor and control your Macs from anywhere. Sign in to your System Stats account to see all your devices and hosts in one place." = "Monitor and control your Macs from anywhere. Sign in to your System Stats account to see all your devices and hosts in one place.";
+
+"No readable data on this Mac." = "No readable data on this Mac.";

@@ -1,0 +1,166 @@
+//
+//  settings.swift
+//  GPU
+//
+//  Created by Serhiy Mytrovtsiy on 17/08/2020.
+//  Using Swift 5.0.
+//  Running on macOS 10.15.
+//
+//  Copyright © 2020 Serhiy Mytrovtsiy. All rights reserved.
+//
+
+import Cocoa
+import IOKit
+
+var GPUtextWidgetHelp = """
+<h2>Description</h2>
+You can use a combination of any of the variables.
+<h3>Examples:</h3>
+<ul>
+<li>$usage - $fps</li>
+<li>GPU: $usage ($temperature)</li>
+<li>Render: $render, Tiler: $tiler</li>
+</ul>
+<h2>Available variables</h2>
+<ul>
+<li><b>$usage</b>: <small>GPU utilization.</small></li>
+<li><b>$render</b>: <small>Renderer utilization.</small></li>
+<li><b>$tiler</b>: <small>Tiler utilization.</small></li>
+<li><b>$ane</b>: <small>Apple Neural Engine utilization.</small></li>
+<li><b>$fps</b>: <small>Frames per second.</small></li>
+<li><b>$temperature</b>: <small>GPU temperature.</small></li>
+</ul>
+"""
+
+internal class GPUSettings: NSStackView, Settings_v, NSTextFieldDelegate {
+    private var updateIntervalValue: Int = 1
+    private var selectedGPU: String
+    private var showTypeValue: Bool = false
+
+    private let title: String
+
+    public var selectedGPUHandler: (String) -> Void = {_ in }
+    public var callback: (() -> Void) = {}
+    public var setInterval: ((_ value: Int) -> Void) = {_ in }
+
+    private lazy var textHelp = HelpHUD(GPUtextWidgetHelp)
+    private var button: NSPopUpButton?
+
+    public init(_ module: ModuleType) {
+        self.title = module.stringValue
+        self.selectedGPU = Store.shared.string(key: "\(self.title)_gpu", defaultValue: "")
+        self.updateIntervalValue = Store.shared.int(key: "\(self.title)_updateInterval", defaultValue: self.updateIntervalValue)
+        self.showTypeValue = Store.shared.bool(key: "\(self.title)_showType", defaultValue: self.showTypeValue)
+
+        super.init(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+
+        self.wantsLayer = true
+        self.orientation = .vertical
+        self.distribution = .gravityAreas
+        self.spacing = Constants.Settings.margin
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    public func load(widgets: [widget_t]) {
+        self.subviews.forEach{ $0.removeFromSuperview() }
+
+        self.addArrangedSubview(PreferencesSection([
+            PreferencesRow(localizedString("Update interval"), component: selectView(
+                action: #selector(self.changeUpdateInterval),
+                items: ReaderUpdateIntervals,
+                selected: "\(self.updateIntervalValue)"
+            ))
+        ]))
+
+        #if arch(x86_64)
+        if !widgets.filter({ $0 == .mini }).isEmpty {
+            self.addArrangedSubview(PreferencesSection([
+                PreferencesRow(localizedString("Show GPU type"), component: switchView(
+                    action: #selector(self.toggleShowType),
+                    state: self.showTypeValue
+                ))
+            ]))
+        }
+        #endif
+
+        self.button = selectView(
+            action: #selector(self.handleSelection),
+            items: [],
+            selected: ""
+        )
+        self.addArrangedSubview(PreferencesSection([
+            PreferencesRow(localizedString("GPU to show"), component: self.button!)
+        ]))
+        if widgets.contains(.text) {
+            let field = NSTextField(string: Store.shared.string(key: "GPU_textWidgetValue", defaultValue: "$usage - $fps"))
+            field.identifier = NSUserInterfaceItemIdentifier("GPUTextTemplate")
+            field.widthAnchor.constraint(equalToConstant: 250).isActive = true
+            field.font = NSFont.systemFont(ofSize: 12)
+            field.usesSingleLineMode = true
+            field.delegate = self
+            self.addArrangedSubview(PreferencesSection([
+                PreferencesRow(localizedString("Text widget value"), component: field) { [weak self] in self?.textHelp.show() }
+            ]))
+        }
+    }
+
+    internal func setList(_ gpus: GPUs) {
+        var list: [KeyValue_t] = [
+            KeyValue_t(key: "automatic", value: "Automatic"),
+            KeyValue_t(key: "separator", value: "separator")
+        ]
+        gpus.active().forEach{ list.append(KeyValue_t(key: $0.model, value: $0.model)) }
+
+        DispatchQueue.main.async(execute: {
+            guard let button = self.button else { return }
+            if button.itemArray.compactMap({ $0.representedObject as? String }) != list.filter({ $0.key != "separator" }).map(\.key) {
+                let menu = NSMenu()
+
+                list.forEach { (item) in
+                    if item.key.contains("separator") {
+                        menu.addItem(NSMenuItem.separator())
+                    } else {
+                        let interfaceMenu = NSMenuItem(title: localizedString(item.value), action: nil, keyEquivalent: "")
+                        interfaceMenu.representedObject = item.key
+                        menu.addItem(interfaceMenu)
+                        if self.selectedGPU == item.key {
+                            interfaceMenu.state = .on
+                        }
+                    }
+                }
+
+                button.menu = menu
+                button.sizeToFit()
+            }
+            if let item = button.itemArray.first(where: { $0.representedObject as? String == self.selectedGPU }) {
+                button.select(item)
+            }
+        })
+    }
+
+    @objc private func changeUpdateInterval(_ sender: NSMenuItem) {
+        guard let key = sender.representedObject as? String, let value = Int(key) else { return }
+        self.updateIntervalValue = value
+        Store.shared.set(key: "\(self.title)_updateInterval", value: value)
+        self.setInterval(value)
+    }
+    @objc private func handleSelection(_ sender: NSMenuItem) {
+        guard let key = sender.representedObject as? String else { return }
+        self.selectedGPU = key
+        Store.shared.set(key: "\(self.title)_gpu", value: key)
+        self.selectedGPUHandler(key)
+    }
+    @objc private func toggleShowType(_ sender: NSControl) {
+        self.showTypeValue = controlState(sender)
+        Store.shared.set(key: "\(self.title)_showType", value: self.showTypeValue)
+        self.callback()
+    }
+    func controlTextDidChange(_ notification: Notification) {
+        guard let field = notification.object as? NSTextField else { return }
+        Store.shared.set(key: "GPU_textWidgetValue", value: field.stringValue)
+    }
+
+}

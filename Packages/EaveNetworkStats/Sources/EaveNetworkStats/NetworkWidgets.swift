@@ -1,89 +1,12 @@
 import AppKit
-import Combine
 
-/// Stats' actual widget views and controls, rendered once for every Eave display.
-public final class NetworkWidgets: NSObject, ObservableObject {
-    @Published public private(set) var image = NSImage(size: .zero)
-    @Published public private(set) var size = NSSize.zero
-    let items: [SWidget]
-    private let canvas = NSView()
-    private let editor = NSStackView()
-    private let livePreview = NSImageView()
+public final class NetworkWidgets: StatsWidgets {
     private var lastUsage = Network_Usage()
     private var connectivity: Network_Connectivity?
-    private var pendingRender = false
 
-    var active: [SWidget] { items.filter(\.isActive).sorted { $0.position < $1.position } }
-
-    public override init() {
-        let url = Bundle.module.url(forResource: "NetworkWidgets", withExtension: "plist")!
-        let config = NSDictionary(contentsOf: url)!["Widgets"] as! NSDictionary
-        let types: [widget_t] = [.label, .speed, .networkChart, .state, .text, .icon]
-        items = types.compactMap { $0.new(module: "Network", config: config, defaultWidget: .speed,
-                                        icon: NSImage(systemSymbolName: "network", accessibilityDescription: nil)) }
-        super.init()
-        canvas.appearance = NSAppearance(named: .darkAqua)
-        editor.orientation = .vertical
-        editor.alignment = .centerX
-        editor.spacing = 10
-        for (position, widget) in items.enumerated() {
-            if !Store.shared.exist(key: "Network_\(widget.type)_position") { widget.position = position }
-            widget.sizeCallback = { [weak self] in self?.scheduleRender() }
-        }
-        NotificationCenter.default.addObserver(self, selector: #selector(preferencesChanged(_:)), name: .networkPreferencesChanged, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(reordered), name: .widgetRearrange, object: nil)
-        scheduleRender()
-    }
-
-    func selector(changed: @escaping () -> Void) -> NSView {
-        WidgetSelectorView(module: "Network", widgets: items) { [weak self] in
-            self?.reloadEditor()
-            self?.scheduleRender()
-            changed()
-        }
-    }
-
-    func settings() -> NSView { reloadEditor(); return editor }
-
-    private func reloadEditor() {
-        editor.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        livePreview.identifier = NSUserInterfaceItemIdentifier("NetworkWidgetsPreview")
-        livePreview.image = image
-        livePreview.imageScaling = .scaleProportionallyDown
-        livePreview.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        livePreview.wantsLayer = true
-        livePreview.layer?.backgroundColor = NSColor.black.cgColor
-        livePreview.layer?.cornerRadius = 6
-        livePreview.setAccessibilityLabel(localizedString("Network"))
-        if livePreview.constraints.isEmpty { livePreview.heightAnchor.constraint(equalToConstant: 38).isActive = true }
-        editor.addArrangedSubview(livePreview)
-        if active.count > 1 {
-            let toggle = NSSwitch()
-            toggle.action = #selector(toggleMerge(_:))
-            toggle.state = Store.shared.bool(key: "Network_oneView", defaultValue: false) ? .on : .off
-            toggle.target = self
-            editor.addArrangedSubview(PreferencesSection([PreferencesRow(localizedString("Merge widgets"), component: toggle)]))
-        }
-        for widget in active where widget.type != .label {
-            editor.addArrangedSubview(WidgetSettings(title: widget.type.name(), image: widget.image, settingsView: widget.item.settings()))
-        }
-        for view in editor.arrangedSubviews {
-            view.widthAnchor.constraint(equalTo: editor.widthAnchor).isActive = true
-        }
-    }
-
-    @objc private func toggleMerge(_ sender: NSControl) {
-        Store.shared.set(key: "Network_oneView", value: controlState(sender))
-    }
-
-    @objc private func reordered() { reloadEditor(); scheduleRender() }
-
-    @objc private func preferencesChanged(_ note: Notification) {
-        guard let key = note.userInfo?["key"] as? String,
-              key.hasPrefix("Network_speed") || key.hasPrefix("Network_network_chart") || key.hasPrefix("Network_widget") ||
-              key.hasSuffix("_position") || ["Network_oneView", "Network_base", "Network_textWidgetValue"].contains(key) else { return }
-        updateValues(appendHistory: false)
-        scheduleRender()
+    public init() {
+        super.init(module: .network)
+        refreshValues = { [weak self] in self?.updateValues(appendHistory: false) }
     }
 
     func receive(_ value: Network_Usage) {
@@ -123,52 +46,6 @@ public final class NetworkWidgets: NSObject, ObservableObject {
         }
     }
 
-    private func scheduleRender() {
-        guard !pendingRender else { return }
-        pendingRender = true
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            self.pendingRender = false
-            self.render()
-        }
-    }
-
-    private func render() {
-        let list = active
-        canvas.subviews.forEach { $0.removeFromSuperview() }
-        guard !list.isEmpty else {
-            if size != .zero { size = .zero }
-            image = NSImage(size: .zero)
-            livePreview.image = nil
-            return
-        }
-        canvas.appearance!.performAsCurrentDrawingAppearance {
-            let spacing: CGFloat = Store.shared.bool(key: "Network_oneView", defaultValue: false) ? Constants.Widget.spacing : 10
-            var x: CGFloat = 4
-            for widget in list {
-                let view = widget.item
-                canvas.addSubview(view)
-                // Original draw methods determine their width. Measure before composing the strip.
-                _ = view.dataWithPDF(inside: view.bounds)
-                if let wrapper = view as? WidgetWrapper { view.setFrameSize(wrapper.shadowSize) }
-                view.setFrameOrigin(NSPoint(x: x, y: Constants.Widget.margin.y))
-                x += view.frame.width + spacing
-            }
-            let newSize = NSSize(width: x - spacing + 4, height: Constants.Widget.height)
-            canvas.setFrameSize(newSize)
-            if let rendered = NSImage(data: canvas.dataWithPDF(inside: canvas.bounds)) {
-                image = rendered
-                livePreview.image = rendered
-            }
-            if size != newSize { size = newSize }
-        }
-    }
-
-    deinit { NotificationCenter.default.removeObserver(self) }
-}
-
-extension Notification.Name {
-    static let networkPreferencesChanged = Notification.Name("EaveNetworkPreferencesChanged")
 }
 
 // Template substitutions from Stats Modules/Net/main.swift.

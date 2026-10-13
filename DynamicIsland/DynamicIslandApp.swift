@@ -437,9 +437,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func calculateRequiredNotchSize() -> CGSize {
         var size = calculateRequiredNotchBaseSize()
-        if vm.notchState == .closed, Defaults[.enableStatsFeature], Defaults[.showNetworkWidgetWhenClosed], StatsManager.shared.network.widgets.size.width > 0 {
-            size.height += ClosedNetworkWidget.height
-            size.width = max(size.width, ClosedNetworkWidget.minimumWidth + 24)
+        if vm.notchState == .closed, Defaults[.enableStatsFeature], !ClosedMonitoringWidgets.entries.isEmpty {
+            size.height += ClosedMonitoringWidgets.height
+            size.width = max(size.width, ClosedMonitoringWidgets.minimumWidth + 24)
         }
         return size
     }
@@ -829,6 +829,31 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.debouncedUpdateWindowSize()
         }.store(in: &cancellables)
         
+        for monitor in [StatsManager.shared.cpu, StatsManager.shared.gpu] {
+            monitor.widgets.$size.removeDuplicates().dropFirst().sink { [weak self] _ in
+                self?.debouncedUpdateWindowSize()
+            }.store(in: &cancellables)
+        }
+        Publishers.Merge(Defaults.publisher(.showCPUWidgetWhenClosed, options: []).map { _ in () },
+                         Defaults.publisher(.showGPUWidgetWhenClosed, options: []).map { _ in () })
+            .sink { [weak self] _ in self?.debouncedUpdateWindowSize() }.store(in: &cancellables)
+
+        for monitor in [StatsManager.shared.memory, StatsManager.shared.disk] {
+            monitor.widgets.$size.removeDuplicates().dropFirst().sink { [weak self] _ in
+                self?.debouncedUpdateWindowSize()
+            }.store(in: &cancellables)
+        }
+        Publishers.Merge(Defaults.publisher(.showMemoryWidgetWhenClosed, options: []).map { _ in () },
+                         Defaults.publisher(.showDiskWidgetWhenClosed, options: []).map { _ in () })
+            .sink { [weak self] _ in self?.debouncedUpdateWindowSize() }.store(in: &cancellables)
+
+        StatsManager.shared.sensors.widgets.$size.removeDuplicates().dropFirst().sink { [weak self] _ in
+            self?.debouncedUpdateWindowSize()
+        }.store(in: &cancellables)
+        Defaults.publisher(.showSensorsWidgetWhenClosed, options: []).sink { [weak self] _ in
+            self?.debouncedUpdateWindowSize()
+        }.store(in: &cancellables)
+
         StatsManager.shared.network.widgets.$size.removeDuplicates().dropFirst().sink { [weak self] _ in
             self?.debouncedUpdateWindowSize()
         }.store(in: &cancellables)
@@ -1016,7 +1041,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self, selector: #selector(onScreenUnlocked(_:)),
             name: NSNotification.Name(rawValue: "com.apple.screenIsUnlocked"), object: nil)
 
-        StatsManager.shared.network.shortcutHandler = { [weak self] in
+        let showDetail: (MonitoringModule) -> Void = { [weak self] module in
             Task { @MainActor in
                 guard let self else { return }
                 let manager = StatsManager.shared
@@ -1025,15 +1050,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                    let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }),
                    let screenVM = self.viewModels[screen] { activeVM = screenVM }
                 self.cancelPendingNotchAutoClose()
-                if manager.detail == .network {
-                    manager.networkDetailRequested = false
+                if manager.detail == module {
+                    manager.requestedDetail = nil
                 } else {
-                    manager.networkDetailViewModel = activeVM
-                    manager.networkDetailRequested = true
+                    manager.detailViewModel = activeVM
+                    manager.requestedDetail = module
                     activeVM.open(target: .stats)
                 }
             }
         }
+        StatsManager.shared.network.shortcutHandler = { showDetail(.network) }
+        StatsManager.shared.cpu.shortcutHandler = { showDetail(.cpu) }
+        StatsManager.shared.gpu.shortcutHandler = { showDetail(.gpu) }
+        StatsManager.shared.memory.shortcutHandler = { showDetail(.memory) }
+        StatsManager.shared.disk.shortcutHandler = { showDetail(.disk) }
+        StatsManager.shared.sensors.shortcutHandler = { showDetail(.sensors) }
+
 
         KeyboardShortcuts.onKeyDown(for: .toggleSneakPeek) { [weak self] in
             guard let self = self else { return }

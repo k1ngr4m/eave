@@ -1649,7 +1649,97 @@ public func showNotification(title: String, subtitle: String? = nil, userInfo: [
 }
 
 public func removeNotification(_ id: String) {
+    // UserNotifications requires an application bundle; SwiftPM tests have none.
+    guard Bundle.main.bundleURL.pathExtension == "app" else { return }
     let center = UNUserNotificationCenter.current()
     center.removeDeliveredNotifications(withIdentifiers: [id])
+}
+
+
+public func fetchIOService(_ name: String) -> [NSDictionary]? {
+    var iterator: io_iterator_t = io_iterator_t()
+    var obj: io_registry_entry_t = 1
+    var list: [NSDictionary] = []
+
+    let result = IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching(name), &iterator)
+    if result != kIOReturnSuccess {
+        print("Error IOServiceGetMatchingServices(): " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
+        return nil
+    }
+
+    while obj != 0 {
+        obj = IOIteratorNext(iterator)
+        if let props = getIOProperties(obj) {
+            list.append(props)
+        }
+        IOObjectRelease(obj)
+    }
+    IOObjectRelease(iterator)
+
+    return list.isEmpty ? nil : list
+}
+
+public func getIOProperties(_ entry: io_registry_entry_t) -> NSDictionary? {
+    var properties: Unmanaged<CFMutableDictionary>? = nil
+
+    if IORegistryEntryCreateCFProperties(entry, &properties, kCFAllocatorDefault, 0) != kIOReturnSuccess {
+        return nil
+    }
+
+    defer {
+        properties?.release()
+    }
+
+    return properties?.takeUnretainedValue()
+}
+
+internal func getIOName(_ entry: io_registry_entry_t) -> String? {
+    let pointer = UnsafeMutablePointer<io_name_t>.allocate(capacity: 1)
+    defer { pointer.deallocate() }
+
+    let result = IORegistryEntryGetName(entry, pointer)
+    if result != kIOReturnSuccess {
+        print("Error IORegistryEntryGetName(): " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
+        return nil
+    }
+
+    return String(cString: UnsafeRawPointer(pointer).assumingMemoryBound(to: CChar.self))
+}
+
+internal func convertCFDataToArr(_ data: CFData, _ isM4OrLater: Bool = false) -> [Int32] {
+    let length = CFDataGetLength(data)
+    var bytes = [UInt8](repeating: 0, count: length)
+    CFDataGetBytes(data, CFRange(location: 0, length: length), &bytes)
+
+    var multiplier: UInt32 = 1000 * 1000
+    if isM4OrLater {
+        multiplier = 1000
+    }
+
+    var arr: [Int32] = []
+    var chunks = stride(from: 0, to: bytes.count, by: 8).map { Array(bytes[$0..<min($0 + 8, bytes.count)])}
+    for chunk in chunks {
+        let v = UInt32(chunk[0]) | UInt32(chunk[1]) << 8 | UInt32(chunk[2]) << 16 | UInt32(chunk[3]) << 24
+        arr.append(Int32(v / multiplier))
+    }
+    bytes.removeAll()
+    chunks.removeAll()
+
+    return arr
+}
+
+public struct TopProcess: Codable, Process_p {
+    public var pid: Int
+    public var name: String
+    public var usage: Double
+    public var icon: NSImage {
+        get { ProcessIconCache.shared.icon(for: self.pid) }
+    }
+
+    public init(pid: Int, name: String, usage: Double) {
+        self.pid = pid
+        self.name = name
+        self.usage = usage
+    }
 }
 

@@ -48,8 +48,12 @@ struct NotchStatsView: View {
                             .popover(isPresented: Binding(get: { selected == module }, set: { if !$0 { selected = nil } })) {
                                 if module == .network {
                                     NetworkMonitoringDetailView()
+                                } else if module == .cpu || module == .gpu {
+                                    ProcessorMonitoringDetailView(monitor: module == .cpu ? manager.cpu : manager.gpu)
                                 } else {
-                                    MonitoringDetailView(module: module)
+                                    if module == .memory || module == .disk {
+                                        MemoryDiskMonitoringDetailView(monitor: module == .memory ? manager.memory : manager.disk)
+                                    } else { SensorsMonitoringDetailView() }
                                 }
                             }
                     }
@@ -60,27 +64,25 @@ struct NotchStatsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             manager.updateMonitoringState(notchIsOpen: vm.notchState == .open, currentView: "stats")
-            if manager.networkDetailRequested && manager.networkDetailViewModel === vm { selected = .network }
+            if manager.detailViewModel === vm { selected = manager.requestedDetail }
         }
-        .onChange(of: manager.networkDetailRequested) { _, requested in
-            if requested && manager.networkDetailViewModel === vm {
-                selected = .network
-            } else if selected == .network { selected = nil }
+        .onChange(of: manager.requestedDetail) { _, requested in
+            if manager.detailViewModel === vm { selected = requested }
         }
         .onChange(of: selected) { _, value in
             vm.isStatsPopoverActive = value != nil
             manager.detail = value
-            if value == .network {
-                manager.networkDetailViewModel = vm
-                manager.networkDetailRequested = true
-            } else if manager.networkDetailViewModel === vm { manager.networkDetailRequested = false }
+            if let value {
+                manager.detailViewModel = vm
+                manager.requestedDetail = value
+            } else if manager.detailViewModel === vm { manager.requestedDetail = nil }
         }
         .onChange(of: manager.enabledModules) { _, modules in
             if let selected, !modules.contains(selected) { self.selected = nil }
         }
         .onDisappear {
             selected = nil; manager.detail = nil; vm.isStatsPopoverActive = false
-            if manager.networkDetailViewModel === vm { manager.networkDetailRequested = false }
+            if manager.detailViewModel === vm { manager.requestedDetail = nil }
         }
     }
 
@@ -94,14 +96,14 @@ struct NotchStatsView: View {
                 Image(systemName: "chevron.right").font(.system(size: 8, weight: .semibold)).foregroundStyle(.secondary)
             }
             .font(.system(size: 11))
-            Text(module == .network ? manager.network.formattedSpeed(sample?.value ?? 0) : module.unit.string(sample?.value, fahrenheit: temperatureUnit == .fahrenheit))
+            Text(module == .network ? manager.network.formattedSpeed(sample?.value ?? 0) : module == .disk ? manager.disk.formattedSpeed(sample?.value ?? 0) : module.unit.string(sample?.value, fahrenheit: temperatureUnit == .fahrenheit))
                 .font(.system(size: 19, weight: .semibold, design: .rounded)).monospacedDigit()
                 .lineLimit(1).minimumScaleFactor(0.7)
             HStack(spacing: 3) {
                 Text(module.primaryLabel)
                 if module == .disk || module == .network {
                     Spacer(minLength: 0)
-                    Text(module.secondaryLabel + " " + (module == .network ? manager.network.formattedSpeed(sample?.secondary ?? 0) : module.unit.string(sample?.secondary)))
+                    Text(module.secondaryLabel + " " + (module == .network ? manager.network.formattedSpeed(sample?.secondary ?? 0) : manager.disk.formattedSpeed(sample?.secondary ?? 0)))
                 }
             }
             .font(.system(size: 9)).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)

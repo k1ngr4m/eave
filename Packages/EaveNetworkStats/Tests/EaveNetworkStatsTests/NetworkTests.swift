@@ -182,7 +182,7 @@ final class NetworkTests: XCTestCase {
             XCTFail("Missing original control: \(action) \(key)"); return
         }
         control.select(item)
-        XCTAssertTrue(NSApp.sendAction(control.action!, to: control.target, from: item))
+        XCTAssertTrue(control.sendAction(control.action!, to: control.target))
     }
     private func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
 }

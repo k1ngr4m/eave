@@ -371,8 +371,8 @@ public extension NSView {
         }
     }
     
-    func selectView(action: Selector, items: [KeyValue_p], selected: String) -> NSPopUpButton {
-        let select: NSPopUpButton = NSPopUpButton(frame: NSRect(x: 0, y: 4, width: 50, height: 28))
+    func selectView(action: Selector, items: [KeyValue_p], selected: String, menuItemAction: Bool = true) -> NSPopUpButton {
+        let select: NSPopUpButton = menuItemAction ? StatsPopUpButton(frame: NSRect(x: 0, y: 4, width: 50, height: 28)) : NSPopUpButton(frame: NSRect(x: 0, y: 4, width: 50, height: 28))
         select.target = self
         select.action = action
         
@@ -961,5 +961,13 @@ public class KeyboardShartcutView: NSStackView {
         }
         
         return  String(utf16CodeUnits: nameBuffer, count: nameLength)
+    }
+}
+
+// Stats handlers consume the selected menu item, including menus rebuilt after hardware discovery.
+private final class StatsPopUpButton: NSPopUpButton {
+    override func sendAction(_ action: Selector?, to target: Any?) -> Bool {
+        guard let action, let item = selectedItem else { return false }
+        return NSApp.sendAction(action, to: target, from: item)
     }
 }

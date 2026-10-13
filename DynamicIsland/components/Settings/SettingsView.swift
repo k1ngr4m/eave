@@ -454,6 +454,7 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .stocks, title: "Enable A-share stocks", keywords: ["stocks", "quotes", "watchlist", "股票", "行情", "自选"], highlightID: nil),
 
         // Stats
+        SettingsSearchEntry(tab: .stats, title: "Show sensor widget when collapsed", keywords: ["sensor", "temperature", "传感器", "收起"], highlightID: SettingsTab.stats.highlightID(for: "Show sensor widget when collapsed")),
         SettingsSearchEntry(tab: .stats, title: "Sensors", keywords: ["temperature", "power", "fans", "传感器"], highlightID: SettingsTab.stats.highlightID(for: "Sensors")),
         SettingsSearchEntry(tab: .stats, title: "Enable system stats monitoring", keywords: ["stats", "monitoring"], highlightID: SettingsTab.stats.highlightID(for: "Enable system stats monitoring")),
         SettingsSearchEntry(tab: .llmAgents, title: "Enable LLM Usage Monitor", keywords: ["llm", "usage", "ai", "monitor"], highlightID: SettingsTab.llmAgents.highlightID(for: "Enable LLM Usage Monitor")),
@@ -468,6 +469,10 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .stats, title: "Temperature unit", keywords: ["cpu", "temperature", "celsius", "fahrenheit"], highlightID: SettingsTab.stats.highlightID(for: "Temperature unit")),
         SettingsSearchEntry(tab: .stats, title: "Memory Usage", keywords: ["memory", "ram"], highlightID: SettingsTab.stats.highlightID(for: "Memory Usage")),
         SettingsSearchEntry(tab: .stats, title: "GPU Usage", keywords: ["gpu", "graphics"], highlightID: SettingsTab.stats.highlightID(for: "GPU Usage")),
+        SettingsSearchEntry(tab: .stats, title: "Show CPU widget when collapsed", keywords: ["cpu", "processor", "widget", "处理器", "小组件", "收起"], highlightID: SettingsTab.stats.highlightID(for: "Show CPU widget when collapsed")),
+        SettingsSearchEntry(tab: .stats, title: "Show GPU widget when collapsed", keywords: ["gpu", "graphics", "widget", "显卡", "小组件", "收起"], highlightID: SettingsTab.stats.highlightID(for: "Show GPU widget when collapsed")),
+        SettingsSearchEntry(tab: .stats, title: "Show memory widget when collapsed", keywords: ["memory", "ram", "内存", "小组件", "收起"], highlightID: SettingsTab.stats.highlightID(for: "Show memory widget when collapsed")),
+        SettingsSearchEntry(tab: .stats, title: "Show disk widget when collapsed", keywords: ["disk", "磁盘", "小组件", "收起"], highlightID: SettingsTab.stats.highlightID(for: "Show disk widget when collapsed")),
         SettingsSearchEntry(tab: .stats, title: "Show network widget when collapsed", keywords: ["network", "speed", "widget", "collapsed", "网络", "网速", "小组件", "收起"], highlightID: SettingsTab.stats.highlightID(for: "Show network widget when collapsed")),
         SettingsSearchEntry(tab: .stats, title: "Network Activity", keywords: ["network", "graph"], highlightID: SettingsTab.stats.highlightID(for: "Network Activity")),
         SettingsSearchEntry(tab: .stats, title: "Disk I/O", keywords: ["disk", "io"], highlightID: SettingsTab.stats.highlightID(for: "Disk I/O")),
@@ -8023,7 +8028,6 @@ struct StatsSettings: View {
     @ObservedObject private var manager = StatsManager.shared
     @Default(.enableStatsFeature) private var enabled
     @Default(.statsStopWhenNotchCloses) private var stopWhenClosed
-    @Default(.statsUpdateInterval) private var interval
     @Default(.cpuTemperatureUnit) private var temperatureUnit
 
     private let moduleSettings: [(MonitoringModule, String)] = [
@@ -8041,11 +8045,6 @@ struct StatsSettings: View {
                 Section("Monitoring Behavior") {
                     Defaults.Toggle(key: .statsStopWhenNotchCloses) { Text("Stop monitoring after closing the notch") }
                         .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Stop monitoring after closing the notch"))
-                    HStack {
-                        Text("Update interval")
-                        Slider(value: $interval, in: 1...60, step: 1).accessibilityLabel("Stats update interval")
-                        Text("\(Int(interval.isFinite ? min(60, max(1, interval)) : 1)) s").monospacedDigit().frame(width: 40)
-                    }
                     Text("Only enabled modules are sampled. Process details are collected while their detail view is open.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
@@ -8058,16 +8057,42 @@ struct StatsSettings: View {
                                             items: Array(LockScreenWeatherTemperatureUnit.allCases)) { $0.localizedName }
                         .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Temperature unit"))
                 }
+                Section("CPU") {
+                    Defaults.Toggle(key: .showCPUWidgetWhenClosed) { Text("Show CPU widget when collapsed") }
+                        .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Show CPU widget when collapsed"))
+                    Button("CPU settings…") { manager.cpu.showSettings() }
+                }
+                Section("GPU") {
+                    Defaults.Toggle(key: .showGPUWidgetWhenClosed) { Text("Show GPU widget when collapsed") }
+                        .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Show GPU widget when collapsed"))
+                    Button("GPU settings…") { manager.gpu.showSettings() }
+                }
+                Section("Memory") {
+                    Defaults.Toggle(key: .showMemoryWidgetWhenClosed) { Text("Show memory widget when collapsed") }
+                        .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Show memory widget when collapsed"))
+                    Button("Memory settings…") { manager.memory.showSettings() }
+                }
+                Section("Disk") {
+                    Defaults.Toggle(key: .showDiskWidgetWhenClosed) { Text("Show disk widget when collapsed") }
+                        .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Show disk widget when collapsed"))
+                    Button("Disk settings…") { manager.disk.showSettings() }
+                }
                 Section("Network") {
                     Defaults.Toggle(key: .showNetworkWidgetWhenClosed) { Text("Show network widget when collapsed") }
                         .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Show network widget when collapsed"))
                     Button("Network settings…") { manager.network.showSettings() }
                 }
+                Section("Sensors") {
+                    Defaults.Toggle(key: .showSensorsWidgetWhenClosed) { Text("Show sensor widget when collapsed") }
+                        .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Show sensor widget when collapsed"))
+                    Button("Sensor settings…") { manager.sensors.showSettings() }
+                }
                 Section("Monitoring Status") {
-                    LabeledContent("Status", value: (manager.isMonitoring || manager.network.isEnabled) ? String(localized: "Active") : String(localized: "Stopped"))
+                    LabeledContent("Status", value: (manager.isMonitoring || manager.network.isEnabled || manager.cpu.isEnabled || manager.gpu.isEnabled || manager.memory.isEnabled || manager.disk.isEnabled || manager.sensors.isEnabled) ? String(localized: "Active") : String(localized: "Stopped"))
                     ForEach(manager.enabledModules) { module in
                         LabeledContent(module.title, value: module == .network
                                        ? manager.network.formattedSpeed(manager.samples[module]?.value ?? 0)
+                                       : module == .disk ? manager.disk.formattedSpeed(manager.samples[module]?.value ?? 0)
                                        : module.unit.string(manager.samples[module]?.value, fahrenheit: temperatureUnit == .fahrenheit))
                     }
                     if let date = manager.lastUpdated {
