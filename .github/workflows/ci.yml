@@ -61,6 +61,9 @@ jobs:
       - name: Test menu bar status module
         run: swift test --package-path Packages/EaveStatus
 
+      - name: Test Wi-Fi standard descriptions
+        run: swift test --package-path Packages/EaveNetworkStats --filter NetworkTests.testPHYModeDescriptions
+
       - name: Download Metal Toolchain
         # The downloadable Metal Toolchain is an Xcode 26+ (macOS 26) component; older Xcode ships metal.
         run: |

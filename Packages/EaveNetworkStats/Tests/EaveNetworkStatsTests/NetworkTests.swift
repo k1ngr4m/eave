@@ -1,9 +1,17 @@
 import AppKit
 import CoreLocation
+import CoreWLAN
 import XCTest
 @testable import EaveNetworkStats
 
 final class NetworkTests: XCTestCase {
+    func testPHYModeDescriptions() {
+        XCTAssertEqual(CWPHYMode.modeNone.description, "none")
+        XCTAssertEqual(CWPHYMode.mode11ax.description, "802.11ax")
+        XCTAssertEqual(CWPHYMode(rawValue: 7)?.description, "802.11be")
+        XCTAssertEqual(CWPHYMode(rawValue: 99)?.description, "unknown")
+    }
+
     func testOriginalNetworkSemanticsAndSettings() throws {
         let suite = "app.eave.network.tests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!

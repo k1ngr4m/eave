@@ -24,9 +24,9 @@ extension CWPHYMode: @retroactive CustomStringConvertible {
         case .mode11g:  return "802.11g"
         case .mode11n:  return "802.11n"
         case .mode11ax: return "802.11ax"
-        case .mode11be: return "802.11be"
         case .modeNone: return "none"
-        @unknown default: return "unknown"
+        // kCWPHYMode11be is 7, but older CoreWLAN SDKs do not expose its name.
+        default: return rawValue == 7 ? "802.11be" : "unknown"
         }
     }
 }
