@@ -36,6 +36,7 @@ import UIKit
 
 @MainActor
 struct ContentView: View {
+    @Default(.pinnedLyricFontSize) private var pinnedLyricFontSize
     @Default(.pinnedLyricContext) private var pinnedLyricContext
     @Default(.enableStocksFeature) private var enableStocksFeature
     @Default(.stockShowWhenClosed) private var stockShowWhenClosed
@@ -782,7 +783,7 @@ struct ContentView: View {
             .offset(y: shouldHideUntilHover && !isHovering
                 ? -(vm.closedNotchSize.height + closedNetworkWidgetHeight
                      + PinnedLyricsView.reservedHeight(isEligible: pinnedLyricsVisible,
-                         availability: musicManager.lyricsAvailability, context: pinnedLyricContext)
+                         availability: musicManager.lyricsAvailability, context: pinnedLyricContext, fontSize: pinnedLyricFontSize)
                      + pillTopOffset + currentShadowPadding + 10)
                 : 0
             )
@@ -2147,7 +2148,7 @@ struct ContentView: View {
         )
         let height = max(closedHeight, recordingSize?.height ?? 0) + 6 + closedNetworkWidgetHeight
             + PinnedLyricsView.reservedHeight(isEligible: pinnedLyricsVisible,
-                availability: musicManager.lyricsAvailability, context: pinnedLyricContext)
+                availability: musicManager.lyricsAvailability, context: pinnedLyricContext, fontSize: pinnedLyricFontSize)
         let width = max(closedWidth, recordingSize?.width ?? 0, closedNetworkWidgetVisible ? ClosedMonitoringWidgets.minimumWidth : 0) + 24
         // Same shift the content is drawn with, so the hit area stays under it.
         let minX = screen.frame.midX - width / 2 + menuBarClearanceOffset

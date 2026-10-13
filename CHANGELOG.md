@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-13
+
+- Add adjustable pinned lyric font sizes with matching layout and hit areas.
+- Reduce settings page layout work and repeated application icon lookups.
+- Keep the system Now Playing source available without the obsolete deprecation check.
+- Remove third-party extensions and refine monitoring, settings, and menu bar previews.
+- Update LLM pricing data and repair the release-signing test fixture.
+
+## [0.1.0] - 2026-10-13
+
 - Start Eave's independent version line at `0.1.0` with `dev` and `release` channels.
 - Increment local build numbers independently per channel on every app build.
 - Change the app version only when preparing an official release archive.

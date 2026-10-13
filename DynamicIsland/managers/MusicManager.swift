@@ -554,10 +554,6 @@ class MusicManager: ObservableObject {
     private var optimisticPlayStateTimeoutTask: Task<Void, Never>?
     @MainActor private var optimisticPlaybackTransition = OptimisticPlaybackTransition()
 
-    // Helper to check if macOS has removed support for NowPlayingController
-    public private(set) var isNowPlayingDeprecated: Bool = false
-    private let mediaChecker = MediaChecker()
-
     // Active controller
     private var activeController: (any MediaControllerProtocol)?
 
@@ -762,16 +758,7 @@ class MusicManager: ObservableObject {
         // Observe Pear Desktop launch/terminate for auto-detection
         setupPearDesktopAutoDetection()
 
-        // Initialize deprecation check asynchronously
         Task { @MainActor in
-            do {
-                self.isNowPlayingDeprecated = try await self.mediaChecker.checkDeprecationStatus()
-                print("Deprecation check completed: \(self.isNowPlayingDeprecated)")
-            } catch {
-                print("Failed to check deprecation status: \(error). Defaulting to false.")
-                self.isNowPlayingDeprecated = false
-            }
-            
             // Check if Pear Desktop is already running at startup
             let pearDesktopRunning = NSWorkspace.shared.runningApplications.contains {
                 $0.bundleIdentifier == Self.pearDesktopBundleID
@@ -784,7 +771,7 @@ class MusicManager: ObservableObject {
                     self.setActiveController(controller)
                 }
             } else {
-                // Initialize the active controller after deprecation check
+                // Initialize the user-selected controller
                 self.setActiveControllerBasedOnPreference()
             }
         }
@@ -853,12 +840,7 @@ class MusicManager: ObservableObject {
 
         switch type {
         case .nowPlaying:
-            // Only create NowPlayingController if not deprecated on this macOS version
-            if !self.isNowPlayingDeprecated {
-                newController = NowPlayingController()
-            } else {
-                return nil
-            }
+            newController = NowPlayingController()
         case .appleMusic:
             newController = AppleMusicController()
         case .spotify:
@@ -892,14 +874,9 @@ class MusicManager: ObservableObject {
         let preferredType = Defaults[.mediaController]
         print("Preferred Media Controller: \(preferredType)")
 
-        // If NowPlaying is deprecated but that's the preference, use Apple Music instead
-        let controllerType = (self.isNowPlayingDeprecated && preferredType == .nowPlaying)
-            ? .appleMusic
-            : preferredType
-
-        if let controller = createController(for: controllerType) {
+        if let controller = createController(for: preferredType) {
             setActiveController(controller)
-        } else if controllerType != .appleMusic, let fallbackController = createController(for: .appleMusic) {
+        } else if preferredType != .appleMusic, let fallbackController = createController(for: .appleMusic) {
             // Fallback to Apple Music if preferred controller couldn't be created
             setActiveController(fallbackController)
         }

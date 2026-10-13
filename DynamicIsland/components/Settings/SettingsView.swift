@@ -324,6 +324,7 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .media, title: "Music Source", keywords: ["media source", "controller"], highlightID: SettingsTab.media.highlightID(for: "Music Source")),
         SettingsSearchEntry(tab: .media, title: "Skip buttons", keywords: ["skip", "controls", "±10"], highlightID: SettingsTab.media.highlightID(for: "Skip buttons")),
         SettingsSearchEntry(tab: .media, title: "Sneak Peek Style", keywords: ["sneak peek", "preview"], highlightID: SettingsTab.media.highlightID(for: "Sneak Peek Style")),
+        SettingsSearchEntry(tab: .media, title: "Pinned lyric font size", keywords: ["lyrics", "font", "size", "歌词", "字体", "字号"], highlightID: SettingsTab.media.highlightID(for: "Pinned lyric font size")),
         SettingsSearchEntry(tab: .media, title: "Pinned lyric context", keywords: ["pinned lyrics", "lyric context", "lyrics lines", "closed notch", "lyrics height"], highlightID: SettingsTab.media.highlightID(for: "Pinned lyric context")),
         SettingsSearchEntry(tab: .media, title: "Keep lyrics under the closed notch", keywords: ["lyrics", "pin", "pinned", "closed notch", "always show"], highlightID: SettingsTab.media.highlightID(for: "Keep lyrics under the closed notch")),
         SettingsSearchEntry(tab: .media, title: "Show lyrics", keywords: ["lyrics", "song text", "side panel", "calendar", "inline"], highlightID: SettingsTab.media.highlightID(for: "Show lyrics")),
@@ -551,7 +552,11 @@ private struct SettingsHighlightModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .id(id)
-            .background(highlightBackground)
+            .background {
+                if isActive {
+                    highlightBackground
+                }
+            }
             .onChange(of: isActive) { _, active in
                 animatePulse = active
             }
@@ -701,7 +706,7 @@ struct SettingsView: View {
     }
 
     private var resolvedSelection: SettingsTab {
-        availableTabs.contains(selectedTab) ? selectedTab : (availableTabs.first ?? .general)
+        isTabVisible(selectedTab) ? selectedTab : .general
     }
 
     @ToolbarContentBuilder
@@ -983,8 +988,9 @@ struct SettingsView: View {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return [] }
 
+        let visibleTabs = Set(availableTabs)
         return settingsSearchIndex
-            .filter { availableTabs.contains($0.tab) }
+            .filter { visibleTabs.contains($0.tab) }
             .filter { entry in
                 entry.title.localizedCaseInsensitiveContains(trimmed) ||
                 NSLocalizedString(entry.title, comment: "").localizedCaseInsensitiveContains(trimmed) ||
@@ -3199,6 +3205,7 @@ struct Media: View {
     @Default(.showCalendar) private var showCalendar
     @Default(.enableLyrics) private var enableLyrics
     @Default(.pinLyricsWhenClosed) private var pinLyricsWhenClosed
+    @Default(.pinnedLyricFontSize) private var pinnedLyricFontSize
     @Default(.pinnedLyricContext) private var pinnedLyricContext
     @Default(.lyricHighlightStyle) private var lyricHighlightStyle
     @Default(.lyricsScript) private var lyricsScript
@@ -3232,14 +3239,14 @@ struct Media: View {
                     HStack(spacing: 6) {
                         Text("Music Source")
                             .font(.system(size: 13, weight: .semibold))
-                        MediaSourceCapabilitiesButton(controllers: availableMediaControllers)
+                        MediaSourceCapabilitiesButton(controllers: MediaControllerType.allCases)
                         Spacer()
                         ScrollHintIndicator()
                     }
 
                     MusicSourceSelector(
                         selection: $mediaController,
-                        controllers: availableMediaControllers
+                        controllers: MediaControllerType.allCases
                     )
                 }
                 .onChange(of: mediaController) { _, _ in
@@ -3252,7 +3259,7 @@ struct Media: View {
             } header: {
                 Text("Media Source")
             } footer: {
-                if MusicManager.shared.isNowPlayingDeprecated {
+                if mediaController == .youtubeMusic {
                     HStack {
                         Text("YouTube Music requires this third-party app to be installed: ")
                             .foregroundStyle(.secondary)
@@ -3510,6 +3517,18 @@ struct Media: View {
                     .disabled(!pinLyricsWhenClosed)
                     .settingsHighlight(id: highlightID("Pinned lyric context"))
 
+                    Slider(value: $pinnedLyricFontSize, in: 8...24, step: 1) {
+                        HStack {
+                            Text("Pinned lyric font size")
+                            Spacer()
+                            Text("\(Int(pinnedLyricFontSize)) pt")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                    }
+                    .disabled(!pinLyricsWhenClosed)
+                    .settingsHighlight(id: highlightID("Pinned lyric font size"))
+
 
                     Text("Shows timed lyrics below the closed notch with the selected context. Keeps the space during instrumental breaks; hides the words while a HUD is on screen. Can also be toggled from the pin on the lyrics panel.")
                         .font(.caption)
@@ -3693,14 +3712,6 @@ struct Media: View {
         .navigationTitle("Media")
     }
 
-    // Only show controller options that are available on this macOS version
-    private var availableMediaControllers: [MediaControllerType] {
-        if MusicManager.shared.isNowPlayingDeprecated {
-            return MediaControllerType.allCases.filter { $0 != .nowPlaying }
-        } else {
-            return MediaControllerType.allCases
-        }
-    }
 
     private var unavailableBlurRow: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -9457,10 +9468,11 @@ struct AppIconImage: View {
     var symbolFallback: String = "app.fill"
     var symbolColor: Color = .accentColor
     var size: CGFloat = 16
+    @State private var icon: NSImage?
 
     var body: some View {
         Group {
-            if let nsImage = resolvedIcon() {
+            if let nsImage = icon {
                 Image(nsImage: nsImage.fitted(toSide: size))
                     .clipShape(RoundedRectangle(cornerRadius: size * 0.2))
             } else if let assetFallback, let nsImage = NSImage(named: NSImage.Name(assetFallback)) {
@@ -9472,6 +9484,10 @@ struct AppIconImage: View {
             }
         }
         .frame(width: size, height: size)
+        // Resolve once per identity/size, outside repeated body/layout passes.
+        .task(id: bundleIdentifiers + [String(describing: size)]) {
+            icon = resolvedIcon()
+        }
     }
 
     private func resolvedIcon() -> NSImage? {

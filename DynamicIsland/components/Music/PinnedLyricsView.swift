@@ -25,6 +25,7 @@ import SwiftUI
 struct PinnedLyricsModifier: ViewModifier {
     @ObservedObject private var musicManager = MusicManager.shared
     @Default(.pinnedLyricContext) private var context
+    @Default(.pinnedLyricFontSize) private var fontSize
     let isVisible: Bool
     let isContentHidden: Bool
 
@@ -36,7 +37,7 @@ struct PinnedLyricsModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         let height = PinnedLyricsView.reservedHeight(isEligible: isVisible,
-            availability: musicManager.lyricsAvailability, context: context)
+            availability: musicManager.lyricsAvailability, context: context, fontSize: fontSize)
         content
             .padding(.bottom, height)
             .overlay(alignment: .bottom) {
@@ -58,7 +59,7 @@ struct PinnedLyricsModifier: ViewModifier {
                 ForEach(slots.indices, id: \.self) { index in
                     let slot = slots[index]
                     Text(slot.text)
-                        .font(.system(size: PinnedLyricsView.fontSize, weight: .medium))
+                        .font(.system(size: fontSize, weight: .medium))
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .contentTransition(.opacity)
@@ -69,13 +70,13 @@ struct PinnedLyricsModifier: ViewModifier {
                             unsung: tint.opacity(0.55),
                             idle: .white.opacity(0.45)
                         )
-                        .frame(height: PinnedLyricsView.rowHeight)
+                        .frame(height: PinnedLyricsView.rowHeight(fontSize: fontSize))
                 }
             }
             .animation(.smooth(duration: 0.18), value: slots)
         }
         .padding(.horizontal, 10)
-        .frame(height: PinnedLyricsView.rowHeight * CGFloat(context.rawValue))
+        .frame(height: PinnedLyricsView.rowHeight(fontSize: fontSize) * CGFloat(context.rawValue))
         .padding(.bottom, PinnedLyricsView.gap)
         .clipped()
     }
@@ -88,12 +89,11 @@ extension View {
 }
 
 enum PinnedLyricsView {
-    static let fontSize: CGFloat = 10
     static let gap: CGFloat = 4
-    static let rowHeight: CGFloat = {
+    static func rowHeight(fontSize: CGFloat = 10) -> CGFloat {
         let font = NSFont.systemFont(ofSize: fontSize, weight: .medium)
         return (font.ascender - font.descender + font.leading).rounded(.up) + 1
-    }()
+    }
 
     static func shouldReserve(lyricsEnabled: Bool, pinEnabled: Bool,
                               surfaceEligible: Bool, availability: LyricsAvailability) -> Bool {
@@ -102,7 +102,7 @@ enum PinnedLyricsView {
 
     /// Deliberately takes no current index, current text, or HUD state.
     static func reservedHeight(isEligible: Bool, availability: LyricsAvailability,
-                               context: PinnedLyricContext) -> CGFloat {
-        isEligible && availability == .timed ? rowHeight * CGFloat(context.rawValue) + gap : 0
+                               context: PinnedLyricContext, fontSize: CGFloat = 10) -> CGFloat {
+        isEligible && availability == .timed ? rowHeight(fontSize: fontSize) * CGFloat(context.rawValue) + gap : 0
     }
 }

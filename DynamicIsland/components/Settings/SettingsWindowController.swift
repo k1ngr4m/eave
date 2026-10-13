@@ -67,6 +67,10 @@ class SettingsWindowController: NSWindowController {
         // Create the SwiftUI content
         let settingsView = SettingsView()
         let hostingView = NSHostingView(rootView: settingsView)
+        // The window owns its size; don't measure every form for min/ideal/max
+        // sizes again when the selected settings page changes.
+        hostingView.sizingOptions = []
+        window.contentMinSize = NSSize(width: 700, height: 600)
         window.contentView = hostingView
         
         // Handle window closing

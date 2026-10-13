@@ -110,6 +110,10 @@ with tempfile.TemporaryDirectory() as directory:
     (root / 'VERSION').write_text('0.1.0')
     for name in ('Info.plist', 'DynamicIsland.entitlements'):
         shutil.copy2(ROOT / 'DynamicIsland' / name, root / 'DynamicIsland' / name)
+    source_entitlements = root / 'DynamicIsland/DynamicIsland.entitlements'
+    fixture = plistlib.loads(source_entitlements.read_bytes())
+    fixture['com.apple.security.mach-services'] = ['com.example.test.xpc']
+    source_entitlements.write_bytes(plistlib.dumps(fixture))
     public_key = plistlib.loads((root / 'DynamicIsland/Info.plist').read_bytes())['SUPublicEDKey']
     commands = []
     settings = []

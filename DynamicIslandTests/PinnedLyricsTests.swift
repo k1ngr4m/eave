@@ -143,11 +143,28 @@ final class PinnedLyricsContextTests: XCTestCase {
         let availability = LyricsResolution(lines: lines).availability
         XCTAssertEqual(availability, .timed)
         for context in PinnedLyricContext.allCases {
-            let expected = PinnedLyricsView.rowHeight * CGFloat(context.rawValue) + PinnedLyricsView.gap
+            let expected = PinnedLyricsView.rowHeight() * CGFloat(context.rawValue) + PinnedLyricsView.gap
             for index in -1..<lines.count {
                 XCTAssertEqual(slots(index, context).count, context.rawValue)
                 XCTAssertEqual(PinnedLyricsView.reservedHeight(isEligible: true,
                     availability: availability, context: context), expected)
+            }
+        }
+    }
+
+    func testFontSizeScalesEveryContextHeight() {
+        XCTAssertEqual(Defaults.Keys.pinnedLyricFontSize.defaultValue, 10)
+        for context in PinnedLyricContext.allCases {
+            var previousHeight: CGFloat = 0
+            for size: CGFloat in [8, 10, 16, 24] {
+                let height = PinnedLyricsView.reservedHeight(isEligible: true,
+                    availability: .timed, context: context, fontSize: size)
+                XCTAssertGreaterThan(height, previousHeight)
+                XCTAssertEqual(height, PinnedLyricsView.rowHeight(fontSize: size)
+                    * CGFloat(context.rawValue) + PinnedLyricsView.gap)
+                XCTAssertEqual(PinnedLyricsView.reservedHeight(isEligible: false,
+                    availability: .timed, context: context, fontSize: size), 0)
+                previousHeight = height
             }
         }
     }

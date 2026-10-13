@@ -8,9 +8,33 @@ source = (root / 'DynamicIsland/components/Settings/SettingsView.swift').read_te
 navigation = source.split('private enum SettingsTabGroup:', 1)[1]
 navigation = 'private enum SettingsTabGroup:' + navigation.split('final class SettingsHighlightCoordinator:', 1)[0]
 
+# Run the actual selection/search implementation without launching app services.
+selection = source.split('    private var resolvedSelection:', 1)[1].split('    @ToolbarContentBuilder', 1)[0]
+tabs = source.split('    private var availableTabs:', 1)[1].split('    /// Groups the filtered tabs', 1)[0]
+search = source.split('    private func searchEntries(', 1)[1].split('    @ViewBuilder\n    private func detailView', 1)[0]
+logic = ('private struct SearchCheck {\n'
+         'var selectedTab: SettingsTab = .general\nvar enableMinimalisticUI = false\n'
+         + 'var resolvedSelection:' + selection
+         + 'var availableTabs:' + tabs
+         + 'func searchEntries(' + search.replace('private ', '') + '\n}\n')
+
 with tempfile.TemporaryDirectory() as directory:
     main = Path(directory) / 'main.swift'
-    main.write_text('import SwiftUI\n' + navigation + '''
+    main.write_text('import SwiftUI\n' + navigation + logic + '''
+private var check = SearchCheck()
+for minimal in [false, true] {
+    check.enableMinimalisticUI = minimal
+    for tab in SettingsTab.allCases {
+        check.selectedTab = tab
+        assert(check.resolvedSelection == (check.availableTabs.contains(tab) ? tab : .general))
+    }
+    assert(check.searchEntries(matching: "  ").isEmpty)
+    for entry in SettingsSearchIndex.entries {
+        let results = check.searchEntries(matching: "  " + entry.title + "  ")
+        assert(results.contains { $0.id == entry.id } == check.availableTabs.contains(entry.tab))
+        assert(results.allSatisfy { check.availableTabs.contains($0.tab) })
+    }
+}
 assert(SettingsTab.stats.group == .system)
 assert(SettingsTab.llmAgents.group == .developer)
 private let expected: [(SettingsTab, [String])] = [

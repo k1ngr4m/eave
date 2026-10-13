@@ -1425,6 +1425,7 @@ extension Defaults.Keys {
     /// Whether the sung line is swept or simply lit.
     static let lyricHighlightStyle = Key<LyricHighlightStyle>("lyricHighlightStyle", default: .sweep)
     /// Keeps the current line under the closed notch after the panel is gone.
+    static let pinnedLyricFontSize = Key<CGFloat>("pinnedLyricFontSize", default: 10)
     static let pinnedLyricContext = Key<PinnedLyricContext>("pinnedLyricContext", default: .current)
     static let pinLyricsWhenClosed = Key<Bool>("pinLyricsWhenClosed", default: false)
     static let lyricsPanelWidth = Key<CGFloat>("lyricsPanelWidth", default: 280)
