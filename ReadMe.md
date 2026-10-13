@@ -28,8 +28,8 @@ keychain service names. Existing Atoll settings and credentials are not migrated
 ## Updates and compatibility
 
 Automatic and manual application updates are disabled. Eave has no published
-update feed or download URL. Inherited release, mirror, and nightly merge recipes
-are saved as `.yml.disabled` files; CI build checks remain active.
+update feed or download URL. The inherited multi-channel release, mirror, and
+nightly merge recipes have been removed; CI build checks remain active.
 
 `AtollExtensionKit`, its RPC/XPC contracts, and the Spotify OAuth callback remain
 compatible with upstream. Do not run both apps' extension services simultaneously:
@@ -38,6 +38,41 @@ marketplace continue to use their upstream providers.
 
 The original icon assets are retained. Links to Atoll identify upstream sources
 or services, not an Eave release destination.
+
+## Versions and builds
+
+`VERSION` is the only source of the app version, starting at `0.1.0`. Ordinary
+builds never change it. There are two distribution channels: `dev` and `release`.
+Both Debug and Release configurations default to `dev`; compiler optimization
+does not make a build an official release. The settings badge shows the channel;
+click the version row to show its build number.
+
+Every app build in Xcode or `xcodebuild` stamps the final Info.plist before signing,
+using a new build number for its channel. Counters start at 1 and persist in
+`~/Library/Application Support/Eave/BuildNumbers/`, outside Git and DerivedData.
+They are independent per channel and machine, survive clean builds and version
+changes, and may have gaps after failed builds. CI runners have their own local
+counters; these numbers are not globally unique. `EAVE_BUILD_COUNTER_DIR` can
+override the directory for isolated tests.
+
+To prepare an official release, choose its version explicitly:
+
+```sh
+python3 scripts/eave_version.py archive 0.1.0
+```
+
+This updates `VERSION`, archives with Release optimization and
+`EAVE_CHANNEL=release`, and checks the version/channel in the resulting
+`build/Eave-0.1.0.xcarchive`. Configure your signing team/certificate in Xcode
+before archiving. Downgrades, existing local version tags and existing archives
+are rejected. A failed archive leaves the requested version in place so it can
+be retried; move any partial archive before retrying.
+
+After verifying the archive, update release notes, commit the source and
+`VERSION`, and tag that exact commit `v0.1.0`. Export/sign/notarize and publish
+the verified archive as needed; this command does not upload or tag anything.
+Subsequent fixes can use `0.1.1`, and feature releases `0.2.0`. Development builds
+keep the last chosen version until the next official release is prepared.
 
 ## License
 

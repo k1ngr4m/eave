@@ -24,7 +24,7 @@ assert 'appcast' not in (APP / 'models/UpdateChannel.swift').read_text()
 assert 'ForEach(UpdateChannel.availableChannels)' not in swift
 for name in ('release', 'mirror-release', 'nightly-merge'):
     assert not (ROOT / f'.github/workflows/{name}.yml').exists(), name
-    assert (ROOT / f'.github/workflows/{name}.yml.disabled').is_file(), name
+    assert not (ROOT / f'.github/workflows/{name}.yml.disabled').exists(), name
 
 for old_path in ('"DynamicIsland/IdleAnimations"', 'appendingPathComponent("DynamicIsland"',
                  'documentsPath.appendingPathComponent("ClipboardData")',

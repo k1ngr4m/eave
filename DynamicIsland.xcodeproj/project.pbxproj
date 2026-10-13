@@ -378,6 +378,7 @@
 				7EA69B1B2F5AE13500EB2D16 /* CopyFiles */,
 				EA7E57A70000000000000008 /* Embed Mobile Battery Helper */,
 				7EFAA8AA2F6F12F3000A99E8 /* ShellScript */,
+				EA7E57A70000000000000020 /* Stamp App Version */,
 			);
 			buildRules = (
 			);
@@ -498,6 +499,22 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		EA7E57A70000000000000020 /* Stamp App Version */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+				"$(SRCROOT)/VERSION",
+				"$(SRCROOT)/scripts/eave_version.py",
+			);
+			name = "Stamp App Version";
+			outputPaths = ();
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "python3 \"$SRCROOT/scripts/eave_version.py\" build\n";
+		};
 		7EFAA8AA2F6F12F3000A99E8 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -817,7 +834,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1637;
+				EAVE_CHANNEL = dev;
 				DEVELOPMENT_ASSET_PATHS = "\"DynamicIsland/Preview Content\"";
 				DEVELOPMENT_TEAM = WA7U45K5KU;
 				ENABLE_APP_SANDBOX = NO;
@@ -860,7 +877,6 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 2.3.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.eave.app.dev;
 				PRODUCT_NAME = Eave;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -891,7 +907,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1637;
+				EAVE_CHANNEL = dev;
 				DEVELOPMENT_ASSET_PATHS = "\"DynamicIsland/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = WA7U45K5KU;
@@ -935,7 +951,6 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 2.3.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.eave.app;
 				PRODUCT_NAME = Eave;
 				PROVISIONING_PROFILE_SPECIFIER = "";

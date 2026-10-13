@@ -6,7 +6,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ENTITLEMENTS = ROOT / "DynamicIsland" / "DynamicIsland.entitlements"
 PROJECT = ROOT / "DynamicIsland.xcodeproj" / "project.pbxproj"
-RELEASE_WORKFLOW = ROOT / ".github" / "workflows" / "release.yml.disabled"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 
 
@@ -56,31 +55,6 @@ class PrivacyConfigurationTests(unittest.TestCase):
         self.assertEqual(
             2,
             project.count("INFOPLIST_KEY_NSRemindersFullAccessUsageDescription ="),
-        )
-
-    def test_release_resigning_preserves_archived_entitlements(self):
-        workflow = RELEASE_WORKFLOW.read_text()
-
-        self.assertIn(
-            'codesign -d --entitlements :- "$APP_PATH" > "$ENTITLEMENTS_PATH"',
-            workflow,
-        )
-        self.assertIn('--entitlements "$ENTITLEMENTS_PATH"', workflow)
-        self.assertIn(
-            'FINAL_ENTITLEMENTS_PATH="$RUNNER_TEMP/${APP_NAME}-final.entitlements"',
-            workflow,
-        )
-        self.assertIn(
-            'codesign -d --entitlements :- "$APP_PATH" > "$FINAL_ENTITLEMENTS_PATH"',
-            workflow,
-        )
-        self.assertIn(
-            '/usr/libexec/PlistBuddy -c "Print :com.apple.security.device.camera" "$FINAL_ENTITLEMENTS_PATH" | grep -qx "true"',
-            workflow,
-        )
-        self.assertIn(
-            '/usr/libexec/PlistBuddy -c "Print :com.apple.security.automation.apple-events" "$FINAL_ENTITLEMENTS_PATH" | grep -qx "true"',
-            workflow,
         )
 
     def test_ci_checks_the_privacy_configuration(self):

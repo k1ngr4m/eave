@@ -52625,6 +52625,12 @@
             "state" : "translated",
             "value" : "监视模块"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "監視模組"
+          }
         }
       }
     },
@@ -58683,6 +58689,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "仅采集已启用的模块；打开详情时才采集对应的进程数据。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "僅收集已啟用模組的資料；開啟詳細資訊時才收集對應的程序資料。"
           }
         }
       }
@@ -71174,6 +71186,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "传感器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "感測器"
           }
         }
       }

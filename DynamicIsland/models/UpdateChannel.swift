@@ -19,73 +19,34 @@
 import AppKit
 import Defaults
 
-/// Identifies the build configuration shown in version information.
+/// Distribution channel, independent of Debug/Release compiler settings.
 enum UpdateChannel: String, CaseIterable, Identifiable, Codable, Defaults.Serializable {
-    case stable
-    case beta
-    case alpha
-    case nightly
     case dev
+    case release
 
     var id: String { rawValue }
 
-    var displayName: String {
-        switch self {
-        case .stable:  return String(localized: "Stable")
-        case .beta:    return String(localized: "Beta")
-        case .alpha:   return String(localized: "Alpha")
-        case .nightly: return String(localized: "Nightly")
-        case .dev:     return String(localized: "Dev")
-        }
-    }
-
-    var description: String {
-        switch self {
-        case .stable:  return String(localized: "Production releases, thoroughly tested")
-        case .beta:    return String(localized: "Pre-release builds, mostly stable")
-        case .alpha:   return String(localized: "Early testing builds, may have issues")
-        case .nightly: return String(localized: "Bleeding edge, built daily from dev")
-        case .dev:     return String(localized: "Local development build from Xcode")
-        }
-    }
+    var displayName: String { rawValue }
 
     /// A color used for the channel badge in the UI.
     var badgeColor: NSColor {
         switch self {
-        case .stable:  return .systemGreen
-        case .beta:    return .systemBlue
-        case .alpha:   return .systemOrange
-        case .nightly: return .systemPurple
-        case .dev:     return .systemYellow
+        case .dev: return .systemYellow
+        case .release: return .systemGreen
         }
     }
 
     /// An SF Symbol icon for the channel badge.
     var badgeIcon: String {
         switch self {
-        case .stable:  return "checkmark.seal.fill"
-        case .beta:    return "testtube.2"
-        case .alpha:   return "flask.fill"
-        case .nightly: return "moon.stars.fill"
-        case .dev:     return "hammer.fill"
+        case .dev: return "hammer.fill"
+        case .release: return "checkmark.seal.fill"
         }
     }
 
-    /// The channel this build was compiled for.
-    /// Debug builds (run from Xcode) are always identified as `.dev`.
-    /// Release builds use the `-D` compiler flags set by CI.
+    /// Stamped into the bundle by the app's version build phase.
     static var buildChannel: UpdateChannel {
-        #if DEBUG
-        return .dev
-        #elseif NIGHTLY
-        return .nightly
-        #elseif ALPHA
-        return .alpha
-        #elseif BETA
-        return .beta
-        #else
-        return .stable
-        #endif
+        UpdateChannel(rawValue: Bundle.main.object(forInfoDictionaryKey: "EaveBuildChannel") as? String ?? "") ?? .dev
     }
 
 }

@@ -1,4 +1,14 @@
-# Changelog
+# Eave Changelog
+
+## [Unreleased]
+
+- Start Eave's independent version line at `0.1.0` with `dev` and `release` channels.
+- Increment local build numbers independently per channel on every app build.
+- Change the app version only when preparing an official release archive.
+
+---
+
+# Upstream Atoll Changelog
 
 All notable changes to Atoll will be documented in this file.
 
