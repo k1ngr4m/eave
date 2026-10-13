@@ -1,246 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-  "Show sensor widget when collapsed": {
-    "localizations": {
-      "zh-Hans": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "收起时显示传感器小组件"
-        }
-      },
-      "zh-Hant": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "收起時顯示感測器小工具"
-        }
-      }
-    }
-  },
-  "Sensor settings…": {
-    "localizations": {
-      "zh-Hans": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "传感器设置…"
-        }
-      },
-      "zh-Hant": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "感測器設定…"
-        }
-      }
-    }
-  },
-  "Open sensor details": {
-    "localizations": {
-      "zh-Hans": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "打开传感器详情"
-        }
-      },
-      "zh-Hant": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "開啟感測器詳細資訊"
-        }
-      }
-    }
-  },
-    "Show memory widget when collapsed": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "收起时显示内存小组件"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "收起時顯示記憶體小工具"
-          }
-        }
-      }
-    },
-    "Show disk widget when collapsed": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "收起时显示磁盘小组件"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "收起時顯示磁碟小工具"
-          }
-        }
-      }
-    },
-    "Memory settings…": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "内存设置…"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "記憶體設定…"
-          }
-        }
-      }
-    },
-    "Disk settings…": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "磁盘设置…"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "磁碟設定…"
-          }
-        }
-      }
-    },
-    "Open memory details": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开内存详情"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開啟記憶體詳細資訊"
-          }
-        }
-      }
-    },
-    "Open disk details": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开磁盘详情"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開啟磁碟詳細資訊"
-          }
-        }
-      }
-    },
-    "Show CPU widget when collapsed" : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "收起时显示 CPU 小组件"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "收起時顯示 CPU 小工具"
-          }
-        }
-      }
-    },
-    "Show GPU widget when collapsed" : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "收起时显示 GPU 小组件"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "收起時顯示 GPU 小工具"
-          }
-        }
-      }
-    },
-    "CPU settings…" : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "CPU 设置…"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "CPU 設定…"
-          }
-        }
-      }
-    },
-    "GPU settings…" : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GPU 设置…"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GPU 設定…"
-          }
-        }
-      }
-    },
-    "Open CPU details" : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开 CPU 详情"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開啟 CPU 詳細資訊"
-          }
-        }
-      }
-    },
-    "Open GPU details" : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开 GPU 详情"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開啟 GPU 詳細資訊"
-          }
-        }
-      }
-    },
     "" : {
       "localizations" : {
         "ar" : {
@@ -1364,16 +1124,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ · %@"
-          }
-        }
-      }
-    },
-    "%@ %@, %@ %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ %2$@, %3$@ %4$@"
           }
         }
       }
@@ -4136,6 +3886,7 @@
     },
     "±10 Seconds" : {
       "comment" : "Display name for the \"±10 Seconds\" music skip behavior option.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -4745,6 +4496,7 @@
     },
     "3 lines" : {
       "comment" : "Pinned lyrics setting in Media settings.",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4979,6 +4731,7 @@
       }
     },
     "4 hours" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5142,6 +4895,7 @@
     },
     "5 lines" : {
       "comment" : "Pinned lyrics setting in Media settings.",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -5775,6 +5529,7 @@
       }
     },
     "15 minutes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6039,6 +5794,7 @@
       }
     },
     "30 minutes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6380,6 +6136,7 @@
     },
     "Accent" : {
       "comment" : "Display name for the caps lock indicator tint mode.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -7402,6 +7159,7 @@
     },
     "Adaptive gradient" : {
       "comment" : "Display name for the timer icon color mode: adaptive gradient.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -7449,6 +7207,7 @@
       }
     },
     "Adapts based on power source and battery level." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -10780,6 +10539,7 @@
       }
     },
     "Anthropic's Claude with strong analytical skills" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -12304,6 +12064,7 @@
       }
     },
     "Automatic" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -12902,6 +12663,7 @@
       }
     },
     "Balanced" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -12925,6 +12687,7 @@
     },
     "Bar" : {
       "comment" : "Name of the timer progress style that shows a horizontal bar.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -21247,6 +21010,7 @@
       }
     },
     "Compact" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -23319,7 +23083,6 @@
     },
     "CPU" : {
       "comment" : "Title for the CPU usage graph.",
-      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -23409,6 +23172,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "CPU 概覽"
+          }
+        }
+      }
+    },
+    "CPU settings…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CPU 设置…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CPU 設定…"
           }
         }
       }
@@ -23674,6 +23453,7 @@
     },
     "Current" : {
       "comment" : "Pinned lyrics setting in Media settings.",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -27494,6 +27274,7 @@
     },
     "Digital" : {
       "comment" : "The display name for the \"Digital\" reminder presentation style.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -28468,6 +28249,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "磁碟讀取"
+          }
+        }
+      }
+    },
+    "Disk settings…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "磁盘设置…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "磁碟設定…"
           }
         }
       }
@@ -36959,6 +36756,7 @@
       }
     },
     "File Sharing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -38350,6 +38148,7 @@
       }
     },
     "Full Calendar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -39828,6 +39627,7 @@
       }
     },
     "Google's Gemini AI with multimodal capabilities" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -39969,7 +39769,6 @@
     },
     "GPU" : {
       "comment" : "Title for the GPU usage graph.",
-      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -40059,6 +39858,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "GPU 概覽"
+          }
+        }
+      }
+    },
+    "GPU settings…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPU 设置…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPU 設定…"
           }
         }
       }
@@ -40318,6 +40133,7 @@
     },
     "Green" : {
       "comment" : "Display name for the green caps lock indicator tint mode.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -40365,6 +40181,7 @@
       }
     },
     "Groq's fast inference for OpenAI-compatible models" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -41434,6 +41251,7 @@
       }
     },
     "High Performance" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -43199,6 +43017,7 @@
       }
     },
     "Indicator only" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -46839,6 +46658,7 @@
       }
     },
     "Local AI model (Ollama or similar)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -50311,6 +50131,7 @@
       }
     },
     "Media Output" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -51083,6 +50904,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "記憶體壓力升高。關閉 App 可能有助於緩解。"
+          }
+        }
+      }
+    },
+    "Memory settings…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内存设置…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記憶體設定…"
           }
         }
       }
@@ -52065,6 +51902,7 @@
       }
     },
     "Mini View" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -57675,6 +57513,7 @@
       }
     },
     "Notch Tab" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -58887,6 +58726,22 @@
         }
       }
     },
+    "Open CPU details" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 CPU 详情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟 CPU 詳細資訊"
+          }
+        }
+      }
+    },
     "Open Developer Dashboard" : {
       "localizations" : {
         "ko" : {
@@ -58905,6 +58760,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打開開發者控制台"
+          }
+        }
+      }
+    },
+    "Open disk details" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开磁盘详情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟磁碟詳細資訊"
           }
         }
       }
@@ -58957,6 +58828,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "開啟 Google AI Studio"
+          }
+        }
+      }
+    },
+    "Open GPU details" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 GPU 详情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟 GPU 詳細資訊"
           }
         }
       }
@@ -59059,6 +58946,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在行事曆中開啟"
+          }
+        }
+      }
+    },
+    "Open memory details" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开内存详情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟記憶體詳細資訊"
           }
         }
       }
@@ -59225,6 +59128,22 @@
     },
     "Open Privacy Settings" : {
 
+    },
+    "Open sensor details" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开传感器详情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟感測器詳細資訊"
+          }
+        }
+      }
     },
     "Open Settings" : {
       "localizations" : {
@@ -59446,6 +59365,7 @@
       }
     },
     "OpenAI's GPT models with advanced reasoning" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -59858,6 +59778,7 @@
       }
     },
     "Original lyrics" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -60149,6 +60070,7 @@
     },
     "Panel" : {
       "comment" : "Display name for the clipboard display mode \"Panel\".",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -62463,6 +62385,7 @@
       }
     },
     "Power Saver" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -68435,6 +68358,7 @@
     },
     "Ring" : {
       "comment" : "The name of the timer progress style that shows a ring shape.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -71227,6 +71151,22 @@
         }
       }
     },
+    "Sensor settings…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "传感器设置…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "感測器設定…"
+          }
+        }
+      }
+    },
     "Sensors" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -71251,6 +71191,7 @@
     },
     "Separate Tab" : {
       "comment" : "Display name for the clipboard display mode option to open the clipboard in a separate tab.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -73473,6 +73414,38 @@
         }
       }
     },
+    "Show CPU widget when collapsed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起时显示 CPU 小组件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起時顯示 CPU 小工具"
+          }
+        }
+      }
+    },
+    "Show disk widget when collapsed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起时显示磁盘小组件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起時顯示磁碟小工具"
+          }
+        }
+      }
+    },
     "Show download progress" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -74123,6 +74096,22 @@
         }
       }
     },
+    "Show GPU widget when collapsed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起时显示 GPU 小组件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起時顯示 GPU 小工具"
+          }
+        }
+      }
+    },
     "Show intraday chart for %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -74620,6 +74609,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在動態島中顯示媒體控制"
+          }
+        }
+      }
+    },
+    "Show memory widget when collapsed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起时显示内存小组件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起時顯示記憶體小工具"
           }
         }
       }
@@ -75416,6 +75421,22 @@
         }
       }
     },
+    "Show sensor widget when collapsed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起时显示传感器小组件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起時顯示感測器小工具"
+          }
+        }
+      }
+    },
     "Show shuffle and repeat buttons" : {
       "comment" : "merge:ko:alt='임의 재생 및 반복 버튼 표시'",
       "extractionState" : "stale",
@@ -75951,6 +75972,7 @@
       }
     },
     "Shows clipboard as a dropdown attached to the clipboard button" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -75967,6 +75989,7 @@
       }
     },
     "Shows clipboard in a floating panel near the notch" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -75983,6 +76006,7 @@
       }
     },
     "Shows color picker as a dropdown attached to the color picker button" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -76005,6 +76029,7 @@
       }
     },
     "Shows color picker in a floating panel near the notch" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -76027,6 +76052,7 @@
       }
     },
     "Shows copied items in a dedicated clipboard tab inside the notch; drag items straight out to other apps" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -76043,6 +76069,7 @@
       }
     },
     "Shows copied items in a separate tab within the Dynamic Island (merges with Notes if enabled)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -76112,6 +76139,7 @@
     },
     "Shows screen assistant as a dropdown attached to the AI button" : {
       "comment" : "Description of the screen assistant display mode option that shows the screen assistant as a dropdown attached to the AI button.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -76160,6 +76188,7 @@
     },
     "Shows screen assistant in a floating panel near the notch" : {
       "comment" : "Description of the screen assistant display mode option that shows the screen assistant in a floating panel near the notch.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -76784,6 +76813,7 @@
       }
     },
     "Simplified Chinese" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -77065,6 +77095,7 @@
     },
     "Skip forward or backward by ten seconds" : {
       "comment" : "Description of a music skip behavior option.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -77266,6 +77297,7 @@
       }
     },
     "Slower detection (4Hz) to maximize battery life." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -77903,6 +77935,7 @@
       }
     },
     "Solid" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -78889,6 +78922,7 @@
       }
     },
     "Standard detection (16Hz) for smooth responsiveness." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -79052,6 +79086,7 @@
     },
     "Standard previous/next track controls" : {
       "comment" : "Description of the music skip behavior option to use standard previous/next track controls.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -80092,6 +80127,7 @@
       }
     },
     "Stats update interval" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -81328,6 +81364,7 @@
       }
     },
     "Sweep" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -82526,6 +82563,7 @@
       }
     },
     "The current line is lit by one fixed gradient that does not move, the way lyrics were marked before the sweep." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -82548,6 +82586,7 @@
       }
     },
     "The current line is lit in one flat colour, with nothing crossing it." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -82570,6 +82609,7 @@
       }
     },
     "The highlight travels across the line word by word, in reading order." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -85018,6 +85058,7 @@
     },
     "Track Skip" : {
       "comment" : "Display name for the \"Track Skip\" music skip behavior.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -85065,6 +85106,7 @@
       }
     },
     "Traditional Chinese" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -85801,6 +85843,7 @@
       }
     },
     "Ultra-fast detection (30Hz) for near-instant hiding." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -86477,6 +86520,7 @@
       }
     },
     "Until turned off" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -86715,6 +86759,7 @@
       }
     },
     "Update interval" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -91661,6 +91706,7 @@
       }
     },
     "With stop button" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -92393,6 +92439,7 @@
     },
     "Youtube Music" : {
       "comment" : "Spotify music service.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
