@@ -50,7 +50,7 @@ enum AppMetadata {
 
     static func versionDisplayString(from infoDictionary: [String: Any]) -> String {
         let version = infoDictionary["CFBundleShortVersionString"] as? String ?? "1.0.0"
-        let build = infoDictionary["CFBundleVersion"] as? String ?? "1"
-        return "\(version) (\(build))"
+        let build = infoDictionary["EaveBuildNumber"] as? String ?? "—"
+        return "\(version) (build \(build))"
     }
 }
