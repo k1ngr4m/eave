@@ -48,7 +48,8 @@ def available_version(version, releases):
 def check_remote(version):
     pages = json.loads(run('gh', 'api', '--paginate', '--slurp', f'repos/{REPO}/releases?per_page=100'))
     available_version(version, [item for page in pages for item in page])
-    if run('git', 'ls-remote', '--tags', f'https://github.com/{REPO}.git', f'refs/tags/v{version}'):
+    refs = json.loads(run('gh', 'api', f'repos/{REPO}/git/matching-refs/tags/v{version}'))
+    if any(ref['ref'] == f'refs/tags/v{version}' for ref in refs):
         raise ValueError(f'Remote tag v{version} already exists')
 
 

@@ -22,6 +22,13 @@ def rejected(action):
     raise AssertionError('Unsafe operation accepted')
 
 
+# GitHub matching-refs uses prefix matching; only the exact tag blocks release.
+with patch.object(release, 'run', side_effect=['[[]]', '[{"ref":"refs/tags/v0.1.0-old"}]']):
+    release.check_remote('0.1.0')
+with patch.object(release, 'run', side_effect=['[[]]', '[{"ref":"refs/tags/v0.1.0"}]']):
+    rejected(lambda: release.check_remote('0.1.0'))
+
+
 with tempfile.TemporaryDirectory() as directory:
     root = Path(directory)
     # Different machines have unrelated counters; the installation version must
