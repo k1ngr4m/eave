@@ -27,7 +27,6 @@ struct PinnedLyricsModifier: ViewModifier {
     @Default(.pinnedLyricContext) private var context
     @Default(.pinnedLyricFontSize) private var fontSize
     let isVisible: Bool
-    let isContentHidden: Bool
 
     private var tint: Color {
         Defaults[.playerColorTinting]
@@ -43,8 +42,6 @@ struct PinnedLyricsModifier: ViewModifier {
             .overlay(alignment: .bottom) {
                 if height > 0 {
                     lyricRows
-                        .opacity(isContentHidden ? 0 : 1)
-                        .accessibilityHidden(isContentHidden)
                 }
             }
             .animation(.smooth(duration: 0.28), value: height)
@@ -54,7 +51,7 @@ struct PinnedLyricsModifier: ViewModifier {
         let slots = PinnedLyricsContextRows.slots(lines: musicManager.syncedLyrics,
             duration: musicManager.songDuration, currentIndex: musicManager.currentLyricIndex,
             context: context)
-        return TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !musicManager.isPlaying || isContentHidden)) { timeline in
+        return TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !musicManager.isPlaying)) { timeline in
             VStack(spacing: 0) {
                 ForEach(slots.indices, id: \.self) { index in
                     let slot = slots[index]
@@ -83,8 +80,8 @@ struct PinnedLyricsModifier: ViewModifier {
 }
 
 extension View {
-    func pinnedLyrics(isVisible: Bool, isContentHidden: Bool = false) -> some View {
-        modifier(PinnedLyricsModifier(isVisible: isVisible, isContentHidden: isContentHidden))
+    func pinnedLyrics(isVisible: Bool) -> some View {
+        modifier(PinnedLyricsModifier(isVisible: isVisible))
     }
 }
 

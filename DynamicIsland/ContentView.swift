@@ -1272,8 +1272,7 @@ struct ContentView: View {
                           .onChange(of: geo.size.width) { _, width in closedContentWidth = width }
                   }
               }
-              .pinnedLyrics(isVisible: pinnedLyricsVisible,
-                  isContentHidden: isSneakPeekVisibleOnCurrentScreen || isConnectivityHUDVisible)
+              .pinnedLyrics(isVisible: pinnedLyricsVisible)
               // A connectivity HUD must remain centred on the physical notch:
               // its middle transparent lane is what keeps both wings visible.
               // Menu-bar clearance would shift that lane underneath the camera
@@ -2186,7 +2185,7 @@ struct ContentView: View {
         closedNetworkWidgetVisible ? ClosedMonitoringWidgets.height : 0
     }
 
-    /// Track-level reservation. A sneak peek hides only the overlaid words.
+    /// Track-level reservation, independent of notification HUD visibility.
     private var pinnedLyricsVisible: Bool {
         PinnedLyricsView.shouldReserve(
             lyricsEnabled: enableLyrics,

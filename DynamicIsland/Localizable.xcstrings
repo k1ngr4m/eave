@@ -7154,6 +7154,18 @@
             "state" : "translated",
             "value" : "적응형 오디오"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自适应音频"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自適應音訊"
+          }
         }
       }
     },
@@ -22421,6 +22433,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "대화 인식"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话感知"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對話感知"
           }
         }
       }
@@ -56601,6 +56625,18 @@
             "state" : "translated",
             "value" : "노이즈 캔슬링"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "降噪"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "降噪"
+          }
         }
       }
     },
@@ -85530,6 +85566,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "주변음 허용"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通透模式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通透模式"
           }
         }
       }
