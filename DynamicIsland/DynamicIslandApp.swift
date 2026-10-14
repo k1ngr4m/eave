@@ -235,6 +235,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        DesktopPingManager.shared.stop()
         // Guarantee the native OSD is usable after we exit: if we were
         // suppressing it, OSDUIHelper is SIGSTOP-frozen and the async restore in
         // enableSystemHUD() would not finish before the process dies. Resume it
@@ -659,6 +660,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = EaveUpdater.shared
+        DesktopPingManager.shared.start()
         Self.shared = self
         LockScreenLiveActivityWindowManager.shared.configure(viewModel: vm)
         LockScreenManager.shared.configure(viewModel: vm)

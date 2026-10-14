@@ -58,6 +58,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     case stats
     case llmAgents
     case stocks
+    case desktopPing
     case downloads
     case shelf
     case shortcuts
@@ -74,7 +75,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .media, .liveActivities, .lockScreen, .devices:                 return .mediaAndDisplay
         case .hudAndOSD, .battery, .stats:                                   return .system
         case .timer, .calendar, .notes:                                      return .productivity
-        case .shelf, .downloads, .shortcuts, .stocks:                         return .utilities
+        case .shelf, .downloads, .shortcuts, .stocks, .desktopPing:                         return .utilities
         case .llmAgents, .terminal:                                          return .developer
         case .about:                                                         return .info
         }
@@ -93,6 +94,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .calendar: return String(localized: "Calendar")
         case .hudAndOSD: return String(localized: "Controls")
         case .battery: return String(localized: "Battery")
+        case .desktopPing: return String(localized: "Desktop Pings")
         case .stocks: return String(localized: "Stocks")
         case .stats: return String(localized: "Monitoring")
         case .llmAgents: return String(localized: "LLM Agents")
@@ -118,6 +120,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .calendar: return "calendar"
         case .hudAndOSD: return "dial.medium.fill"
         case .battery: return "battery.100.bolt"
+        case .desktopPing: return "scope"
         case .stocks: return "chart.line.uptrend.xyaxis"
         case .stats: return "chart.xyaxis.line"
         case .llmAgents: return "sparkles"
@@ -143,6 +146,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .calendar: return .cyan
         case .hudAndOSD: return .indigo
         case .battery: return Color(red: 0.202, green: 0.783, blue: 0.348, opacity: 1.000)
+        case .desktopPing: return .cyan
         case .stocks: return .red
         case .stats: return .teal
         case .llmAgents: return .purple
@@ -213,6 +217,7 @@ enum LockScreenSettingsSection: String, CaseIterable, Identifiable {
 
 private enum SettingsSearchIndex {
     static let entries: [SettingsSearchEntry] = [
+        SettingsSearchEntry(tab: .desktopPing, title: "Desktop Pings", keywords: ["lolping", "ping", "wheel", "signal", "pause", "轮盘", "信号", "暫停", "訊號"], highlightID: nil),
         // General
         SettingsSearchEntry(tab: .general, title: "Enable Minimalistic UI", keywords: ["minimalistic", "ui mode", "general"], highlightID: SettingsTab.general.highlightID(for: "Enable Minimalistic UI")),
         SettingsSearchEntry(tab: .general, title: "Menubar icon", keywords: ["menu bar", "status bar", "icon"], highlightID: SettingsTab.general.highlightID(for: "Menubar icon")),
@@ -775,6 +780,7 @@ struct SettingsView: View {
             .downloads,
             .shortcuts,
             .stocks,
+            .desktopPing,
             // Developer
             .llmAgents,
             .terminal,
@@ -1023,6 +1029,8 @@ struct SettingsView: View {
             SettingsForm(tab: .battery) {
                 Charge()
             }
+        case .desktopPing:
+            SettingsForm(tab: .desktopPing) { DesktopPingSettings() }
         case .stocks:
             SettingsForm(tab: .stocks) {
                 Form { StocksSettingsSection() }

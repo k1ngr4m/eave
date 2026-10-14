@@ -369,6 +369,7 @@
 				F54406E52CD4987A00C7AFD9 /* Resources */,
 				7EA69B1B2F5AE13500EB2D16 /* CopyFiles */,
 				EA7E57A70000000000000008 /* Embed Mobile Battery Helper */,
+				EA7E57A70000000000000030 /* Embed Desktop Ping */,
 				7EFAA8AA2F6F12F3000A99E8 /* ShellScript */,
 				EA7E57A70000000000000020 /* Stamp App Version */,
 			);
@@ -489,6 +490,18 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		EA7E57A70000000000000030 /* Embed Desktop Ping */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = ();
+			name = "Embed Desktop Ping";
+			outputPaths = ();
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "/bin/bash \"$SRCROOT/scripts/build-desktop-ping.sh\"";
+		};
 		7EFAA8AA2F6F12F3000A99E8 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;

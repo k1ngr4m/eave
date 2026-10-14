@@ -30,3 +30,9 @@ Network and sensor details additionally embed Stats' original AppKit popup, sett
 notifications, charts and readers in Packages/EaveNetworkStats (see UPSTREAM.md).
 Network preferences and latest snapshots use Eave-owned UserDefaults storage.
 Stats remote telemetry, app updater and fan control are excluded.
+
+Desktop ping wheel
+------------------
+Input helper and signal rendering adapted from lolPing, Copyright 2026 Danrui Meng,
+MIT License. See Support/DesktopPing/LICENSE, also bundled with the app.
+Signal textures and sounds are copyright Riot Games and are excluded from MIT.
