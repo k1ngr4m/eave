@@ -7988,6 +7988,13 @@ struct LLMAgentsSettings: View {
 
             if enableLLMUsageFeature {
                 Section {
+                    Defaults.Toggle(key: .showCodexLiveActivity) {
+                        Text("Show Codex activity in the closed notch")
+                    }
+                } footer: {
+                    Text("Shows a breathing Codex icon and elapsed task time. Click to open Codex details.")
+                }
+                Section {
                     Defaults.Toggle(key: .enableClaudeProvider) {
                         Text("Claude")
                     }

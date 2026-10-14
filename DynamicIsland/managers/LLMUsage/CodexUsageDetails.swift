@@ -59,6 +59,11 @@ struct CodexUsageDetails: Equatable {
     var days: [CodexUsageBucket] = []
     var hours: [CodexUsageBucket] = []
     var tasks: [CodexLiveTask] = []
+    func activityStarted(at now: Date) -> Date? {
+        // ponytail: like Vorssaint, hide turns silent for 10 minutes; use process/turn status if long silent work needs tracking.
+        tasks.filter { $0.started <= now && now.timeIntervalSince($0.lastActivity) < 600 }
+            .map(\.started).min()
+    }
     var activeDays: Int { days.filter { $0.totals.totalTokens > 0 }.count }
     var total: UsageTotals { days.reduce(into: UsageTotals()) { $0.add($1.totals) } }
     var busiestDay: CodexUsageBucket? { days.filter { $0.totals.totalTokens > 0 }.max { $0.totals.totalTokens < $1.totals.totalTokens } }

@@ -1,6 +1,36 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Show Codex activity in the closed notch" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在收起的刘海中显示 Codex 活动"
+          }
+        }
+      }
+    },
+    "Shows a breathing Codex icon and elapsed task time. Click to open Codex details." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示带呼吸动画的 Codex 图标和任务已运行时间，点击打开 Codex 详情。"
+          }
+        }
+      }
+    },
+    "Codex task running" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codex 任务正在运行"
+          }
+        }
+      }
+    },
     "Create and design with mirror and visual effects." : {
       "localizations" : {
         "ko" : {

@@ -51,6 +51,10 @@ struct ContentView: View {
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
     @ObservedObject var musicManager = MusicManager.shared
     @ObservedObject var timerManager = TimerManager.shared
+    @ObservedObject private var llmUsageManager = LLMUsageManager.shared
+    @Default(.enableLLMUsageFeature) private var enableLLMUsageFeature
+    @Default(.enableCodexProvider) private var enableCodexProvider
+    @Default(.showCodexLiveActivity) private var showCodexLiveActivity
     @ObservedObject var reminderManager = ReminderLiveActivityManager.shared
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var statsManager = StatsManager.shared
@@ -333,6 +337,27 @@ struct ContentView: View {
 
     private var closedStockCode: String? {
         stockWatchlist.contains(stockPinnedCode) ? stockPinnedCode : nil
+    }
+
+    private var codexActivityStarted: Date? {
+        guard enableLLMUsageFeature, enableCodexProvider, showCodexLiveActivity,
+              case .success(let snapshot) = llmUsageManager.results[.codex] else { return nil }
+        return snapshot.codexDetails?.activityStarted(at: .now)
+    }
+
+    private var showClosedAgent: Bool {
+        codexActivityStarted != nil
+            && vm.notchState == .closed && !vm.hideOnClosed && !lockScreenManager.isLocked
+            && !enableMinimalisticUI && !coordinator.firstLaunch
+            && !isCurrentScreenExpansionVisible && !isSneakPeekVisibleOnCurrentScreen
+            && !isConnectivityHUDVisible
+            && !(capsLockManager.isCapsLockActive && Defaults[.enableCapsLockIndicator])
+            && !(timerManager.isTimerActive && coordinator.timerLiveActivityEnabled)
+            && !(reminderManager.isActive && enableReminderLiveActivity)
+            && !(recordingManager.isRecording && Defaults[.enableScreenRecordingDetection] && Defaults[.showRecordingIndicator])
+            && !(privacyManager.hasAnyIndicator && (Defaults[.enableCameraDetection] || Defaults[.enableMicrophoneDetection]))
+            && !(downloadManager.isDownloading && Defaults[.enableDownloadListener])
+            && !localSendLiveActivityActive
     }
 
     private var showClosedStock: Bool {
@@ -1149,6 +1174,14 @@ struct ContentView: View {
                       } else if vm.notchState == .closed && capsLockManager.isCapsLockActive && Defaults[.enableCapsLockIndicator] && !vm.hideOnClosed && !lockScreenManager.isLocked {
                           InlineHUD(type: .constant(.capsLock), value: .constant(1.0), icon: .constant(""), hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(AnyTransition.move(edge: .trailing).combined(with: .opacity))
+                      } else if showClosedAgent, let started = codexActivityStarted {
+                          CodexLiveActivity(started: started,
+                                            centerWidth: vm.closedNotchSize.width + (isHovering ? 8 : 0),
+                                            height: vm.effectiveClosedNotchHeight + (isHovering ? 8 : 0)) {
+                              coordinator.codexDetailPresented = true
+                              vm.open(target: .llmUsage)
+                          }
+                          .transition(closedLiveActivitySwapTransition)
                       } else if showClosedStock, let code = closedStockCode {
                           ClosedStockView(code: code,
                                           centerWidth: vm.closedNotchSize.width + (isHovering ? 8 : 0),
@@ -1258,6 +1291,7 @@ struct ContentView: View {
                   }
               }
               .animation(.smooth(duration: 0.28), value: closedNetworkWidgetVisible)
+              .animation(.smooth(duration: 0.28), value: showClosedAgent)
               .background {
                   GeometryReader { geo in
                       Color.clear
@@ -1824,6 +1858,7 @@ struct ContentView: View {
 
     private var isClosedMusicGestureContext: Bool {
         vm.notchState == .closed
+            && !showClosedAgent
             && !showClosedStock
             && coordinator.musicLiveActivityEnabled
             && closedMusicContentEnabled
@@ -2137,7 +2172,8 @@ struct ContentView: View {
         let height = max(closedHeight, recordingSize?.height ?? 0) + 6 + closedNetworkWidgetHeight
             + PinnedLyricsView.reservedHeight(isEligible: pinnedLyricsVisible,
                 availability: musicManager.lyricsAvailability, context: pinnedLyricContext, fontSize: pinnedLyricFontSize)
-        let width = max(closedWidth, recordingSize?.width ?? 0, closedNetworkWidgetVisible ? ClosedMonitoringWidgets.minimumWidth : 0) + 24
+        let width = max(closedWidth, recordingSize?.width ?? 0, closedNetworkWidgetVisible ? ClosedMonitoringWidgets.minimumWidth : 0,
+                        showClosedAgent ? closedContentWidth : 0) + 24
         // Same shift the content is drawn with, so the hit area stays under it.
         let minX = screen.frame.midX - width / 2 + menuBarClearanceOffset
         let minY = screen.frame.maxY - height

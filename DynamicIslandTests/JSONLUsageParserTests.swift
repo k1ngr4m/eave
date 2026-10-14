@@ -302,6 +302,34 @@ final class CodexUsageDetailsTests: XCTestCase {
         }
     }
 
+    func testClosedActivityLifecycleAndClock() throws {
+        try temporary { root in
+            let file = root.appendingPathComponent("session.jsonl")
+            try Data((context() + line("event_msg", ["type": "task_started"])).utf8).write(to: file)
+            let store = store(root)
+            func start(at date: Date) -> Date? {
+                store.snapshot(now: date, calendar: calendar).codexDetails?.activityStarted(at: date)
+            }
+            XCTAssertEqual(start(at: now), now)
+            XCTAssertEqual(start(at: now.addingTimeInterval(599)), now)
+            XCTAssertNil(start(at: now.addingTimeInterval(600)))
+            try append(modern("resume", at: now.addingTimeInterval(601)), to: file)
+            XCTAssertEqual(start(at: now.addingTimeInterval(602)), now)
+            try append(line("event_msg", ["type": "task_complete"], at: now.addingTimeInterval(603)), to: file)
+            XCTAssertNil(start(at: now.addingTimeInterval(604)))
+        }
+        let old = CodexLiveTask(id: "old", started: now.addingTimeInterval(-900), lastActivity: now.addingTimeInterval(-600), model: "", project: "")
+        let first = CodexLiveTask(id: "first", started: now.addingTimeInterval(-842), lastActivity: now, model: "", project: "")
+        let second = CodexLiveTask(id: "second", started: now.addingTimeInterval(-20), lastActivity: now, model: "", project: "")
+        var details = CodexUsageDetails()
+        details.tasks = [second, old, first]
+        XCTAssertEqual(details.activityStarted(at: now), first.started)
+        XCTAssertNil(details.activityStarted(at: now.addingTimeInterval(-1000)))
+        XCTAssertEqual(CodexLiveActivity.elapsed(since: first.started, at: now), "14:02")
+        XCTAssertEqual(CodexLiveActivity.elapsed(since: now, at: now.addingTimeInterval(3600)), "1:00:00")
+        XCTAssertEqual(CodexLiveActivity.elapsed(since: now, at: now.addingTimeInterval(-1)), "00:00")
+    }
+
     func testModernDedupArchiveAndModelSwitch() throws {
         try temporary { root in
             let sessions = root.appendingPathComponent("sessions")

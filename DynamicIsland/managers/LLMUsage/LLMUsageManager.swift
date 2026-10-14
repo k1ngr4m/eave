@@ -20,6 +20,13 @@ final class LLMUsageManager: ObservableObject {
     init(providers: [UsageProvider]? = nil) {
         self.injectedProviders = providers
         if providers == nil {
+            Timer.publish(every: 2, on: .main, in: .common).autoconnect()
+                .sink { [weak self] _ in
+                    guard Defaults[.enableLLMUsageFeature], Defaults[.enableCodexProvider],
+                          Defaults[.showCodexLiveActivity] else { return }
+                    Task { await self?.refreshCodexDetail() }
+                }
+                .store(in: &cancellables)
             Defaults.publisher(.enableLLMUsageFeature, options: [])
                 .receive(on: RunLoop.main)
                 .sink { [weak self] change in
@@ -72,7 +79,7 @@ final class LLMUsageManager: ObservableObject {
         (injectedProviders != nil || (Defaults[.enableLLMUsageFeature] && Defaults[id.enabledKey])) && providerVersions[id, default: 0] == version
     }
 
-    /// Called by the detail view's cancellable task. Overview refreshes keep their existing cadence.
+    /// Shared by the closed activity and detail view; coalesces concurrent refreshes.
     func refreshCodexDetail() async {
         if let codexRefresh { await codexRefresh.value; return }
         guard !isRefreshing, Defaults[.enableLLMUsageFeature],
