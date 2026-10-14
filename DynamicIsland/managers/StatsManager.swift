@@ -145,22 +145,22 @@ final class StatsManager: ObservableObject {
     }
 
     private func reconcile() {
-        network.setEnabled(Defaults[.enableStatsFeature] && (enabledModules.contains(.network) || Defaults[.showNetworkWidgetWhenClosed]) && !sleeping)
+        network.setEnabled(Defaults[.enableStatsFeature] && enabledModules.contains(.network) && !sleeping)
         let shouldRun = MonitoringActivity.shouldRun(enabled: Defaults[.enableStatsFeature], hasModules: !enabledModules.isEmpty,
                                         sleeping: sleeping, notchIsOpen: notchIsOpen, statsSelected: currentView == "stats",
                                         stopWhenClosed: Defaults[.statsStopWhenNotchCloses])
         for (module, monitor, widget) in [(MonitoringModule.cpu, cpu, Defaults[.showCPUWidgetWhenClosed]),
                                           (.gpu, gpu, Defaults[.showGPUWidgetWhenClosed])] {
             monitor.setEnabled(Defaults[.enableStatsFeature] && !sleeping &&
-                ((shouldRun && enabledModules.contains(module)) || widget || monitor.settingsVisible))
+                ((enabledModules.contains(module) && (shouldRun || widget)) || monitor.settingsVisible))
         }
         for (module, monitor, widget) in [(MonitoringModule.memory, memory, Defaults[.showMemoryWidgetWhenClosed]),
                                           (.disk, disk, Defaults[.showDiskWidgetWhenClosed])] {
             monitor.setEnabled(Defaults[.enableStatsFeature] && !sleeping &&
-                ((shouldRun && enabledModules.contains(module)) || widget || monitor.settingsVisible))
+                ((enabledModules.contains(module) && (shouldRun || widget)) || monitor.settingsVisible))
         }
         sensors.setEnabled(Defaults[.enableStatsFeature] && !sleeping &&
-            ((shouldRun && enabledModules.contains(.sensors)) || Defaults[.showSensorsWidgetWhenClosed] || sensors.settingsVisible))
+            ((enabledModules.contains(.sensors) && (shouldRun || Defaults[.showSensorsWidgetWhenClosed])) || sensors.settingsVisible))
         if shouldRun { startMonitoring() } else { stopMonitoring() }
     }
 

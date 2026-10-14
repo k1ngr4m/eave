@@ -1,4 +1,5 @@
 """Run: python3 tests/test_monitoring.py [--live] [--ui].
+--ui --modules-only checks module switches without opening detail windows.
 --ui also checks the real manager and renders the overview in an isolated defaults suite.
 First build the Debug app with -derivedDataPath .build/stats-monitoring for Defaults.o.
 """
@@ -142,6 +143,52 @@ final class DynamicIslandViewModel: ObservableObject {
 Task { @MainActor in
     EaveNetworkStats.Store.shared = Store(defaults: monitoringTestDefaults)
     let manager = StatsManager.shared
+    let widgetKeys: [Defaults.Key<Bool>] = [.showCPUWidgetWhenClosed, .showMemoryWidgetWhenClosed,
+        .showGPUWidgetWhenClosed, .showDiskWidgetWhenClosed, .showNetworkWidgetWhenClosed, .showSensorsWidgetWhenClosed]
+    for key in widgetKeys { Defaults[key] = true }
+    manager.updateMonitoringState(notchIsOpen: false, currentView: "other")
+    try await Task.sleep(for: .seconds(3))
+    @MainActor func running(_ module: MonitoringModule) -> Bool {
+        switch module {
+        case .cpu: return manager.cpu.isEnabled
+        case .memory: return manager.memory.isEnabled
+        case .gpu: return manager.gpu.isEnabled
+        case .disk: return manager.disk.isEnabled
+        case .network: return manager.network.isEnabled
+        case .sensors: return manager.sensors.isEnabled
+        }
+    }
+    for module in MonitoringModule.allCases {
+        assert(running(module))
+        assert(ClosedMonitoringWidgets.entries.contains { $0.0 == module })
+        Defaults[module.visibilityKey] = false
+        try await Task.sleep(for: .milliseconds(100))
+        assert(!running(module), "Disabled module must stop sampling: \(module)")
+        assert(!manager.enabledModules.contains(module))
+        assert(!ClosedMonitoringWidgets.entries.contains { $0.0 == module })
+        assert(manager.samples[module] == nil && manager.history[module] == nil)
+        assert(widgetKeys.allSatisfy { Defaults[$0] })
+        Defaults[module.visibilityKey] = true
+        try await Task.sleep(for: .milliseconds(100))
+        assert(running(module))
+        assert(ClosedMonitoringWidgets.entries.contains { $0.0 == module })
+    }
+    for module in MonitoringModule.allCases { Defaults[module.visibilityKey] = false }
+    try await Task.sleep(for: .milliseconds(100))
+    assert(ClosedMonitoringWidgets.entries.isEmpty)
+    assert(MonitoringModule.allCases.allSatisfy { !running($0) })
+    for key in widgetKeys { Defaults[key] = false }
+    for module in MonitoringModule.allCases { Defaults[module.visibilityKey] = true }
+    try await Task.sleep(for: .milliseconds(100))
+    print("All six module switches gate collapsed widgets and sampling; re-enabling preserves widget preferences.")
+    if CommandLine.arguments.contains("--modules-only") {
+        Defaults[.enableStatsFeature] = false
+        try await Task.sleep(for: .milliseconds(100))
+        manager.network.usageReader.terminate()
+        manager.network.connectivityReader.terminate()
+        monitoringTestDefaults.removePersistentDomain(forName: suiteName)
+        exit(0)
+    }
     Defaults[.statsModuleOrder] = ["network", "cpu", "network", "removed"]
     try await Task.sleep(for: .milliseconds(100))
     assert(manager.enabledModules == [.network, .cpu, .memory, .gpu, .disk, .sensors])
@@ -385,6 +432,8 @@ Task { @MainActor in
     for module in MonitoringModule.allCases { Defaults[module.visibilityKey] = false }
     try await Task.sleep(for: .milliseconds(100))
     assert(!manager.isMonitoring && !manager.network.isEnabled)
+    manager.updateMonitoringState(notchIsOpen: false, currentView: "other")
+    for module in MonitoringModule.allCases where module != .network { Defaults[module.visibilityKey] = true }
     for key in [Defaults.Keys.showMemoryWidgetWhenClosed, .showDiskWidgetWhenClosed] {
         Defaults[key] = true
         try await Task.sleep(for: .milliseconds(300))
@@ -443,7 +492,8 @@ Task { @MainActor in
     assert(!manager.sensors.isEnabled)
     print("Closed sensor rows, click details, width cap, settings-only sampling and simulated sleep/wake passed.")
 
-    // The closed widget samples even when the overview's network card is hidden.
+    // Enabled modules can sample while the overview is closed.
+    Defaults[.showNetworkGraph] = true
     Defaults[.showNetworkWidgetWhenClosed] = true
     try await Task.sleep(for: .milliseconds(300))
     assert(manager.network.isEnabled && !manager.isMonitoring)
@@ -477,6 +527,7 @@ Task { @MainActor in
     try await Task.sleep(for: .milliseconds(300))
     assert(!widgetVM.isStatsPopoverActive)
     Defaults[.showNetworkWidgetWhenClosed] = false
+    Defaults[.showNetworkGraph] = false
     try await Task.sleep(for: .milliseconds(300))
     assert(!manager.network.isEnabled)
     print("Closed network widget: independent sampling, fixed height, click-to-open and dismissal passed.")
@@ -517,6 +568,7 @@ Task { @MainActor in
         try await Task.sleep(for: .milliseconds(300))
         assert(!monitor.isEnabled && !monitor.settingsVisible)
     }
+    Defaults[.showNetworkGraph] = true
     Defaults[.showCPUWidgetWhenClosed] = true
     Defaults[.showGPUWidgetWhenClosed] = true
     Defaults[.showNetworkWidgetWhenClosed] = true
@@ -569,7 +621,7 @@ if '--ui' in sys.argv:
         resources.mkdir()
         shutil.copytree(products / 'EaveNetworkStats_EaveNetworkStats.bundle', resources / 'EaveNetworkStats_EaveNetworkStats.bundle')
         import os
-        subprocess.run([str(executable), str(directory / 'overview.png')], check=True,
+        subprocess.run([str(executable), str(directory / 'overview.png'), *sys.argv[1:]], check=True,
                        env={**os.environ, 'LLVM_PROFILE_FILE': str(directory / 'checks.profraw')}, timeout=180)
 
         if destination := os.environ.get('EAVE_MONITORING_SNAPSHOT_DIR'):

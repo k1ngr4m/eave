@@ -46,13 +46,14 @@ struct ClosedMonitoringWidgets: View {
          (.network, Defaults[.showNetworkWidgetWhenClosed], NetworkMonitor.shared.widgets),
          (.sensors, Defaults[.showSensorsWidgetWhenClosed], SensorsMonitor.shared.widgets)]
         return MonitoringModule.ordered(Defaults[.statsModuleOrder]).compactMap { module in
-            guard let entry = candidates.first(where: { $0.0 == module }), entry.1, entry.2.size.width > 0 else { return nil }
+            guard Defaults[module.visibilityKey], let entry = candidates.first(where: { $0.0 == module }), entry.1, entry.2.size.width > 0 else { return nil }
             return (entry.0, entry.2)
         }
     }
     static var naturalWidth: CGFloat { entries.reduce(0) { $0 + $1.1.size.width } + CGFloat(max(0, entries.count - 1)) * 8 }
     static var minimumWidth: CGFloat { max(190, min(600, naturalWidth + 16)) }
 
+    @ObservedObject private var manager = StatsManager.shared
     @Default(.statsModuleOrder) private var moduleOrder
     @Default(.showMemoryWidgetWhenClosed) private var showMemory
     @Default(.showDiskWidgetWhenClosed) private var showDisk

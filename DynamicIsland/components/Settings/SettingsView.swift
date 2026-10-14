@@ -7864,6 +7864,7 @@ struct StatsSettings: View {
                                 let title = moduleTitles[module] ?? module.title
                                 VStack(spacing: 8) {
                                     MonitoringWidgetPreview(widgets: module.widgets)
+                                        .opacity(manager.enabledModules.contains(module) ? 1 : 0.35)
                                     Defaults.Toggle(key: module.visibilityKey) { Text(LocalizedStringKey(title)) }
                                         .toggleStyle(.checkbox)
                                         .font(.caption)

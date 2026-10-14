@@ -214,7 +214,8 @@ struct BluetoothSettingsSection: View {
                                     .accessibilityHidden(true)
                                     .frame(width: 18)
                             }
-                            .frame(height: 30)
+                            .frame(height: Self.orderRowHeight)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
                             .opacity(isHidden ? 0.45 : 1)
                         }
                         .onMove { source, destination in
@@ -226,6 +227,9 @@ struct BluetoothSettingsSection: View {
                         }
                     }
                     .listStyle(.inset)
+                    .environment(\.defaultMinListRowHeight, Self.orderRowHeight)
+                    .contentMargins(.vertical, Self.orderListPadding, for: .scrollContent)
+                    .scrollDisabled(true)
                     .scrollContentBackground(.hidden)
                     .frame(height: orderListHeight)
                 }
@@ -327,8 +331,11 @@ struct BluetoothSettingsSection: View {
 
     /// Sized for every row so no device is clipped; the enclosing Form scrolls
     /// when the paired list is long.
+    private static let orderRowHeight: CGFloat = 40
+    private static let orderListPadding: CGFloat = 8
+
     private var orderListHeight: CGFloat {
-        max(CGFloat(orderedBluetoothDevices.count) * 32 + 12, 48)
+        CGFloat(orderedBluetoothDevices.count) * Self.orderRowHeight + Self.orderListPadding * 2
     }
 
     private var showInStatusPanelBinding: Binding<Bool> {

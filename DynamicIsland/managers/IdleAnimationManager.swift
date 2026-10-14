@@ -66,11 +66,11 @@ class IdleAnimationManager {
             print("✅ [IdleAnimationManager] First launch: Initialized with \(animations.count) animations")
         } else {
             // Subsequent launch - ensure all bundled animations are present
-            let existingNames = Set(existing.filter { $0.isBuiltIn }.map { $0.name })
-            
-            // Add any missing bundled animations
+            // Bundle URLs change when the app moves or a different build is launched.
             for bundledAnim in animations where bundledAnim.isBuiltIn {
-                if !existingNames.contains(bundledAnim.name) {
+                if let index = existing.firstIndex(where: { $0.isBuiltIn && $0.name == bundledAnim.name }) {
+                    existing[index].source = bundledAnim.source
+                } else {
                     existing.insert(bundledAnim, at: existing.firstIndex(where: { !$0.isBuiltIn }) ?? existing.count)
                     print("➕ [IdleAnimationManager] Added missing bundled animation: \(bundledAnim.name)")
                 }
@@ -90,6 +90,9 @@ class IdleAnimationManager {
                 if !isValid {
                     Defaults[.selectedIdleAnimation] = existing.first
                     print("🔄 [IdleAnimationManager] Migrated selection from legacy face to: \(existing.first?.name ?? "nil")")
+                } else if selected.isBuiltIn,
+                          let refreshed = existing.first(where: { $0.id == selected.id }) {
+                    Defaults[.selectedIdleAnimation] = refreshed
                 }
             }
             
