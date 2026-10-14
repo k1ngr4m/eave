@@ -11,4 +11,3 @@
 "NSLocationWhenInUseUsageDescription" = "Eave, doğru kilit ekranı hava durumunu göstermek için konumunuzu kullanır.";
 "NSRemindersUsageDescription" = "Eave, anımsatıcılarınızı göstermek için Anımsatıcılar erişimine ihtiyaç duyar.";
 "NSAudioCaptureUsageDescription" = "Eave, gerçek zamanlı müzik dalga biçimi görselleştiricisini göstermek için ses yakalama iznine ihtiyaç duyar.";
-"NSScreenCaptureUsageDescription" = "Eave, yapay zeka asistanı özelliği için ekran görüntüleri yakalamak üzere ekran kaydı iznine ihtiyaç duyar.";

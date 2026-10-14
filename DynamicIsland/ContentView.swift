@@ -220,13 +220,6 @@ struct ContentView: View {
             return CGSize(width: baseSize.width, height: resolvedHeight)
         }
 
-        if coordinator.currentView == .clipboard {
-            // Clipboard has its own fixed height source; don't inherit whatever notes
-            // layout state happens to be set.
-            let resolvedHeight = max(baseSize.height, NotesLayoutState.list.preferredHeight)
-            return CGSize(width: baseSize.width, height: resolvedHeight)
-        }
-
         if coordinator.currentView == .terminal {
             // Dynamic height: up to terminalMaxHeightFraction of screen, min 300pt
             let screenHeight = NSScreen.main?.visibleFrame.height ?? 800
@@ -1297,12 +1290,8 @@ struct ContentView: View {
                                   NotchStocksView()
                               case .llmUsage:
                                   NotchLLMUsageView()
-                              case .colorPicker:
-                                  NotchColorPickerView()
                             case .notes:
                                 NotchNotesView()
-                            case .clipboard:
-                                NotchClipboardView()
                             case .terminal:
                                 NotchTerminalView()
                           }
@@ -2199,8 +2188,6 @@ struct ContentView: View {
     // Helper function to check if any popovers are active
     private func hasAnyActivePopovers() -> Bool {
      return vm.isBatteryPopoverActive || 
-         vm.isClipboardPopoverActive || 
-         vm.isColorPickerPopoverActive || 
          vm.isStatsPopoverActive ||
          vm.isTimerPopoverActive ||
          vm.isPerAppVolumePopoverActive ||
@@ -2214,7 +2201,7 @@ struct ContentView: View {
         // Without this, the hover-exit timer closes the panel mid-drag, tearing
         // down the NSView that is acting as the drag source and cancelling the
         // session — an independent second cause of "drag-out doesn't work".
-        Defaults[.keepNotchExpanded] || coordinator.firstLaunch || hasAnyActivePopovers() || vm.isAutoCloseSuppressed || ShelfSelectionModel.shared.isDragging || ClipboardManager.shared.isDraggingItem || SharingStateManager.shared.preventNotchClose || (Defaults[.terminalStickyMode] && coordinator.currentView == .terminal)
+        Defaults[.keepNotchExpanded] || coordinator.firstLaunch || hasAnyActivePopovers() || vm.isAutoCloseSuppressed || ShelfSelectionModel.shared.isDragging || SharingStateManager.shared.preventNotchClose || (Defaults[.terminalStickyMode] && coordinator.currentView == .terminal)
     }
     
     // Helper to prevent rapid haptic feedback

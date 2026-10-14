@@ -25,8 +25,6 @@ struct NotchNotesView: View {
     @ObservedObject private var appleNotesSync = AppleNotesSyncManager.shared
     @FocusState private var isFocused: Bool
     @Default(.savedNotes) var savedNotes
-    @Default(.clipboardDisplayMode) var clipboardDisplayMode
-    @Default(.enableClipboardManager) var enableClipboardManager
     @Default(.enableAppleNotesSync) var enableAppleNotesSync
     
     @State private var selectedNoteId: UUID?
@@ -42,22 +40,8 @@ struct NotchNotesView: View {
 
     @Default(.enableNotes) var enableNotes
     
-    var showSplitView: Bool {
-        return enableClipboardManager && clipboardDisplayMode == .separateTab
-    }
-
     var body: some View {
         HStack(spacing: 0) {
-            if showSplitView {
-                NotchClipboardView(fixedColumns: 2)
-                    .frame(maxWidth: .infinity)
-                
-                if enableNotes {
-                    Divider()
-                        .background(Color.white.opacity(0.15))
-                }
-            }
-            
             if enableNotes {
                 ZStack {
                     if isEditingNewNote || selectedNoteId != nil {
@@ -121,12 +105,6 @@ struct NotchNotesView: View {
             updateLayoutState()
         }
         .onChange(of: selectedNoteId) { _, _ in
-            updateLayoutState()
-        }
-        .onChange(of: enableClipboardManager) { _, _ in
-            updateLayoutState()
-        }
-        .onChange(of: clipboardDisplayMode) { _, _ in
             updateLayoutState()
         }
         .onChange(of: enableNotes) { _, _ in
@@ -428,8 +406,6 @@ struct NotchNotesView: View {
         let newState: NotesLayoutState
         if enableNotes && (isEditingNewNote || selectedNoteId != nil) {
             newState = .editor
-        } else if showSplitView {
-            newState = .split
         } else {
             newState = .list
         }

@@ -69,16 +69,11 @@ struct TabModel: Identifiable {
             tabsArray.append(TabModel(label: "Usage", icon: "chart.bar.doc.horizontal", view: .llmUsage))
         }
 
-        if Defaults[.enableNotes] || (Defaults[.enableClipboardManager] && Defaults[.clipboardDisplayMode] == .separateTab) {
-            let label = Defaults[.enableNotes] ? "Notes" : "Clipboard"
-            let icon = Defaults[.enableNotes] ? "note.text" : "doc.on.clipboard"
-            tabsArray.append(TabModel(label: label, icon: icon, view: .notes))
+        if Defaults[.enableNotes] {
+            tabsArray.append(TabModel(label: "Notes", icon: "note.text", view: .notes))
         }
         if Defaults[.enableTerminalFeature] {
             tabsArray.append(TabModel(label: "Terminal", icon: "apple.terminal", view: .terminal))
-        }
-        if Defaults[.enableClipboardManager] && Defaults[.clipboardDisplayMode] == .notchTab {
-            tabsArray.append(TabModel(label: "Clipboard", icon: "list.clipboard", view: .clipboard))
         }
         return tabsArray
     }
@@ -89,7 +84,7 @@ struct TabSelectionView: View {
     @Namespace var animation
 
     private var tabs: [TabModel] {
-        coordinator.availableTabs.filter { $0.view != .clipboard }
+        coordinator.availableTabs
     }
     var body: some View {
         HStack(spacing: 24) {

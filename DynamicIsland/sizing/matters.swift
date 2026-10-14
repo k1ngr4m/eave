@@ -136,8 +136,8 @@ func enabledStandardTabCount() -> Int {
         count += 1
     }
 
-    // Notes / Clipboard tab
-    if Defaults[.enableNotes] || (Defaults[.enableClipboardManager] && Defaults[.clipboardDisplayMode] == .separateTab) {
+    // Notes tab
+    if Defaults[.enableNotes] {
         count += 1
     }
 

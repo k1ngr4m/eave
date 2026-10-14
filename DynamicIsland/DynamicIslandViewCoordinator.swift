@@ -62,7 +62,7 @@ class DynamicIslandViewCoordinator: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var hoverOpenSuppressedUntil: Date = .distantPast
     
-    private static let tabOrder: [NotchViews] = [.home, .shelf, .timer, .stats, .stocks, .llmUsage, .colorPicker, .notes, .clipboard, .terminal]
+    private static let tabOrder: [NotchViews] = [.home, .shelf, .timer, .stats, .stocks, .llmUsage, .notes, .terminal]
     
     /// Direction of the most recent tab switch (true = forward/right, false = backward/left)
     @Published var tabSwitchForward: Bool = true
@@ -161,8 +161,6 @@ class DynamicIslandViewCoordinator: ObservableObject {
             Defaults.publisher(.enableLLMUsageFeature).map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.enableStatsFeature).map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.enableNotes).map { _ in () }.eraseToAnyPublisher(),
-            Defaults.publisher(.enableClipboardManager).map { _ in () }.eraseToAnyPublisher(),
-            Defaults.publisher(.clipboardDisplayMode).map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.enableTerminalFeature).map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.enableMinimalisticUI).map { _ in () }.eraseToAnyPublisher(),
         ]
@@ -336,13 +334,5 @@ class DynamicIslandViewCoordinator: ObservableObject {
     
     func showEmpty() {
         currentView = .home
-    }
-    
-    // MARK: - Clipboard Management
-    @Published var shouldToggleClipboardPopover: Bool = false
-    
-    func toggleClipboardPopover() {
-        // Toggle the published property to trigger UI updates
-        shouldToggleClipboardPopover.toggle()
     }
 }

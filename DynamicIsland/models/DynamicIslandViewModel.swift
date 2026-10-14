@@ -45,8 +45,6 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
     @Published var hideOnClosed: Bool = true
     @Published var isHoveringCalendar: Bool = false
     @Published var isBatteryPopoverActive: Bool = false
-    @Published var isClipboardPopoverActive: Bool = false
-    @Published var isColorPickerPopoverActive: Bool = false
     @Published var isStatsPopoverActive: Bool = false
     @Published var isReminderPopoverActive: Bool = false
     /// Whether any output picker popover is open.
@@ -442,7 +440,7 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
             return adjustedSize
         }
 
-        if coordinator.currentView == .notes || coordinator.currentView == .clipboard {
+        if coordinator.currentView == .notes {
             let preferred = coordinator.notesLayoutState.preferredHeight
             adjustedSize.height = max(adjustedSize.height, preferred)
             return adjustedSize

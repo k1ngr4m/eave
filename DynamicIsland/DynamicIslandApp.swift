@@ -537,9 +537,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else if coordinator.currentView == .notes {
             let preferredHeight = coordinator.notesLayoutState.preferredHeight
             baseSize.height = max(baseSize.height, preferredHeight)
-        } else if coordinator.currentView == .clipboard {
-            // Clipboard has its own fixed height source; don't inherit the notes layout state.
-            baseSize.height = max(baseSize.height, NotesLayoutState.list.preferredHeight)
         } else if coordinator.currentView == .terminal {
             let screenHeight = NSScreen.main?.visibleFrame.height ?? 800
             let maxFraction = Defaults[.terminalMaxHeightFraction]
@@ -672,7 +669,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         Defaults.Keys.migrateMusicControlSlots()
         Defaults.Keys.migrateCapsLockTintMode()
         Defaults.Keys.migrateThirdPartyDDCIntegration()
-        Defaults.Keys.migrateClipboardShortcutToV()
 
         Defaults.publisher(.enableThirdPartyDDCIntegration, options: [])
             .receive(on: DispatchQueue.main)
@@ -713,10 +709,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Setup Lunar integration
         LunarManager.shared.configure(coordinator: coordinator)
         
-        // Honour "Save History Across Restarts" before anything can read the
-        // stored history back.
-        ClipboardManager.purgeStoredHistoryIfPersistenceDisabled()
-
         // Setup ScreenRecording Manager
         if Defaults[.enableScreenRecordingDetection] && !AppRuntimeEnvironment.isUITesting {
             ScreenRecordingManager.shared.startMonitoring()
@@ -900,24 +892,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }.store(in: &cancellables)
 
         Defaults.publisher(.enableTimerFeature, options: []).sink { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.updateFeatureShortcutAvailability()
-            }
-        }.store(in: &cancellables)
-
-        Defaults.publisher(.enableClipboardManager, options: []).sink { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.updateFeatureShortcutAvailability()
-            }
-        }.store(in: &cancellables)
-
-        Defaults.publisher(.enableColorPickerFeature, options: []).sink { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.updateFeatureShortcutAvailability()
-            }
-        }.store(in: &cancellables)
-
-        Defaults.publisher(.enableScreenAssistant, options: []).sink { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.updateFeatureShortcutAvailability()
             }
@@ -1412,9 +1386,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // Cancel the auto-close armed by `toggleNotchOpen`. Switching to the clipboard tab
-    // from the header only changes `coordinator.currentView`, so without this the notch
-    // can close mid-copy/drag a few seconds after it was opened.
+    // Keep an explicitly selected tab open after `toggleNotchOpen` armed auto-close.
     func cancelPendingNotchAutoClose() {
         closeNotchWorkItem?.cancel()
         closeNotchWorkItem = nil
@@ -1443,70 +1415,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         KeyboardShortcuts.onKeyDown(for: .startDemoTimer) {
             guard Defaults[.enableShortcuts], Defaults[.enableTimerFeature] else { return }
             TimerManager.shared.startDemoTimer(duration: 300)
-        }
-
-        KeyboardShortcuts.onKeyDown(for: .clipboardHistoryPanel) { [weak self] in
-            guard let self else { return }
-            guard Defaults[.enableShortcuts], Defaults[.enableClipboardManager] else { return }
-
-            if !ClipboardManager.shared.isMonitoring {
-                ClipboardManager.shared.startMonitoring()
-            }
-
-            switch Defaults[.clipboardDisplayMode] {
-            case .panel:
-                ClipboardPanelManager.shared.toggleClipboardPanel()
-            case .popover:
-                if vm.notchState == .closed {
-                    vm.open()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        NotificationCenter.default.post(name: NSNotification.Name("ToggleClipboardPopover"), object: nil)
-                    }
-                } else {
-                    NotificationCenter.default.post(name: NSNotification.Name("ToggleClipboardPopover"), object: nil)
-                }
-            case .separateTab:
-                if vm.notchState == .closed {
-                    vm.open(target: .notes)
-                } else {
-                    if coordinator.currentView == .notes {
-                        vm.close()
-                    } else {
-                        coordinator.currentView = .notes
-                    }
-                }
-            case .notchTab:
-                // Act on the notch under the cursor, matching toggleNotchOpen: with
-                // showOnAllDisplays the rendered windows use viewModels[screen], so mutating
-                // the primary vm could flip currentView without opening a visible notch.
-                var activeVM = vm
-                if Defaults[.showOnAllDisplays] {
-                    let mouseLocation = NSEvent.mouseLocation
-                    for screen in NSScreen.screens where screen.frame.contains(mouseLocation) {
-                        if let screenViewModel = viewModels[screen] {
-                            activeVM = screenViewModel
-                            break
-                        }
-                    }
-                }
-                // Cancel any pending auto-close armed by toggleNotchOpen, so it can't fire
-                // and close the notch a few seconds after this shortcut opens/switches to it.
-                cancelPendingNotchAutoClose()
-                if activeVM.notchState == .closed {
-                    activeVM.open(target: .clipboard)
-                } else {
-                    if coordinator.currentView == .clipboard {
-                        activeVM.close()
-                    } else {
-                        coordinator.currentView = .clipboard
-                    }
-                }
-            }
-        }
-
-        KeyboardShortcuts.onKeyDown(for: .colorPickerPanel) {
-            guard Defaults[.enableShortcuts], Defaults[.enableColorPickerFeature] else { return }
-            ColorPickerPanelManager.shared.toggleColorPickerPanel()
         }
 
         KeyboardShortcuts.onKeyDown(for: .toggleCaffeinate) {
@@ -1540,34 +1448,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
-
-        KeyboardShortcuts.onKeyDown(for: .screenAssistantPanel) { [weak self] in
-            guard let self else { return }
-            guard Defaults[.enableShortcuts], Defaults[.enableScreenAssistant] else { return }
-
-            switch Defaults[.screenAssistantDisplayMode] {
-            case .panel:
-                ScreenAssistantPanelManager.shared.toggleScreenAssistantPanel()
-            case .popover:
-                if vm.notchState == .closed {
-                    vm.open()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        NotificationCenter.default.post(name: NSNotification.Name("ToggleScreenAssistantPopover"), object: nil)
-                    }
-                } else {
-                    NotificationCenter.default.post(name: NSNotification.Name("ToggleScreenAssistantPopover"), object: nil)
-                }
-            }
-        }
     }
 
     @MainActor
     private func updateFeatureShortcutAvailability() {
         updateShortcut(.openMonitoring, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableStatsFeature])
         updateShortcut(.startDemoTimer, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableTimerFeature])
-        updateShortcut(.clipboardHistoryPanel, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableClipboardManager])
-        updateShortcut(.colorPickerPanel, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableColorPickerFeature])
-        updateShortcut(.screenAssistantPanel, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableScreenAssistant])
         updateShortcut(.toggleTerminalTab, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableTerminalFeature])
         updateShortcut(.toggleCaffeinate, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableCaffeinate])
     }

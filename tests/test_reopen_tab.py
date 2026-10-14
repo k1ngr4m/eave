@@ -17,6 +17,10 @@ assert(resolve(ReopenTabSelection.lastPage, "system-notes") == "system-notes")
 assert(resolve("system-terminal", "system-notes") == "system-terminal")
 assert(resolve("system-disabled", "system-notes") == "system-notes")
 assert(resolve("system-disabled", "system-disabled") == "system-home")
+for removed in ["system-clipboard", "system-colorPicker"] {
+    assert(resolve(removed, "system-notes") == "system-notes")
+    assert(resolve(removed, removed) == "system-home")
+}
 assert(resolve(ReopenTabSelection.lastPage, nil) == "system-home")
 assert(resolve("extension-two", "extension-one") == "extension-two")
 assert(resolve(ReopenTabSelection.lastPage, "extension-one") == "extension-one")

@@ -22,7 +22,6 @@
 
 import SwiftUI
 import Defaults
-import KeyboardShortcuts
 import Lottie
 import Foundation
 
@@ -192,69 +191,6 @@ enum ThirdPartyCalendarApp: String, CaseIterable, Codable, Defaults.Serializable
         switch self {
         case .fantastical: return .red
         case .notionCalendar: return .blue
-        }
-    }
-}
-
-enum ClipboardDisplayMode: String, CaseIterable, Codable, Defaults.Serializable {
-    case popover = "popover"     // Traditional popover attached to button
-    case panel = "panel"         // Floating panel near notch
-    case separateTab = "separateTab" // Separate tab in Dynamic Island (merges with Notes)
-    case notchTab = "notchTab"   // Dedicated clipboard tab inside the notch (draggable items)
-
-    var displayName: String {
-        switch self {
-        case .popover: return String(localized: "Popover")
-        case .panel: return String(localized: "Panel")
-        case .separateTab: return String(localized: "Separate Tab")
-        case .notchTab: return String(localized: "Notch Tab")
-        }
-    }
-    
-    var description: String {
-        switch self {
-        case .popover: return String(localized: "Shows clipboard as a dropdown attached to the clipboard button")
-        case .panel: return String(localized: "Shows clipboard in a floating panel near the notch")
-        case .separateTab: return String(localized: "Shows copied items in a separate tab within the Dynamic Island (merges with Notes if enabled)")
-        case .notchTab: return String(localized: "Shows copied items in a dedicated clipboard tab inside the notch; drag items straight out to other apps")
-        }
-    }
-}
-
-enum ScreenAssistantDisplayMode: String, CaseIterable, Codable, Defaults.Serializable {
-    case popover = "popover"     // Traditional popover attached to button
-    case panel = "panel"         // Floating panel near notch
-    
-    var displayName: String {
-        switch self {
-        case .popover: return String(localized: "Popover")
-        case .panel: return String(localized: "Panel")
-        }
-    }
-    
-    var description: String {
-        switch self {
-        case .popover: return String(localized: "Shows screen assistant as a dropdown attached to the AI button")
-        case .panel: return String(localized: "Shows screen assistant in a floating panel near the notch")
-        }
-    }
-}
-
-enum ColorPickerDisplayMode: String, CaseIterable, Codable, Defaults.Serializable {
-    case popover = "popover"     // Traditional popover attached to button
-    case panel = "panel"         // Floating panel near notch
-    
-    var displayName: String {
-        switch self {
-        case .popover: return String(localized: "Popover")
-        case .panel: return String(localized: "Panel")
-        }
-    }
-    
-    var description: String {
-        switch self {
-        case .popover: return String(localized: "Shows color picker as a dropdown attached to the color picker button")
-        case .panel: return String(localized: "Shows color picker in a floating panel near the notch")
         }
     }
 }
@@ -698,88 +634,6 @@ enum ReminderPresentationStyle: String, CaseIterable, Identifiable, Defaults.Ser
             case .minutes:
                 return String(localized: "Minutes")
         }
-    }
-}
-
-// AI Model types for screen assistant
-enum AIModelProvider: String, CaseIterable, Identifiable, Defaults.Serializable {
-    case gemini = "Gemini"
-    case openai = "OpenAI GPT"
-    case claude = "Claude"
-    case local = "Local Model"
-    case groq = "Groq"
-    
-    var id: String { self.rawValue }
-    
-    var displayName: String {
-        return self.rawValue
-    }
-    
-    var description: String {
-        switch self {
-        case .gemini: return String(localized: "Google's Gemini AI with multimodal capabilities")
-        case .openai: return String(localized: "OpenAI's GPT models with advanced reasoning")
-        case .claude: return String(localized: "Anthropic's Claude with strong analytical skills")
-        case .local: return String(localized: "Local AI model (Ollama or similar)")
-        case .groq: return String(localized: "Groq's fast inference for OpenAI-compatible models")
-        }
-    }
-    
-    var supportedModels: [AIModel] {
-        switch self {
-        case .gemini:
-            return [
-                // Gemini 2.5 Models (Latest)
-                AIModel(id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", supportsThinking: true),
-                AIModel(id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", supportsThinking: true),
-                AIModel(id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash-Lite", supportsThinking: false),
-                AIModel(id: "gemini-2.5-flash-live", name: "Gemini 2.5 Flash Live", supportsThinking: false),
-                AIModel(id: "gemini-2.5-flash-native-audio", name: "Gemini 2.5 Flash Native Audio", supportsThinking: true),
-                
-                // Gemini 2.0 Models
-                AIModel(id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", supportsThinking: false),
-                AIModel(id: "gemini-2.0-flash-lite", name: "Gemini 2.0 Flash-Lite", supportsThinking: false),
-                AIModel(id: "gemini-2.0-flash-live", name: "Gemini 2.0 Flash Live", supportsThinking: false),
-                
-                // Legacy 1.5 Models (for compatibility)
-                AIModel(id: "gemini-1.5-pro", name: "Gemini 1.5 Pro", supportsThinking: false),
-                AIModel(id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", supportsThinking: false)
-            ]
-        case .openai:
-            return [
-                AIModel(id: "gpt-4o", name: "GPT-4o", supportsThinking: false),
-                AIModel(id: "gpt-4o-mini", name: "GPT-4o Mini", supportsThinking: false),
-                AIModel(id: "o1-preview", name: "o1 Preview", supportsThinking: true),
-                AIModel(id: "o1-mini", name: "o1 Mini", supportsThinking: true)
-            ]
-        case .claude:
-            return [
-                AIModel(id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet", supportsThinking: false),
-                AIModel(id: "claude-3-haiku", name: "Claude 3 Haiku", supportsThinking: false)
-            ]
-        case .local:
-            return [
-                AIModel(id: "llama3.2", name: "Llama 3.2", supportsThinking: false),
-                AIModel(id: "qwen2.5", name: "Qwen 2.5", supportsThinking: false)
-            ]
-        case .groq:
-            return [
-                AIModel(id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B Versatile", supportsThinking: false),
-                AIModel(id: "llama-3.1-8b-instant", name: "Llama 3.1 8B Instant", supportsThinking: false),
-                AIModel(id: "qwen-qwq-32b", name: "Qwen QWQ 32B", supportsThinking: false),
-                AIModel(id: "mixtral-8x7b-32768", name: "Mixtral 8x7B", supportsThinking: false)
-            ]
-        }
-    }
-}
-
-struct AIModel: Codable, Identifiable, Defaults.Serializable {
-    let id: String
-    let name: String
-    let supportsThinking: Bool
-    
-    var displayName: String {
-        return name + (supportsThinking ? " (Thinking)" : "")
     }
 }
 
@@ -1277,35 +1131,6 @@ extension Defaults.Keys {
     static let caffeinateDefaultDuration = Key<CaffeinateDuration>("caffeinateDefaultDuration", default: .indefinite)
     static let caffeinateKeepsDisplayAwake = Key<Bool>("caffeinateKeepsDisplayAwake", default: true)
 
-    // MARK: ColorPicker Feature
-    static let enableColorPickerFeature = Key<Bool>("enableColorPickerFeature", default: true)
-    static let showColorFormats = Key<Bool>("showColorFormats", default: true)
-    static let colorPickerDisplayMode = Key<ColorPickerDisplayMode>("colorPickerDisplayMode", default: .panel)
-    static let colorHistorySize = Key<Int>("colorHistorySize", default: 10)
-    static let showColorPickerIcon = Key<Bool>("showColorPickerIcon", default: true)
-    
-    // MARK: Clipboard Feature
-    static let enableClipboardManager = Key<Bool>("enableClipboardManager", default: true)
-    static let clipboardHistorySize = Key<Int>("clipboardHistorySize", default: 3)
-    /// Whether clipboard history is written to disk and restored on launch.
-    /// Off keeps it in memory for the session only — nothing survives a quit.
-    /// Defaults to true so existing installs keep the behaviour they have.
-    static let persistClipboardHistory = Key<Bool>("persistClipboardHistory", default: true)
-    static let showClipboardIcon = Key<Bool>("showClipboardIcon", default: true)
-    static let clipboardDisplayMode = Key<ClipboardDisplayMode>("clipboardDisplayMode", default: .panel)
-    
-    // MARK: Screen Assistant Feature
-    static let enableScreenAssistant = Key<Bool>("enableScreenAssistant", default: true)
-    static let screenAssistantDisplayMode = Key<ScreenAssistantDisplayMode>("screenAssistantDisplayMode", default: .panel)
-    static let geminiApiKey = Key<String>("geminiApiKey", default: "")
-    static let openaiApiKey = Key<String>("openaiApiKey", default: "")
-    static let claudeApiKey = Key<String>("claudeApiKey", default: "")
-    static let groqApiKey = Key<String>("groqApiKey", default: "")
-    static let selectedAIProvider = Key<AIModelProvider>("selectedAIProvider", default: .gemini)
-    static let selectedAIModel = Key<AIModel?>("selectedAIModel", default: nil)
-    static let enableThinkingMode = Key<Bool>("enableThinkingMode", default: false)
-    static let localModelEndpoint = Key<String>("localModelEndpoint", default: "http://localhost:11434")
-
     // MARK: Keyboard Shortcuts
     static let enableShortcuts = Key<Bool>("enableShortcuts", default: true)
     
@@ -1406,7 +1231,6 @@ extension Defaults.Keys {
     static let capsLockIndicatorUseGreenColor = Key<Bool>("capsLockIndicatorUseGreenColor", default: false) // Legacy toggle
     static let capsLockIndicatorTintMode = Key<CapsLockIndicatorTintMode>("capsLockIndicatorTintMode", default: .white)
     static let didMigrateCapsLockTintMode = Key<Bool>("didMigrateCapsLockTintMode", default: false)
-    static let didMigrateClipboardShortcutToV = Key<Bool>("didMigrateClipboardShortcutToV", default: false)
     static let showCapsLockLabel = Key<Bool>("showCapsLockLabel", default: false)
     
     // MARK: ImageService
@@ -1473,31 +1297,6 @@ extension Defaults.Keys {
         }
 
         normalizeMusicAuxControls()
-    }
-
-    /// Move the clipboard shortcut off the old Cmd+Shift+C default.
-    ///
-    /// Settings has always documented Cmd+Shift+V ("similar to Windows+V on PC") while the
-    /// shortcut was registered as Cmd+Shift+C. Changing the default alone fixes nothing for
-    /// anyone who has already launched Eave: `KeyboardShortcuts.Name` writes its default into
-    /// UserDefaults on first run and never overwrites it, so the old value would win forever.
-    ///
-    /// Only a shortcut still sitting on the old default is moved. Anyone who picked their own
-    /// keeps it — including, unavoidably, anyone who deliberately chose Cmd+Shift+C.
-    ///
-    /// The marker is written last: if this crashed between marking and moving, the migration
-    /// would be considered done while the shortcut still sat on the old key, with no second
-    /// chance to correct it. Running twice is harmless by comparison, since the second run
-    /// finds Cmd+Shift+V rather than the legacy default and changes nothing.
-    static func migrateClipboardShortcutToV() {
-        guard Defaults[.didMigrateClipboardShortcutToV] == false else { return }
-
-        let legacyDefault = KeyboardShortcuts.Shortcut(.c, modifiers: [.shift, .command])
-        if KeyboardShortcuts.getShortcut(for: .clipboardHistoryPanel) == legacyDefault {
-            KeyboardShortcuts.setShortcut(.init(.v, modifiers: [.shift, .command]), for: .clipboardHistoryPanel)
-        }
-
-        Defaults[.didMigrateClipboardShortcutToV] = true
     }
 
     static func migrateCapsLockTintMode() {
