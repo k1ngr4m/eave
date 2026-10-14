@@ -1067,6 +1067,12 @@ struct NotchHomeView: View {
                 sideLyricsContent
             } else {
                 HStack(alignment: .top, spacing: SideLyricsLayout.hStackSpacing) {
+                    if !shouldShowMusicPlayer && !showCalendar && !mirrorIsVisible {
+                        TimelineView(.periodic(from: Calendar.current.startOfDay(for: .now), by: 60)) { context in
+                            HomeIdleView(date: context.date)
+                        }
+                    }
+
                     // Normal mode: Show full music player with optional calendar and webcam
                     if shouldShowMusicPlayer {
                         MusicPlayerView(albumArtNamespace: albumArtNamespace)
@@ -1129,6 +1135,62 @@ struct NotchHomeView: View {
             .blur(radius: vm.notchState == .closed ? 20 : 0)
     }
 
+}
+
+private struct HomeIdleView: View {
+    let date: Date
+
+    var body: some View {
+        HStack(spacing: 28) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(date, format: .dateTime.hour().minute())
+                    .font(.system(size: 48, weight: .ultraLight, design: .rounded))
+                    .monospacedDigit()
+                    .tracking(-1.5)
+                    .foregroundStyle(.white.opacity(0.95))
+                Text(date, format: .dateTime.month().day().weekday(.wide))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+
+            Spacer(minLength: 0)
+
+            Rectangle()
+                .fill(.white.opacity(0.12))
+                .frame(width: 1, height: 40)
+                .accessibilityHidden(true)
+
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle().fill(.white.opacity(0.04))
+                    Circle().strokeBorder(.white.opacity(0.10), lineWidth: 1)
+                    Circle().strokeBorder(.white.opacity(0.06), lineWidth: 1).padding(6)
+                    Circle().fill(Color.accentColor.opacity(0.15)).padding(15)
+                    Image(systemName: "music.note")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(Color.accentColor.opacity(0.85))
+                }
+                .frame(width: 58, height: 58)
+                .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("暂无播放")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.75))
+                    Text("让音乐慢慢响起")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.45))
+                }
+                .fixedSize()
+            }
+        }
+        .frame(maxWidth: 460)
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .combine)
+    }
 }
 
 struct MusicSliderView: View {
