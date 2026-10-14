@@ -62,7 +62,7 @@ final class StatusPanelViewModel: ObservableObject {
         self.updateScheduler = updateScheduler
         self.actions = actions
         visiblePopupSections = settings.visiblePopupSections
-        battery = PanelPresentationMapper.battery(store.popupSnapshot.battery, localization: localization)
+        battery = PanelPresentationMapper.battery(store.popupSnapshot.battery, details: store.batteryDetails.details, localization: localization)
         network = PanelPresentationMapper.network(
             wifi: store.popupSnapshot.wifi,
             connection: store.popupSnapshot.connection,
@@ -281,7 +281,7 @@ final class StatusPanelViewModel: ObservableObject {
         let snapshot = deliveredSnapshot ?? store.popupSnapshot
         let isConstrained = deliveredConstraint ?? store.isNetworkConstrained
         let isResolvingName = deliveredResolutionState ?? store.isResolvingWiFiName
-        let batteryState = PanelPresentationMapper.battery(snapshot.battery, localization: localization)
+        let batteryState = PanelPresentationMapper.battery(snapshot.battery, details: store.batteryDetails.details, localization: localization)
         if battery != batteryState { battery = batteryState }
         let networkState = PanelPresentationMapper.network(
             wifi: snapshot.wifi,
@@ -302,6 +302,10 @@ final class StatusPanelViewModel: ObservableObject {
     }
 
     private func refreshBatteryDetails() {
+        let summary = PanelPresentationMapper.battery(
+            store.popupSnapshot.battery, details: store.batteryDetails.details, localization: localization
+        )
+        if battery != summary { battery = summary }
         let state = PanelDetailMapper.battery(
             status: store.popupSnapshot.battery,
             details: store.batteryDetails.details,

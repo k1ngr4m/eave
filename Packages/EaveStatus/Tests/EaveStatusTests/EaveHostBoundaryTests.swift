@@ -4,6 +4,62 @@ import XCTest
 
 @MainActor
 final class EaveHostBoundaryTests: XCTestCase {
+    func testBatterySummaryUpdatesPowerAndStopsCollectingWhenClosed() async throws {
+        let connected = BatteryStatus(rawPercentage: 80, isPresent: true, isCharging: false,
+                                      isLowPowerMode: false, isConnectedToPower: true)
+        let collector = BatteryDetailsController { state, _ in
+            BatteryDetails(systemPower: SystemPowerSample(watts: state.isCharging ? 50 : 44.8, readAt: Date()))
+        }
+        let store = SystemStatusStore(
+            batteryMonitor: HostBatteryMonitor(), wifiMonitor: SilentWiFiMonitor(),
+            volumeMonitor: VolumeMonitor(statusReader: FixedAudioReader(), eventMonitor: SilentAudioEvents()),
+            volumeFeedback: nil, batteryDetails: collector,
+            initialSnapshot: StatusSnapshot(battery: connected, wifi: .placeholder, volume: .placeholder)
+        )
+        let suite = "EaveStatusTests.Power.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite); store.stop() }
+        let localization = Localization(defaults: defaults, preferredLanguages: ["en"])
+        let settings = SettingsStore(defaults: defaults)
+        let panel = StatusPanelViewModel(store: store, settings: settings, localization: localization,
+                                         actions: StatusPanelActions(store: store, settings: settings))
+        panel.start()
+        defer { panel.stop() }
+        let firstReading = expectation(description: "Summary receives initial power without opening details")
+        let subscription = panel.$battery.first { $0.measurements == "44.8 W" }
+            .sink { _ in firstReading.fulfill() }
+        defer { subscription.cancel() }
+        store.setPopoverVisible(true)
+        XCTAssertTrue(collector.isActive)
+        XCTAssertFalse(store.hasOpenPopoverPanel)
+        await fulfillment(of: [firstReading], timeout: 2)
+
+        panel.actions.batteryDetailsAppeared()
+        XCTAssertTrue(store.hasOpenPopoverPanel)
+        XCTAssertNotNil(collector.details, "Opening details must retain the summary's reading")
+        panel.actions.batteryDetailsClosed()
+        XCTAssertFalse(store.hasOpenPopoverPanel)
+        XCTAssertTrue(collector.isActive, "Returning to summary must keep sampling")
+
+        let updated = expectation(description: "Summary receives subsequent readings")
+        let updateSubscription = panel.$battery.first { $0.measurements == "50.0 W" }
+            .sink { _ in updated.fulfill() }
+        defer { updateSubscription.cancel() }
+        let charging = BatteryStatus(rawPercentage: 80, isPresent: true, isCharging: true,
+                                     isLowPowerMode: false, isConnectedToPower: true)
+        collector.activate(state: BatteryPowerState(charging))
+        await fulfillment(of: [updated], timeout: 2)
+
+        let unplugged = BatteryStatus.placeholder
+        let discharge = BatteryDetails(power: BatteryPowerSample(volts: 12, amps: -2, updatedAt: Date()))
+        XCTAssertEqual(PanelPresentationMapper.battery(unplugged, details: discharge, localization: localization).measurements, "24.0 W")
+        XCTAssertNil(PanelPresentationMapper.battery(connected, details: discharge, localization: localization).measurements)
+        XCTAssertNil(PanelPresentationMapper.battery(connected, details: BatteryDetails(adapterWatts: 65), localization: localization).measurements)
+        store.setPopoverVisible(false)
+        XCTAssertFalse(collector.isActive)
+        XCTAssertNil(collector.details)
+    }
+
     func testPanelActionsUseHostAudioCommandsAndValidateValues() {
         var volumes: [Double] = []
         var mutes = 0

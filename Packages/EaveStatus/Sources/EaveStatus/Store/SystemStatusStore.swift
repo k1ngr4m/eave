@@ -136,6 +136,7 @@ final class SystemStatusStore: ObservableObject {
     /// screen, which is what decides whether the built popover content can be
     /// kept for a rapid reopen.
     private var isPrimaryLinkPanelOpen = false
+    private var isBatteryPanelOpen = false
 
     init(
         batteryMonitor: any BatteryMonitoring,
@@ -514,8 +515,14 @@ final class SystemStatusStore: ObservableObject {
         }
     }
 
+    func activateBatteryDetails(state: BatteryPowerState) {
+        isBatteryPanelOpen = true
+        batteryDetails.activate(state: state)
+    }
+
     func closeBatteryDetails() {
-        batteryDetails.deactivate()
+        isBatteryPanelOpen = false
+        if !isPopoverVisible { batteryDetails.deactivate() }
     }
 
     func refreshForPopoverOpening() {
@@ -556,6 +563,7 @@ final class SystemStatusStore: ObservableObject {
         popupPublishTask = nil
         startVPNMonitoringForPopover()
         popupSnapshot = snapshot
+        batteryDetails.activate(state: BatteryPowerState(snapshot.battery))
         startWiFiNameResolutionIfNeeded()
         bluetoothDevices.prepareForPresentation()
         bluetoothDevices.holdVisibleSurface(BluetoothDeviceController.popoverSurfaceToken)
@@ -608,10 +616,10 @@ final class SystemStatusStore: ObservableObject {
 
     /// Whether a popover detail panel (Wi-Fi, wired link, Bluetooth, or battery)
     /// is currently open. Query this before `setPopoverVisible(false)`: the
-    /// battery page stops its collector when its view disappears, and that
-    /// happens while the popover is already closing.
+    /// battery collector also serves the summary, so its activity alone does
+    /// not indicate that the battery detail page is open.
     var hasOpenPopoverPanel: Bool {
-        wifiNetworks.isActive || isPrimaryLinkPanelOpen || batteryDetails.isActive
+        wifiNetworks.isActive || isPrimaryLinkPanelOpen || isBatteryPanelOpen
     }
 
     func refreshAll() {
@@ -978,6 +986,7 @@ final class SystemStatusStore: ObservableObject {
     }
 
     private func applyPopupSnapshot(_ next: StatusSnapshot) {
+        if isPopoverVisible { batteryDetails.activate(state: BatteryPowerState(next.battery)) }
         popupSnapshot = next
         if isResolvingWiFiName, !next.wifi.isAwaitingName {
             clearWiFiNameResolution()

@@ -31,6 +31,16 @@ struct BatteryStatusView: View {
 
                     Spacer()
 
+                    if let measurements = state.measurements {
+                        Text(measurements)
+                            .font(.subheadline.weight(.semibold))
+                            .monospacedDigit()
+                            .fixedSize()
+                            .contentTransition(.numericText())
+                            .animation(.easeInOut(duration: 0.25), value: measurements)
+                            .help(state.accessibilityValue)
+                    }
+
                     if hasDetails {
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))

@@ -2,13 +2,12 @@ import Combine
 import Foundation
 
 /// The existing battery icon monitor remains event-driven. Only the expanded
-/// details view activates this store-owned collector; closing ends periodic work.
+/// popover activates this store-owned collector; closing ends periodic work.
 @MainActor
 final class BatteryDetailsController: ObservableObject {
     typealias Reader = @Sendable (BatteryPowerState, Date?) -> BatteryDetails
     @Published private(set) var details: BatteryDetails?
-    /// True while the collector owns periodic work. The popover uses this to
-    /// treat an open battery page like its Wi-Fi and Bluetooth counterparts.
+    /// True while the visible popover owns periodic work.
     var isActive: Bool { active }
     private let reader: Reader
     private static let queue = DispatchQueue(label: "com.lingsmbp.StatusTrio.battery-details", qos: .utility)
@@ -27,6 +26,7 @@ final class BatteryDetailsController: ObservableObject {
     deinit { refreshTask?.cancel() }
 
     func activate(state: BatteryPowerState, now: Date = Date()) {
+        guard !active || self.state != state else { return }
         if let previous = self.state, previous != state {
             notBefore = now
         }
@@ -38,7 +38,7 @@ final class BatteryDetailsController: ObservableObject {
         refreshTask?.cancel()
         refreshTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
-                do { try await Task.sleep(for: .seconds(15), tolerance: .seconds(3)) }
+                do { try await Task.sleep(for: .seconds(3), tolerance: .seconds(1)) }
                 catch { return }
                 guard !Task.isCancelled else { return }
                 self?.refresh()

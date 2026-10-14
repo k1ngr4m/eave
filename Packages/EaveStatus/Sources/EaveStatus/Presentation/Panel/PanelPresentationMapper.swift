@@ -2,18 +2,28 @@ import Foundation
 
 @MainActor
 enum PanelPresentationMapper {
-    static func battery(_ status: BatteryStatus, localization: Localization) -> PanelSummaryState {
+    static func battery(_ status: BatteryStatus, details: BatteryDetails? = nil, localization: Localization) -> PanelSummaryState {
         let title = batteryTitle(status, localization: localization)
         let subtitle = batterySubtitle(status, localization: localization)
+        let reading = details.map { BatteryPowerPresentation(details: $0, isConnectedToPower: status.isConnectedToPower) }
+        let measurements = status.isPresent ? reading?.watts.map {
+            $0.formatted(.number.precision(.fractionLength(1)).locale(localization.resolvedLanguage.locale)) + " W"
+        } : nil
+        let powerDescription: String?
+        if let reading, let measurements {
+            powerDescription = "\(localization.string(reading.title)): \(measurements)"
+        } else {
+            powerDescription = nil
+        }
 
         return PanelSummaryState(
             title: title,
             subtitle: subtitle,
-            measurements: nil,
+            measurements: measurements,
             symbol: .symbol(name: batterySymbolName(status), variableValue: nil, fallback: nil),
             tint: batteryTint(status),
             accessibilityLabel: title,
-            accessibilityValue: subtitle,
+            accessibilityValue: [subtitle, powerDescription].compactMap { $0 }.joined(separator: ", "),
             showsSettings: status.isPresent,
             intent: status.isPresent ? .batteryDetails : .none
         )
