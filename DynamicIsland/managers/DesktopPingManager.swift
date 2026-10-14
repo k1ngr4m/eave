@@ -19,6 +19,8 @@ final class DesktopPingManager: ObservableObject {
     private var input: Pipe?
     private var overlays: [DesktopPingOverlay] = []
     private var wheelOverlay: DesktopPingOverlay?
+    private var previewSurface: DesktopPingOverlay?
+    private var previewTimeout: Task<Void, Never>?
     private var sounds: [String: NSSound] = [:]
     private var observers = Set<AnyCancellable>()
     private var accessTimer: Timer?
@@ -82,9 +84,11 @@ final class DesktopPingManager: ObservableObject {
             if !configuration.enabled { failure = nil; restarts = 0 }
             return
         }
+        let previouslyNeededPermission = needsPermission
         needsPermission = !AXIsProcessTrusted()
         guard !needsPermission else {
-            closeSurfaces()
+            // Permission polling must not interrupt an explicit settings preview.
+            if !previouslyNeededPermission { closeSurfaces() }
             status = String(localized: "Accessibility permission required")
             if accessTimer == nil {
                 accessTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
@@ -204,12 +208,37 @@ final class DesktopPingManager: ObservableObject {
     }
 
     func preview(_ id: String) {
-        guard configuration.enabled, !configuration.paused, DesktopPingConfiguration.pingIDs.contains(id), let overlay = overlays.first, overlay.ready else { return }
-        overlay.send("click", ["id": id, "x": overlay.screen.frame.width / 2, "y": overlay.screen.frame.height / 2])
+        guard !sleeping, !locked, DesktopPingConfiguration.pingIDs.contains(id), let screen = NSScreen.main, let root else { return }
+        closePreview()
+        // An explicit settings preview needs no global input access and never starts the helper.
+        let overlay = DesktopPingOverlay(screen: screen, root: root)
+        previewSurface = overlay
+        overlay.onSound = { [weak self] in self?.play($0, preview: true) }
+        overlay.onFailure = { [weak self] _ in self?.closePreview() }
+        overlay.onReady = { [weak self, weak overlay] in
+            guard let self, let overlay else { return }
+            overlay.send("settings", self.configuration.overlaySettings)
+            overlay.send("click", ["id": id, "x": screen.frame.width / 2, "y": screen.frame.height / 2])
+            self.expirePreview(after: self.configuration.normalized.duration + 0.3)
+        }
+        expirePreview(after: 10)
     }
 
-    private func play(_ name: String) {
-        guard configuration.enabled, !configuration.paused, !configuration.muted,
+    private func expirePreview(after seconds: Double) {
+        previewTimeout?.cancel()
+        previewTimeout = Task { [weak self] in
+            do { try await Task.sleep(for: .seconds(seconds)) } catch { return }
+            self?.closePreview()
+        }
+    }
+
+    private func closePreview() {
+        previewTimeout?.cancel(); previewTimeout = nil
+        previewSurface?.close(); previewSurface = nil
+    }
+
+    private func play(_ name: String, preview: Bool = false) {
+        guard (preview || (configuration.enabled && !configuration.paused)), !configuration.muted,
               DesktopPingConfiguration.sounds.contains(name), let root else { return }
         if sounds[name] == nil { sounds[name] = NSSound(contentsOf: root.appendingPathComponent("sounds/\(name).wav"), byReference: false) }
         guard let sound = sounds[name], sounds.values.filter(\.isPlaying).count < 8 else { return }
@@ -219,6 +248,7 @@ final class DesktopPingManager: ObservableObject {
     }
 
     private func clear() {
+        closePreview()
         wheelOverlay = nil
         for overlay in overlays { overlay.send("clear") }
         sounds.values.forEach { $0.stop() }
@@ -237,6 +267,7 @@ final class DesktopPingManager: ObservableObject {
     }
 
     private func closeSurfaces() {
+        closePreview()
         stopHelper()
         overlayTimeout?.cancel(); overlayTimeout = nil
         wheelOverlay = nil

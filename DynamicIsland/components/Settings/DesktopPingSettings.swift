@@ -2,7 +2,6 @@ import SwiftUI
 
 struct DesktopPingSettings: View {
     @ObservedObject private var manager = DesktopPingManager.shared
-    private let directions = ["↑", "↗", "→", "↘", "↓", "↙", "←", "↖"]
 
     var body: some View {
         Form {
@@ -29,9 +28,6 @@ struct DesktopPingSettings: View {
                     }
                 }
                 Toggle("Send a Ping on Trigger + Click", isOn: $manager.configuration.clickPing)
-                if manager.configuration.clickPing {
-                    pingPicker("Click Signal", selection: $manager.configuration.clickPingID)
-                }
                 LabeledContent("Drag Threshold") {
                     Slider(value: $manager.configuration.dragThreshold, in: 2...40, step: 1)
                     Text("\(Int(manager.configuration.dragThreshold)) pt").monospacedDigit().frame(width: 52)
@@ -59,40 +55,10 @@ struct DesktopPingSettings: View {
                 Toggle("Wheel Tick Sound", isOn: $manager.configuration.tickSound)
             }
             Section {
-                ForEach(0..<8, id: \.self) { slot in
-                    HStack {
-                        Text(directions[slot]).font(.title3).frame(width: 22).accessibilityHidden(true)
-                        pingPicker("Slot \(slot + 1)", selection: Binding(
-                            get: { manager.configuration.wheel[slot] },
-                            set: { manager.configuration.place($0, at: slot) }
-                        ))
-                        Button { manager.preview(manager.configuration.wheel[slot]) } label: {
-                            Image(systemName: "play.fill")
-                        }
-                        .accessibilityLabel(Text("Preview Signal"))
-                        .help(Text("Preview Signal"))
-                        .disabled(!manager.configuration.enabled || manager.configuration.paused || manager.needsPermission || manager.failure != nil)
-                    }
-                }
-                Button("Reset Wheel Layout") { manager.configuration.wheel = DesktopPingConfiguration.defaultWheel }
-            } header: { Text("Signal Wheel") } footer: {
-                Text("Slots run clockwise from the top. Choosing a signal already on the wheel swaps the two slots. Desktop pings remain visible when Eave is hidden from screen capture; share the entire display to include them.")
-            }
+                DesktopPingWheelEditor(configuration: $manager.configuration, preview: manager.preview)
+            } header: { Text("Signal Wheel") }
         }
         .formStyle(.grouped)
     }
 
-    private func pingPicker(_ title: LocalizedStringKey, selection: Binding<String>) -> some View {
-        Picker(title, selection: selection) {
-            ForEach(Array(DesktopPingConfiguration.pingIDs.enumerated()), id: \.element) { index, id in
-                HStack {
-                    if let root = Bundle.main.resourceURL,
-                       let image = NSImage(contentsOf: root.appendingPathComponent("DesktopPing/textures/\(DesktopPingConfiguration.icons[index]).png")) {
-                        Image(nsImage: image).resizable().scaledToFit().frame(width: 18, height: 18)
-                    }
-                    Text(LocalizedStringKey(DesktopPingConfiguration.titles[index]))
-                }.tag(id)
-            }
-        }
-    }
 }

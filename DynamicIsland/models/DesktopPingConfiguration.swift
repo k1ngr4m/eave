@@ -51,7 +51,9 @@ struct DesktopPingConfiguration: Codable, Equatable {
     }
 
     mutating func place(_ id: String, at slot: Int) {
-        guard Self.pingIDs.contains(id), wheel.indices.contains(slot) else { return }
+        guard Self.pingIDs.contains(id) else { return }
+        if slot == 8 { clickPingID = id; return }
+        guard wheel.indices.contains(slot) else { return }
         if let old = wheel.firstIndex(of: id) { wheel.swapAt(slot, old) }
         else { wheel[slot] = id }
     }

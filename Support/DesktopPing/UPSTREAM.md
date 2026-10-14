@@ -12,6 +12,9 @@ the matching upstream TypeScript modules. Imports are local ES modules; room tag
 and emote/toast styles are removed. Eave owns `main.js`, its WebKit message bridge,
 native settings and NSSound playback. Node/Electron are not build or runtime dependencies.
 
+`web/editor` adapts the upstream settings WheelEditor geometry and drag/click
+assignment interactions, hosted in Eave’s native settings via WKWebView.
+
 Only the referenced signal textures and WAV sounds are included, without emotes.
 Code is MIT; Riot assets are excluded (see LICENSE). The app bundles that notice.
 

@@ -16,6 +16,12 @@ struct DesktopPingRegression {
         assert(config.wheel[0] == "push" && config.wheel[1] == "danger")
         config.place("bait", at: 7)
         assert(config.wheel[7] == "bait" && Set(config.wheel).count == 8)
+        let beforeCenter = config.wheel
+        config.place("danger", at: 8)
+        assert(config.clickPingID == "danger" && config.wheel == beforeCenter)
+        config.place("invalid", at: 8)
+        config.place("bait", at: -1)
+        assert(config.clickPingID == "danger" && config.wheel == beforeCenter)
         config.wheel = ["bad"]
         config.size = .nan; config.volume = 999; config.duration = -1; config.clickPingID = "bad"
         let clean = config.normalized

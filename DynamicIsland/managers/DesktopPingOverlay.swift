@@ -75,7 +75,7 @@ final class DesktopPingOverlay: NSObject, WKScriptMessageHandler, WKNavigationDe
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { onFailure?(String(localized: "The desktop ping overlay stopped. Try again.")) }
 }
 
-private final class DesktopPingResources: NSObject, WKURLSchemeHandler {
+final class DesktopPingResources: NSObject, WKURLSchemeHandler {
     let root: URL
     init(root: URL) { self.root = root.resolvingSymlinksInPath().standardizedFileURL }
 

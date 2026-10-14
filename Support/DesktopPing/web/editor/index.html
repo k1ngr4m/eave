@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'none'">
+<title>Eave Signal Wheel Editor</title>
+<link rel="stylesheet" href="./editor.css">
+</head>
+<body>
+<main id="editor">
+  <header><div><h2 id="title"></h2><p id="description"></p></div><button id="reset" type="button"></button></header>
+  <div class="layout">
+    <svg id="wheel" viewBox="0 0 300 300" role="group"></svg>
+    <section class="pool"><h3 id="poolTitle"></h3><p id="poolDescription"></p><div id="signals"></div></section>
+  </div>
+  <p id="hint" role="status" aria-live="polite"></p>
+</main>
+<script type="module" src="./editor.js"></script>
+</body>
+</html>
