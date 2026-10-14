@@ -54,12 +54,19 @@ struct PanelDetailRowsView: View {
     @EnvironmentObject private var localization: Localization
     let detailRows: [PanelDetailRow]
     var leadingInset: CGFloat = 0
+    var icons: [String: (symbol: String, color: Color)] = [:]
     var onCopyValue: (String) -> Void = { _ in }
 
     var body: some View {
         VStack(spacing: 5) {
             ForEach(detailRows, id: \.id) { row in
                 HStack(alignment: .firstTextBaseline) {
+                    if let icon = icons[row.id] {
+                        Image(systemName: icon.symbol)
+                            .foregroundStyle(icon.color)
+                            .frame(width: 16)
+                            .accessibilityHidden(true)
+                    }
                     Text(row.label).foregroundStyle(.secondary)
                     Spacer(minLength: 8)
                     if row.isCopyable {

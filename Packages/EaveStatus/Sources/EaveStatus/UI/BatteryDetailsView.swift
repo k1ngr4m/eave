@@ -10,6 +10,20 @@ struct BatteryDetailsView: View {
 
     private var detailRows: [PanelDetailRow] { state.rows }
 
+    private static let rowIcons: [String: (symbol: String, color: Color)] = [
+        LocalizationKey.batteryDetailsSystemPower.rawValue: ("bolt.fill", .orange),
+        LocalizationKey.batteryDetailsDischarging.rawValue: ("bolt.fill", .orange),
+        LocalizationKey.batteryDetailsSystemReadAt.rawValue: ("clock", .secondary),
+        LocalizationKey.batteryDetailsSampled.rawValue: ("clock", .secondary),
+        LocalizationKey.batteryDetailsCharging.rawValue: ("battery.100.bolt", .green),
+        LocalizationKey.batteryDetailsVoltage.rawValue: ("bolt.horizontal.fill", .orange),
+        LocalizationKey.batteryDetailsCurrent.rawValue: ("waveform.path", .orange),
+        LocalizationKey.batteryDetailsAdapter.rawValue: ("powerplug.fill", .blue),
+        LocalizationKey.batteryDetailsRemaining.rawValue: ("hourglass", .secondary),
+        LocalizationKey.batteryDetailsCycles.rawValue: ("heart.fill", .pink),
+        LocalizationKey.batteryDetailsLowPower.rawValue: ("leaf.fill", .green)
+    ]
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             NavigationBackRow(
@@ -23,7 +37,7 @@ struct BatteryDetailsView: View {
                     Text(localization.string(.batteryDetailsLoading))
                         .foregroundStyle(.secondary)
                 }
-                PanelDetailRowsView(detailRows: detailRows, onCopyValue: onCopyValue)
+                PanelDetailRowsView(detailRows: detailRows, icons: Self.rowIcons, onCopyValue: onCopyValue)
                 if let explanation = state.explanation {
                     Text(explanation)
                         .font(.caption2)
