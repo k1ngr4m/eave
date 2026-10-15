@@ -171,7 +171,7 @@ struct LocalSendDevicePickerView: View {
                     
                     Text("Select Device")
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.primary)
                     
                     Spacer()
                     
@@ -181,7 +181,7 @@ struct LocalSendDevicePickerView: View {
                     } label: {
                         Image(systemName: "arrow.clockwise")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.8))
+                            .foregroundStyle(.primary)
                             .rotationEffect(.degrees(localSend.isRefreshing ? 360 : 0))
                             .animation(
                                 localSend.isRefreshing
@@ -190,7 +190,7 @@ struct LocalSendDevicePickerView: View {
                                 value: localSend.isRefreshing
                             )
                             .frame(width: 32, height: 32)
-                            .background(Circle().fill(Color.white.opacity(0.1)))
+                            .background(Circle().fill(Color.primary.opacity(0.1)))
                     }
                     .buttonStyle(.plain)
                     .disabled(localSend.isRefreshing)
@@ -202,9 +202,9 @@ struct LocalSendDevicePickerView: View {
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.secondary)
                             .frame(width: 28, height: 28)
-                            .background(Circle().fill(Color.white.opacity(0.1)))
+                            .background(Circle().fill(Color.primary.opacity(0.1)))
                     }
                     .buttonStyle(.plain)
                 }
@@ -223,7 +223,7 @@ struct LocalSendDevicePickerView: View {
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: cornerRadius)
-                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                .stroke(Color.primary.opacity(0.2), lineWidth: 1)
         }
         .shadow(color: Color.black.opacity(0.4), radius: 30, x: 0, y: 15)
         .compositingGroup()
@@ -237,7 +237,7 @@ struct LocalSendDevicePickerView: View {
     private var panelBackground: some View {
         if usesCustomLiquidGlass {
             LiquidGlassBackground(variant: liquidGlassVariant, cornerRadius: cornerRadius) {
-                Color.black.opacity(0.3)
+                Color(nsColor: .windowBackgroundColor).opacity(0.3)
             }
         } else if usesStandardLiquidGlass {
             if #available(macOS 26.0, *) {
@@ -248,7 +248,7 @@ struct LocalSendDevicePickerView: View {
                 .fill(.ultraThinMaterial)
                 .background(
                     RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(Color.black.opacity(0.4))
+                        .fill(Color(nsColor: .windowBackgroundColor).opacity(0.4))
                 )
         }
     }
@@ -259,24 +259,24 @@ struct LocalSendDevicePickerView: View {
             
             if localSend.isRefreshing {
                 ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    .progressViewStyle(.circular)
                     .scaleEffect(1.2)
                 
                 Text("Scanning for devices...")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundStyle(.secondary)
             } else {
                 Image(systemName: "antenna.radiowaves.left.and.right.slash")
                     .font(.system(size: 48, weight: .light))
-                    .foregroundColor(.white.opacity(0.4))
+                    .foregroundStyle(.secondary)
                 
                 Text("No devices found")
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundStyle(.primary)
                 
                 Text("Make sure LocalSend is running on other devices")
                     .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.5))
+                    .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                 
                 Button {
@@ -346,19 +346,19 @@ private struct DeviceGridItem: View {
                 // Device icon
                 ZStack {
                     Circle()
-                        .fill(isRejected ? Color.red.opacity(0.15) : Color.white.opacity(isHovered ? 0.15 : 0.08))
+                        .fill(isRejected ? Color.red.opacity(0.15) : Color.primary.opacity(isHovered ? 0.15 : 0.08))
                         .frame(width: 56, height: 56)
                     
                     Image(systemName: deviceIcon)
                         .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(isRejected ? .red : (isHovered ? .accentColor : .white.opacity(0.8)))
+                        .foregroundColor(isRejected ? .red : (isHovered ? .accentColor : .primary))
                 }
                 
                 // Device name
                 VStack(spacing: 2) {
                     Text(device.alias)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(isRejected ? .red : .white)
+                        .foregroundColor(isRejected ? .red : .primary)
                         .lineLimit(1)
                         .truncationMode(.tail)
                     
@@ -369,7 +369,7 @@ private struct DeviceGridItem: View {
                     } else if let model = device.model, !model.isEmpty {
                         Text(model)
                             .font(.system(size: 10))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .truncationMode(.tail)
                     }
@@ -379,11 +379,11 @@ private struct DeviceGridItem: View {
             .padding(.vertical, 16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(isRejected ? Color.red.opacity(0.08) : Color.white.opacity(isHovered ? 0.12 : 0.06))
+                    .fill(isRejected ? Color.red.opacity(0.08) : Color.primary.opacity(isHovered ? 0.12 : 0.06))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(isHovered ? Color.accentColor.opacity(0.6) : Color.white.opacity(0.1), lineWidth: 1)
+                    .stroke(isHovered ? Color.accentColor.opacity(0.6) : Color.primary.opacity(0.1), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -551,7 +551,7 @@ private struct LocalSendGlassBackdrop: View {
                 .foregroundStyle(Color.clear)
                 .frame(width: proxy.size.width, height: proxy.size.height)
                 .glassEffect(
-                    .clear.interactive(),
+                    .regular.interactive(),
                     in: .rect(cornerRadius: cornerRadius)
                 )
         }

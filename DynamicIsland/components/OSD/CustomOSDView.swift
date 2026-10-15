@@ -97,38 +97,14 @@ struct CustomOSDView: View {
         }
     }
     
+    private var backgroundScheme: ColorScheme {
+        osdMaterial.colorScheme(for: colorScheme)
+    }
+
     private var iconColor: Color {
-        switch osdIconColorStyle {
-        case .white:
-            return .white
-        case .whiteTransparent:
-            return .white.opacity(0.85)
-        case .lightGray:
-            return Color(white: 0.85)
-        case .darkGray:
-            return Color(white: 0.3)
-        case .black:
-            return .black
-        case .blackTransparent:
-            return .black.opacity(0.85)
-        case .auto:
-            return colorScheme == .dark ? .white : .black
-        case .autoTransparent:
-            return colorScheme == .dark ? .white.opacity(0.85) : .black.opacity(0.85)
-        }
+        osdIconColorStyle.color(on: backgroundScheme)
     }
-    
-    private var textColor: Color {
-        switch osdIconColorStyle {
-        case .white, .whiteTransparent, .lightGray:
-            return .white
-        case .darkGray, .black, .blackTransparent:
-            return .black
-        case .auto, .autoTransparent:
-            return colorScheme == .dark ? .white : .black
-        }
-    }
-    
+
     // MARK: - Progress View
     
     private var progressView: some View {
@@ -142,16 +118,9 @@ struct CustomOSDView: View {
     }
     
     private var inactiveSegmentColor: Color {
-        switch osdIconColorStyle {
-        case .white, .whiteTransparent, .lightGray:
-            return Color.white.opacity(0.25)
-        case .darkGray, .black, .blackTransparent:
-            return Color.black.opacity(0.25)
-        case .auto, .autoTransparent:
-            return colorScheme == .dark ? Color.white.opacity(0.25) : Color.black.opacity(0.25)
-        }
+        (backgroundScheme == .dark ? Color.white : Color.black).opacity(0.25)
     }
-    
+
     // MARK: - Background
     
     @ViewBuilder
@@ -172,7 +141,7 @@ struct CustomOSDView: View {
                 } else {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .glassEffect(
-                            .clear.interactive(),
+                            .regular.interactive(),
                             in: .rect(cornerRadius: 18)
                         )
                 }
@@ -201,6 +170,14 @@ enum OSDMaterial: String, CaseIterable, Defaults.Serializable {
     case solidDark = "Solid Dark"
     case solidLight = "Solid Light"
     case solidAuto = "Solid Auto"
+
+    func colorScheme(for systemScheme: ColorScheme) -> ColorScheme {
+        switch self {
+        case .solidDark: return .dark
+        case .solidLight: return .light
+        default: return systemScheme
+        }
+    }
 }
 
 // MARK: - OSD Icon Color Style Enum
@@ -214,6 +191,48 @@ enum OSDIconColorStyle: String, CaseIterable, Defaults.Serializable {
     case blackTransparent = "Black (Transparent)"
     case auto = "Auto"
     case autoTransparent = "Auto (Transparent)"
+
+    func color(on backgroundScheme: ColorScheme) -> Color {
+        let automatic: Color = backgroundScheme == .dark ? .white : .black
+        let requested: Color
+        switch self {
+        case .white: requested = .white
+        case .whiteTransparent: requested = .white.opacity(0.85)
+        case .lightGray: requested = Color(white: 0.85)
+        case .darkGray: requested = Color(white: 0.3)
+        case .black: requested = .black
+        case .blackTransparent: requested = .black.opacity(0.85)
+        case .auto: requested = automatic
+        case .autoTransparent: requested = automatic.opacity(0.85)
+        }
+        // Keep manual colors when readable, including previously saved defaults.
+        let luminance = OSDContrast.luminance(of: requested, in: backgroundScheme)
+        let contrast = backgroundScheme == .dark
+            ? (luminance + 0.05) / 0.05 : 1.05 / (luminance + 0.05)
+        return contrast >= 4.5 ? requested : automatic
+    }
+}
+
+// Shared by the classic OSD and text drawn inside the vertical HUD's fill.
+enum OSDContrast {
+    static func luminance(of color: Color, in scheme: ColorScheme) -> Double {
+        var environment = EnvironmentValues()
+        environment.colorScheme = scheme
+        let resolved = color.resolve(in: environment)
+        let backdrop = scheme == .dark ? 0.0 : 1.0
+        func linearize(_ channel: Float) -> Double {
+            let value = Double(channel * resolved.opacity) + backdrop * Double(1 - resolved.opacity)
+            return value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+        }
+        return 0.2126 * linearize(resolved.red)
+            + 0.7152 * linearize(resolved.green)
+            + 0.0722 * linearize(resolved.blue)
+    }
+
+    static func foreground(on color: Color, in scheme: ColorScheme) -> Color {
+        let luminance = luminance(of: color, in: scheme)
+        return (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05) ? .black : .white
+    }
 }
 
 #endif

@@ -75,7 +75,7 @@ struct VerticalHUDView: View {
                     .clipShape(Capsule())
                     .overlay {
                         Capsule()
-                            .stroke(.white.opacity(0.1), lineWidth: 1)
+                            .stroke(unfilledForeground.opacity(0.1), lineWidth: 1)
                     }
 
                 // Fill Bar
@@ -108,7 +108,7 @@ struct VerticalHUDView: View {
                     
                     Image(systemName: symbolName)
                         .font(.system(size: hudWidth * 0.4, weight: .semibold))
-                        .foregroundStyle(state.value > 0.15 ? (useAccentColor ? .white : .black) : .secondary)
+                        .foregroundStyle(state.value > 0.15 ? filledForeground : unfilledForeground)
                         .symbolRenderingMode(.hierarchical)
                         .padding(.bottom, hudWidth * 0.35)
                         .offset(y: stretchOffset > 0 ? -stretchOffset/4 : 0)
@@ -247,14 +247,29 @@ struct VerticalHUDView: View {
             }
         }
         
-        return AnyShapeStyle(useAccentColor ? Color.accentColor : Color.white)
+        return AnyShapeStyle(useAccentColor ? Color.accentColor : unfilledForeground)
+    }
+
+    private var backgroundScheme: ColorScheme {
+        verticalHUDMaterial.colorScheme(for: colorScheme)
+    }
+
+    private var unfilledForeground: Color {
+        backgroundScheme == .dark ? .white : .black
+    }
+
+    private var filledForeground: Color {
+        if state.type == .volume && useColorCodedVolume {
+            // The shared green/yellow/red palette supports black glyphs throughout its gradient.
+            return .black
+        }
+        return OSDContrast.foreground(
+            on: useAccentColor ? .accentColor : unfilledForeground, in: colorScheme
+        )
     }
 
     private var valueLabelColor: Color {
-        if state.value > 0.85 {
-            return useAccentColor ? .white : .black
-        }
-        return .secondary
+        state.value > 0.85 ? filledForeground : unfilledForeground
     }
 
     @ViewBuilder
@@ -275,7 +290,7 @@ struct VerticalHUDView: View {
                     Capsule()
                         .fill(.clear)
                         .glassEffect(
-                            .clear.interactive(),
+                            .regular.interactive(),
                             in: .capsule
                         )
                 }

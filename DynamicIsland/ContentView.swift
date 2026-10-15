@@ -710,6 +710,7 @@ struct ContentView: View {
             .padding(.horizontal, isConnectivityHUDVisible ? 0 : notchHorizontalPadding)
             .padding([.horizontal, .bottom], vm.notchState == .open ? 12 : 0)
             .background(.black)
+            .environment(\.colorScheme, .dark)
             .clipShape(resolvedClipShape)
             // Keep the anti-gap fill outside the clipped notch. The window sits
             // this far above screen.maxY, so placing the spacer after clipShape
