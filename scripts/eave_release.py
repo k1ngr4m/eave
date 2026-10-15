@@ -33,7 +33,7 @@ def digest(path):
         return checksum.hexdigest()
 
 
-def architecture_app(source, destination, architecture):
+def architecture_app(source, destination, architecture, identity='-'):
     run('ditto', source, destination)
     for binary in destination.rglob('*'):
         if binary.is_symlink() or not binary.is_file():
@@ -53,8 +53,23 @@ def architecture_app(source, destination, architecture):
             temporary.replace(binary)
         if run('lipo', '-archs', binary) != architecture:
             raise ValueError(f'{binary} was not thinned to {architecture}')
-    # lipo preserves each slice's signature; verify all nested code and resources.
+    # Slice signatures survive lipo, but resource-embedded frameworks change the app's seal.
+    run('codesign', '--force', '--sign', identity,
+        '--preserve-metadata=identifier,entitlements,requirements,flags,runtime', destination)
     run('codesign', '--verify', '--deep', '--strict', destination)
+
+
+def notarize(app, output, profile):
+    submission = output / 'notarization.zip'
+    run('ditto', '-c', '-k', '--keepParent', app, submission)
+    result = json.loads(run('xcrun', 'notarytool', 'submit', submission, '--keychain-profile', profile,
+                           '--wait', '--output-format', 'json'))
+    (output / 'notarization.json').write_text(json.dumps(result, indent=2) + '\n')
+    if result.get('status') != 'Accepted':
+        raise ValueError(f'Notarization failed; inspect {output / "notarization.json"}')
+    run('xcrun', 'stapler', 'staple', app)
+    run('xcrun', 'stapler', 'validate', app)
+    run('spctl', '--assess', '--type', 'execute', app)
 
 
 def available_version(version, releases):
@@ -154,16 +169,7 @@ def prepare(args):
         raise ValueError('Exported app identity/version/update configuration does not match')
     run('codesign', '--verify', '--deep', '--strict', app)
     if args.signing == 'notarized':
-        submission = output / 'notarization.zip'
-        run('ditto', '-c', '-k', '--keepParent', app, submission)
-        result = json.loads(run('xcrun', 'notarytool', 'submit', submission, '--keychain-profile', args.notary_profile,
-                               '--wait', '--output-format', 'json'))
-        (output / 'notarization.json').write_text(json.dumps(result, indent=2) + '\n')
-        if result.get('status') != 'Accepted':
-            raise ValueError(f'Notarization failed; inspect {output / "notarization.json"}')
-        run('xcrun', 'stapler', 'staple', app)
-        run('xcrun', 'stapler', 'validate', app)
-        run('spctl', '--assess', '--type', 'execute', app)
+        notarize(app, output, args.notary_profile)
     package = output / f'Eave-{args.version}.zip'
     run('ditto', '-c', '-k', '--keepParent', app, package)
     signature = run(binaries / 'sign_update', '--account', ACCOUNT, '-p', package)
@@ -173,10 +179,9 @@ def prepare(args):
     artifacts = [package, feed]
     for label, architecture in ARCHITECTURES.items():
         variant = output / label / 'Eave.app'
-        architecture_app(app, variant, architecture)
+        architecture_app(app, variant, architecture, args.identity if args.signing == 'notarized' else '-')
         if args.signing == 'notarized':
-            run('xcrun', 'stapler', 'validate', variant)
-            run('spctl', '--assess', '--type', 'execute', variant)
+            notarize(variant, variant.parent, args.notary_profile)
         package = output / f'Eave-{args.version}-{label}.zip'
         run('ditto', '-c', '-k', '--keepParent', variant, package)
         artifacts.append(package)
