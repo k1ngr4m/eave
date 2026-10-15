@@ -32,7 +32,7 @@ AI 用量面板会结合本地日志与服务端额度接口：Claude Code、Cod
 
 ### 安装发布版
 
-1. 打开 [最新 Release](https://github.com/k1ngr4m/eave/releases/latest)，Intel Mac 选择 `Eave-<版本>-Intel.zip`，M 系列 Mac 选择 `Eave-<版本>-AppleSilicon.zip`。最低系统要求为 macOS 14.6；不带架构后缀的 ZIP 是供自动更新使用的通用包，也可手动安装。
+1. 打开 [最新 Release](https://github.com/k1ngr4m/eave/releases/latest)，Intel Mac 选择 `Eave-<版本>-Intel.dmg`，M 系列 Mac 选择 `Eave-<版本>-AppleSilicon.dmg`。最低系统要求为 macOS 14.6；不带架构后缀的 ZIP 是供自动更新使用的通用包，也可手动安装。
 2. 使用 DMG 时打开磁盘映像，将 `Eave.app` 拖入“应用程序”；使用 ZIP 时先解压，再将 `Eave.app` 移入“应用程序”。
 3. 从“应用程序”启动 Eave，完成首次设置，按需要启用功能并授予权限。
 
@@ -266,7 +266,7 @@ python3 scripts/eave_release.py prepare 0.1.2 \
   --notary-profile EaveNotary
 ```
 
-准备产物位于 `build/release-<版本>/`，包括通用 `export/Eave.app`、供自动更新使用的 `Eave-<版本>.zip`、独立的 `Eave-<版本>-Intel.zip` 和 `Eave-<版本>-AppleSilicon.zip`、`appcast.xml` 和用于校验的 `release.json`。独立安装包从同一归档提取对应架构，并检查嵌套代码签名。归档位于 `build/Eave-<版本>.xcarchive`。**当前脚本不生成 DMG**。
+准备产物位于 `build/release-<版本>/`，包括通用 `export/Eave.app`、供自动更新使用的 `Eave-<版本>.zip`、独立的 `Eave-<版本>-Intel.dmg` 和 `Eave-<版本>-AppleSilicon.dmg`、`appcast.xml` 和用于校验的 `release.json`。独立安装包从同一归档提取对应架构，检查嵌套代码签名，并提供拖入“应用程序”的 DMG 安装界面。归档位于 `build/Eave-<版本>.xcarchive`。
 
 检查产物并确保该源代码提交已经推送到远端后，使用非空发行说明文件发布：
 

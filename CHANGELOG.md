@@ -4,7 +4,7 @@
 
 ## [0.1.2] - 2026-10-15
 
-- Provide separate Intel and Apple Silicon installation ZIPs, retaining the universal ZIP for automatic updates.
+- Provide separate Intel and Apple Silicon installation DMGs, retaining the universal ZIP for automatic updates.
 - Add a desktop signal wheel with sound, a visual layout editor, and local emotes.
 - Show live Codex activity in the closed notch with configurable agent presentation.
 - Add a clock and date to the idle home view, live battery power consumption, and colored battery detail icons.

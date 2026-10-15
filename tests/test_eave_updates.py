@@ -69,7 +69,7 @@ with tempfile.TemporaryDirectory() as directory:
     assert enclosure.attrib[f'{{{release.SPARKLE}}}edSignature'] == 'test-signature'
     artifacts = [package, feed]
     for label in release.ARCHITECTURES:
-        variant = prepared / f'Eave-0.1.2-{label}.zip'
+        variant = prepared / f'Eave-0.1.2-{label}.dmg'
         variant.write_bytes(label.encode())
         artifacts.append(variant)
     manifest = {'version': '0.1.2', 'commit': 'a' * 40,
@@ -150,6 +150,11 @@ with tempfile.TemporaryDirectory() as directory:
             return 'x86_64 arm64' if data == b'\xca\xfe\xba\xbe' else data[4:].decode()
         if command[0] == 'lipo':
             Path(command[-1]).write_bytes(b'\xcf\xfa\xed\xfe' + command[3].encode())
+        if command[:2] == ('hdiutil', 'create'):
+            staging = Path(command[command.index('-srcfolder') + 1])
+            assert (staging / 'Eave.app/Contents/Info.plist').is_file()
+            assert (staging / 'Applications').readlink() == Path('/Applications')
+            Path(command[-1]).write_bytes(b'disk image')
         if command[0] == 'ditto':
             if command[1] == '-c':
                 Path(command[-1]).write_bytes(b'signed app archive')
@@ -170,7 +175,7 @@ with tempfile.TemporaryDirectory() as directory:
         manifest = json.loads((root / 'build/release-0.1.0/release.json').read_text())
         assert manifest['signing'] == 'local'
         for label, architecture in release.ARCHITECTURES.items():
-            assert f'Eave-0.1.0-{label}.zip' in manifest['sha256']
+            assert f'Eave-0.1.0-{label}.dmg' in manifest['sha256']
             binary = root / f'build/release-0.1.0/{label}/Eave.app/Contents/MacOS/Eave'
             assert binary.read_bytes()[4:].decode() == architecture
         assert (root / 'build/release-0.1.0/export/Eave.app/Contents/MacOS/Eave').read_bytes() == b'\xca\xfe\xba\xbe'

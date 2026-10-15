@@ -72,6 +72,16 @@ def notarize(app, output, profile):
     run('spctl', '--assess', '--type', 'execute', app)
 
 
+def disk_image(app, package):
+    with tempfile.TemporaryDirectory(prefix='eave-dmg-') as directory:
+        staging = Path(directory)
+        run('ditto', app, staging / 'Eave.app')
+        (staging / 'Applications').symlink_to('/Applications')
+        run('hdiutil', 'create', '-volname', package.stem, '-srcfolder', staging,
+            '-format', 'UDZO', '-fs', 'HFS+', package)
+    run('hdiutil', 'verify', package)
+
+
 def available_version(version, releases):
     requested = version_parts(version)
     for release in releases:
@@ -182,8 +192,8 @@ def prepare(args):
         architecture_app(app, variant, architecture, args.identity if args.signing == 'notarized' else '-')
         if args.signing == 'notarized':
             notarize(variant, variant.parent, args.notary_profile)
-        package = output / f'Eave-{args.version}-{label}.zip'
-        run('ditto', '-c', '-k', '--keepParent', variant, package)
+        package = output / f'Eave-{args.version}-{label}.dmg'
+        disk_image(variant, package)
         artifacts.append(package)
     (output / 'release.json').write_text(json.dumps({'version': args.version, 'commit': commit, 'signing': args.signing,
         'sha256': {p.name: digest(p) for p in artifacts}}, indent=2) + '\n')
@@ -195,7 +205,7 @@ def publish(args):
     output = ROOT / 'build' / f'release-{args.version}'
     manifest = json.loads((output / 'release.json').read_text())
     names = {f'Eave-{args.version}.zip', 'appcast.xml',
-             *(f'Eave-{args.version}-{label}.zip' for label in ARCHITECTURES)}
+             *(f'Eave-{args.version}-{label}.dmg' for label in ARCHITECTURES)}
     if manifest['version'] != args.version or set(manifest['sha256']) != names:
         raise ValueError('Release manifest does not match the requested version')
     for name, checksum in manifest['sha256'].items():
