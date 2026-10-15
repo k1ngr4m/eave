@@ -66,9 +66,8 @@ final class DesktopPingManager: ObservableObject {
     }
 
     func requestPermission() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-        _ = AXIsProcessTrustedWithOptions(options)
-        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+        AccessibilityPermissionStore.shared.requestAuthorizationPrompt()
+        AccessibilityPermissionStore.shared.openSystemSettings()
         retry()
     }
 
