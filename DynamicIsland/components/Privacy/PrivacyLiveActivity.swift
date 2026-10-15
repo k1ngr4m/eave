@@ -64,7 +64,7 @@ struct PrivacyLiveActivity: View {
             
             // Center - Black fill
             Rectangle()
-                .fill(.black)
+                .fill(Color.notchBackground)
                 .frame(width: vm.closedNotchSize.width + (isHovering ? 8 : 0))
             
             // Right side - Privacy indicators

@@ -58,7 +58,6 @@ struct CodexUsageDetailView: View {
         }
         .padding(.horizontal, 8)
         .padding(.bottom, 8)
-        .environment(\.colorScheme, .dark)
         .task {
             while !Task.isCancelled {
                 await manager.refreshCodexDetail()
@@ -117,16 +116,16 @@ struct CodexUsageDetailView: View {
     private func card<Content: View>(_ title: LocalizedStringKey, symbol: String,
                                     @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(title, systemImage: symbol).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.8))
+            Label(title, systemImage: symbol).font(.system(size: 12, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.8))
             content()
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .background {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(LinearGradient(colors: [.white.opacity(0.07), .white.opacity(0.035)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .fill(LinearGradient(colors: [Color.primary.opacity(0.07), Color.primary.opacity(0.035)], startPoint: .topLeading, endPoint: .bottomTrailing))
         }
-        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(.white.opacity(0.08), lineWidth: 0.7) }
+        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.7) }
     }
 
     private func limits(_ snapshot: UsageSnapshot) -> some View {
@@ -172,7 +171,7 @@ struct CodexUsageDetailView: View {
                 Text(fraction.formatted(.percent.precision(.fractionLength(0)))).font(.system(size: 16, weight: .bold, design: .rounded))
             }
             GeometryReader { geometry in
-                Capsule().fill(.white.opacity(0.12)).overlay(alignment: .leading) {
+                Capsule().fill(Color.primary.opacity(0.12)).overlay(alignment: .leading) {
                     Capsule().fill(remaining <= 0.1 ? .orange : accent).frame(width: geometry.size.width * fraction)
                 }
             }.frame(height: 7)
@@ -313,7 +312,7 @@ struct CodexUsageDetailView: View {
         let opacity = bucket.totals.totalTokens == 0 ? 0.07 : 0.18 + 0.82 * fraction
         let label = bucket.start.formatted(date: .abbreviated, time: .omitted)
         return RoundedRectangle(cornerRadius: 3)
-            .fill(Color.white.opacity(opacity))
+            .fill(Color.primary.opacity(opacity))
             .frame(width: 12, height: 12)
             .overlay { RoundedRectangle(cornerRadius: 3).strokeBorder(hoveredDay == bucket.start ? accent : .clear) }
             .onHover { hoveredDay = $0 ? bucket.start : nil }

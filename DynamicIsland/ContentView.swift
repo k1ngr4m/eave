@@ -36,6 +36,9 @@ import UIKit
 
 @MainActor
 struct ContentView: View {
+    @Default(.notchAppearance) private var notchAppearance
+    @Environment(\.colorScheme) private var systemColorScheme
+    private var notchColorScheme: ColorScheme { notchAppearance.colorScheme(for: systemColorScheme) }
     @Default(.pinnedLyricFontSize) private var pinnedLyricFontSize
     @Default(.pinnedLyricContext) private var pinnedLyricContext
     @Default(.enableStocksFeature) private var enableStocksFeature
@@ -699,6 +702,7 @@ struct ContentView: View {
 
     var body: some View {
         installRootLifecycleHandlers(on: rootBodyView)
+            .environment(\.colorScheme, notchColorScheme)
     }
 
     private var mainLayoutBase: some View {
@@ -709,8 +713,7 @@ struct ContentView: View {
             // wider than both the root view and its NSWindow, clipping both sides.
             .padding(.horizontal, isConnectivityHUDVisible ? 0 : notchHorizontalPadding)
             .padding([.horizontal, .bottom], vm.notchState == .open ? 12 : 0)
-            .background(.black)
-            .environment(\.colorScheme, .dark)
+            .background(Color.notchBackground)
             .clipShape(resolvedClipShape)
             // Keep the anti-gap fill outside the clipped notch. The window sits
             // this far above screen.maxY, so placing the spacer after clipShape
@@ -719,14 +722,14 @@ struct ContentView: View {
             .overlay(alignment: .top) {
                 if !isIslandMode {
                     Rectangle()
-                        .fill(.black)
+                        .fill(Color.notchBackground)
                         .frame(height: notchTopScreenBleedAmount)
                 }
             }
             .compositingGroup()
             .shadow(
                 color: ((vm.notchState == .open || isHovering) && Defaults[.enableShadow])
-                    ? .black.opacity(0.6)
+                    ? .black.opacity(notchColorScheme == .light ? 0.18 : 0.6)
                     : .clear,
                 radius: Defaults[.cornerRadiusScaling] ? 10 : 5
             )
@@ -943,6 +946,12 @@ struct ContentView: View {
                 // Deterministic teardown for borderless panels (`.onDisappear` is
                 // unreliable); the window-cleanup path calls this before closing.
                 vm.onViewTeardown = { performViewTeardown() }
+            }
+            .onChange(of: notchColorScheme, initial: true) { _, scheme in
+                for module in MonitoringModule.allCases {
+                    module.widgets.setDarkAppearance(scheme == .dark)
+                }
+                TerminalManager.shared.refreshTerminalAppearanceIfNeeded()
             }
             .onChange(of: terminalStickyMode) { _, _ in
                 syncStickyTerminalOutsideClickMonitor()
@@ -1259,7 +1268,7 @@ struct ContentView: View {
                           else if coordinator.sneakPeek.type == .reminder {
                               if !vm.hideOnClosed && activeSneakPeekStyle == .standard, let reminder = reminderManager.activeReminder {
                                   GeometryReader { geo in
-                                      let chipColor = Color(nsColor: reminder.event.calendar.color).ensureMinimumBrightness(factor: 0.7)
+                                      let chipColor = Color(nsColor: reminder.event.calendar.color).ensureMinimumBrightness(factor: 0.7).notchReadableTint()
                                       HStack(spacing: 6) {
                                           RoundedRectangle(cornerRadius: 2)
                                               .fill(chipColor)
@@ -1349,7 +1358,7 @@ struct ContentView: View {
         if isReminderCritical(reminder, now: now) {
             return .red
         }
-        return Color(nsColor: reminder.event.calendar.color).ensureMinimumBrightness(factor: 0.7)
+        return Color(nsColor: reminder.event.calendar.color).ensureMinimumBrightness(factor: 0.7).notchReadableTint()
     }
 
     private func reminderSneakPeekText(for entry: ReminderLiveActivityManager.ReminderEntry, now: Date) -> String {
@@ -1389,7 +1398,7 @@ struct ContentView: View {
                     .fill(.clear)
                     .frame(width: sideSize, height: sideSize)
                 Rectangle()
-                    .fill(.black)
+                    .fill(Color.notchBackground)
                     .frame(width: vm.closedNotchSize.width - 20)
                 IdleAnimationView()
                     .frame(width: sideSize, height: sideSize)
@@ -1452,7 +1461,7 @@ struct ContentView: View {
             .frame(width: wingBaseWidth, height: notchContentHeight, alignment: .center)
 
             Rectangle()
-                .fill(.black)
+                .fill(Color.notchBackground)
                 .frame(width: effectiveCenterWidth, height: notchContentHeight)
                 .overlay(
                     HStack(alignment: .top) {
@@ -1641,7 +1650,7 @@ struct ContentView: View {
         if let secondary, badgeSize > 0 {
             ZStack {
                 Circle()
-                    .fill(Color.black)
+                    .fill(Color.notchBackground)
 
                 switch secondary {
                 case .timer:
@@ -1670,7 +1679,7 @@ struct ContentView: View {
                 case .shelf:
                     Image(systemName: "tray.and.arrow.down.fill")
                         .font(.system(size: badgeSize * 0.50, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.primary)
                 }
             }
             .frame(width: badgeSize, height: badgeSize)
@@ -1728,10 +1737,10 @@ struct ContentView: View {
         case .recording:
             spectrumView(forceSpectrum: true, trailingInset: 6)
         case .shelf(let count):
-            // File count badge: bold white number, like a minimal pill
+            // File count badge follows the notch foreground.
             Text("\(count)")
                 .font(.system(.callout, design: .rounded, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.primary)
                 .contentTransition(.numericText(countsDown: false))
                 .animation(.smooth(duration: 0.3), value: count)
                 .frame(alignment: .center)
@@ -2780,7 +2789,7 @@ private struct MusicTimerSupplementView: View {
         VStack(alignment: .trailing, spacing: showsBarProgress ? 4 : 0) {
             Text(countdownText)
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                .foregroundColor(timerManager.isOvertime ? .red : .white)
+                .foregroundColor(timerManager.isOvertime ? .red : Color.primary)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
                 .contentTransition(.numericText())
@@ -2798,7 +2807,7 @@ private struct MusicTimerSupplementView: View {
     private var ringView: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.18), lineWidth: 3)
+                .stroke(Color.primary.opacity(0.18), lineWidth: 3)
             Circle()
                 .trim(from: 0, to: clampedProgress)
                 .stroke(accentColor, style: StrokeStyle(lineWidth: 3, lineCap: .round))
@@ -2817,14 +2826,14 @@ private struct MusicTimerSupplementView: View {
     private var timerNameView: some View {
         Text(timerManager.timerName)
             .font(.system(size: 12, weight: .medium))
-            .foregroundColor(.white)
+            .foregroundColor(Color.primary)
             .lineLimit(1)
             .frame(width: timerNameFrameWidth, alignment: .trailing)
     }
 
     private func barView(width: CGFloat) -> some View {
         Capsule()
-            .fill(Color.white.opacity(0.15))
+            .fill(Color.primary.opacity(0.15))
             .frame(width: width, height: 4)
             .overlay(alignment: .leading) {
                 Capsule()
@@ -2860,7 +2869,7 @@ private struct MusicReminderSupplementView: View {
     private var ringCountdownView: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.15), lineWidth: 3)
+                .stroke(Color.primary.opacity(0.15), lineWidth: 3)
             Circle()
                 .trim(from: 0, to: progressValue)
                 .stroke(accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))

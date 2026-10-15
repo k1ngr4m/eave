@@ -35,18 +35,18 @@ struct ShelfInlineLiveActivity: View {
             // LEFT of notch — tray icon (white, same style as the screenshot)
             Image(systemName: "tray.fill")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.primary)
                 .frame(width: sideWidth, alignment: .leading)
 
             // Physical notch / pill space
             Rectangle()
-                .fill(Color.black)
+                .fill(Color.notchBackground)
                 .frame(width: vm.closedNotchSize.width)
 
             // RIGHT of notch — file count in white
             Text("\(shelfState.items.count)")
                 .font(.system(.callout, design: .rounded, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.primary)
                 .contentTransition(.numericText(countsDown: false))
                 .animation(.smooth(duration: 0.3), value: shelfState.items.count)
                 .frame(width: sideWidth, alignment: .trailing)

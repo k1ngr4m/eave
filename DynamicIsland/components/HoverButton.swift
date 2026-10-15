@@ -24,7 +24,7 @@ import SwiftUI
 
 struct HoverButton: View {
     var icon: String
-    var iconColor: Color = .white
+    var iconColor: Color = Color.primary
     var scale: Image.Scale = .medium
     var pressEffect: PressEffect? = nil
     var contentTransition: ContentTransition = .symbolEffect

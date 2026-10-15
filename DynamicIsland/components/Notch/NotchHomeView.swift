@@ -250,7 +250,7 @@ struct LyricsSidePanelView: View {
     @State private var isSuppressing = false
     private var artistLineColor: Color {
         Defaults[.playerColorTinting]
-            ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6)
+            ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6).notchReadableTint()
             : .gray
     }
 
@@ -258,9 +258,9 @@ struct LyricsSidePanelView: View {
     /// the unsung remainder still reads as part of the current line.
     private var lyricsStyle: SyncedLyricsStyle {
         SyncedLyricsStyle(
-            sung: .white,
+            sung: Color.primary,
             unsung: artistLineColor.opacity(0.55),
-            idle: .white.opacity(0.5),
+            idle: Color.primary.opacity(0.5),
             tint: artistLineColor
         )
     }
@@ -282,7 +282,7 @@ struct LyricsSidePanelView: View {
             SyncedLyricsList(musicManager: musicManager, style: lyricsStyle)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color.black.opacity(0.3))
+        .background(Color.primary.opacity(0.04))
         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
         .onHover { hovering in
             updateSuppression(for: hovering)
@@ -309,7 +309,7 @@ struct LyricsSidePanelView: View {
         } label: {
             Image(systemName: "list.bullet")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(showingLyricsPicker ? artistLineColor : Color.white.opacity(0.5))
+                .foregroundStyle(showingLyricsPicker ? artistLineColor : Color.primary.opacity(0.5))
                 .frame(width: 20, height: 20)
                 .contentShape(Rectangle())
         }
@@ -416,7 +416,7 @@ struct LyricsSidePanelView: View {
         } label: {
             Image(systemName: pinLyricsWhenClosed ? "pin.fill" : "pin")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(pinLyricsWhenClosed ? artistLineColor : Color.white.opacity(0.5))
+                .foregroundStyle(pinLyricsWhenClosed ? artistLineColor : Color.primary.opacity(0.5))
                 .rotationEffect(.degrees(pinLyricsWhenClosed ? 0 : 45))
                 .frame(width: 20, height: 20)
                 .contentShape(Rectangle())
@@ -608,7 +608,7 @@ struct MusicControlsView: View {
                 isExplicit: musicManager.isCurrentTrackExplicit,
                 font: .headline,
                 nsFont: .headline,
-                textColor: .white,
+                textColor: Color.primary,
                 frameWidth: width,
                 badgeHeight: 14
             )
@@ -617,7 +617,7 @@ struct MusicControlsView: View {
                 font: .headline,
                 nsFont: .headline,
                 textColor: Defaults[.playerColorTinting] ? Color(nsColor: musicManager.avgColor)
-                    .ensureMinimumBrightness(factor: 0.6) : .gray,
+                    .ensureMinimumBrightness(factor: 0.6).notchReadableTint() : .gray,
                 frameWidth: width
             )
             .fontWeight(.medium)
@@ -637,7 +637,7 @@ struct MusicControlsView: View {
                     // during an intro there is no current line to blank out, so
                     // testing the text would miss it.
                     InstrumentalBreakNotes(fontSize: 10, weight: .regular)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(0.7))
                     .padding(.top, 2)
                     .transition(transition)
                 }
@@ -652,7 +652,7 @@ struct MusicControlsView: View {
                         lyricsBinding,
                         font: .system(size: 12, weight: .regular),
                         nsFont: .headline,
-                        textColor: .white.opacity(0.7),
+                        textColor: Color.primary.opacity(0.7),
                         minDuration: 0.35,
                         frameWidth: width
                     )
@@ -755,7 +755,7 @@ struct MusicControlsView: View {
                     }
                 ),
                 range: 0...1,
-                color: .white,
+                color: Color.primary,
                 dragging: $hudDragging,
                 lastDragged: $hudLastDragged,
                 onValueChange: { newValue in
@@ -852,7 +852,7 @@ struct MusicControlsView: View {
     private var repeatIconColor: Color {
         switch musicManager.repeatMode {
         case .off:
-            return .white
+            return Color.primary
         case .all, .one:
             return brandAccentColor
         }
@@ -921,7 +921,7 @@ struct MusicControlsView: View {
         case .shuffle:
             HoverButton(
                 icon: "shuffle",
-                iconColor: musicManager.isShuffled ? brandAccentColor : .white,
+                iconColor: musicManager.isShuffled ? brandAccentColor : Color.primary,
                 scale: .medium
             ) {
                 MusicManager.shared.toggleShuffle()
@@ -941,7 +941,7 @@ struct MusicControlsView: View {
         case .lyrics:
             HoverButton(
                 icon: enableLyrics ? "quote.bubble.fill" : "quote.bubble",
-                iconColor: enableLyrics ? brandAccentColor : .white,
+                iconColor: enableLyrics ? brandAccentColor : Color.primary,
                 scale: .medium
             ) {
                 enableLyrics.toggle()
@@ -950,7 +950,7 @@ struct MusicControlsView: View {
             LikeTrackControl { presentation, toggle in
                 HoverButton(
                     icon: presentation.iconName,
-                    iconColor: presentation.isActive ? brandAccentColor : .white,
+                    iconColor: presentation.isActive ? brandAccentColor : Color.primary,
                     scale: .medium
                 ) {
                     toggle()
@@ -1147,10 +1147,10 @@ private struct HomeIdleView: View {
                     .font(.system(size: 48, weight: .ultraLight, design: .rounded))
                     .monospacedDigit()
                     .tracking(-1.5)
-                    .foregroundStyle(.white.opacity(0.95))
+                    .foregroundStyle(Color.primary.opacity(0.95))
                 Text(date, format: .dateTime.month().day().weekday(.wide))
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(Color.primary.opacity(0.55))
             }
             .lineLimit(1)
             .minimumScaleFactor(0.75)
@@ -1158,15 +1158,15 @@ private struct HomeIdleView: View {
             Spacer(minLength: 0)
 
             Rectangle()
-                .fill(.white.opacity(0.12))
+                .fill(Color.primary.opacity(0.12))
                 .frame(width: 1, height: 40)
                 .accessibilityHidden(true)
 
             HStack(spacing: 14) {
                 ZStack {
-                    Circle().fill(.white.opacity(0.04))
-                    Circle().strokeBorder(.white.opacity(0.10), lineWidth: 1)
-                    Circle().strokeBorder(.white.opacity(0.06), lineWidth: 1).padding(6)
+                    Circle().fill(Color.primary.opacity(0.04))
+                    Circle().strokeBorder(Color.primary.opacity(0.10), lineWidth: 1)
+                    Circle().strokeBorder(Color.primary.opacity(0.06), lineWidth: 1).padding(6)
                     Circle().fill(Color.accentColor.opacity(0.15)).padding(15)
                     Image(systemName: "music.note")
                         .font(.system(size: 16, weight: .medium))
@@ -1178,10 +1178,10 @@ private struct HomeIdleView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("暂无播放")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .foregroundStyle(Color.primary.opacity(0.75))
                     Text("让音乐慢慢响起")
                         .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(0.45))
                 }
                 .fixedSize()
             }
@@ -1383,11 +1383,11 @@ struct MusicSliderView: View {
         }
         switch Defaults[.sliderColor] {
         case .albumArt:
-            return Color(nsColor: color).ensureMinimumBrightness(factor: 0.6)
+            return Color(nsColor: color).ensureMinimumBrightness(factor: 0.6).notchReadableTint()
         case .accent:
             return .accentColor
         case .white:
-            return .white
+            return Color.primary
         }
     }
 
@@ -1396,7 +1396,7 @@ struct MusicSliderView: View {
             return tintOverride
         }
         return Defaults[.playerColorTinting]
-            ? Color(nsColor: color).ensureMinimumBrightness(factor: 0.6)
+            ? Color(nsColor: color).ensureMinimumBrightness(factor: 0.6).notchReadableTint()
             : .gray
     }
 
@@ -1467,7 +1467,7 @@ struct MusicSliderView: View {
 struct CustomSlider: View {
     @Binding var value: Double
     var range: ClosedRange<Double>
-    var color: Color = .white
+    var color: Color = Color.primary
     @Binding var dragging: Bool
     @Binding var lastDragged: Date
     var onValueChange: ((Double) -> Void)?
@@ -1581,7 +1581,7 @@ private struct MediaOutputPickerButton: View {
     @EnvironmentObject private var vm: DynamicIslandViewModel
 
     var body: some View {
-        HoverButton(icon: buttonIcon, iconColor: .white, scale: .medium) {
+        HoverButton(icon: buttonIcon, iconColor: Color.primary, scale: .medium) {
             isPopoverPresented.toggle()
             if isPopoverPresented {
                 routeManager.refreshDevices()
@@ -1643,7 +1643,7 @@ private struct AirPlayPickerButton: View {
     }
 
     var body: some View {
-        HoverButton(icon: "airplayaudio", iconColor: .white, scale: .medium) {
+        HoverButton(icon: "airplayaudio", iconColor: Color.primary, scale: .medium) {
             isPopoverPresented.toggle()
             if isPopoverPresented {
                 Task { await airPlayManager.refreshDevices() }

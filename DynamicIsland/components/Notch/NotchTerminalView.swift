@@ -88,7 +88,6 @@ struct NotchTerminalView: View {
     @Default(.enableTerminalFeature) var enableTerminalFeature
     @Default(.cornerRadiusScaling) var cornerRadiusScaling
     @Default(.enableMinimalisticUI) var enableMinimalisticUI
-    @Default(.terminalForegroundColor) var terminalForegroundColor
     @State private var suppressionToken = UUID()
     @State private var isSuppressing = false
 
@@ -126,12 +125,12 @@ struct NotchTerminalView: View {
                 // Terminal header bar
                 HStack {
                     Image(systemName: "apple.terminal")
-                        .foregroundStyle(terminalForegroundColor)
+                        .foregroundStyle(.primary)
                         .font(.system(size: 11))
 
                     Text(terminalManager.terminalTitle)
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(terminalForegroundColor)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
 
                     Spacer()
@@ -142,7 +141,7 @@ struct NotchTerminalView: View {
                     } label: {
                         Image(systemName: "arrow.counterclockwise")
                             .font(.system(size: 10))
-                            .foregroundStyle(terminalForegroundColor)
+                            .foregroundStyle(.primary)
                     }
                     .buttonStyle(.plain)
                     .help("Restart shell")

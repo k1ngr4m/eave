@@ -341,12 +341,18 @@ class TerminalManager: ObservableObject {
         return NSFont.monospacedSystemFont(ofSize: size, weight: .regular)
     }
 
+    private var usesLightNotchAppearance: Bool {
+        let system: ColorScheme = NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? .dark : .light
+        return Defaults[.notchAppearance].colorScheme(for: system) == .light
+    }
+
     /// Background color with opacity slider applied to alpha only (glyphs stay fully opaque).
     private func resolvedTerminalBackgroundNSColor(
         baseColor: NSColor? = nil,
         opacitySlider: CGFloat? = nil
     ) -> NSColor {
-        let raw = baseColor ?? NSColor(Defaults[.terminalBackgroundColor])
+        let raw = usesLightNotchAppearance ? NSColor(white: 0.96, alpha: 1)
+            : (baseColor ?? NSColor(Defaults[.terminalBackgroundColor]))
         let rgb = raw.usingColorSpace(.deviceRGB) ?? raw.usingColorSpace(.sRGB) ?? raw
         let opacity = opacitySlider ?? CGFloat(Defaults[.terminalOpacity])
         let alpha = CGFloat(rgb.cgColor.alpha) * opacity
@@ -399,8 +405,8 @@ class TerminalManager: ObservableObject {
 
         // Colors (background opacity is separate from terminal opacity slider — see `applyTerminalBackgroundAppearance`)
         applyTerminalBackgroundAppearance(to: view)
-        view.nativeForegroundColor = NSColor(Defaults[.terminalForegroundColor])
-        view.caretColor = NSColor(Defaults[.terminalCursorColor])
+        view.nativeForegroundColor = usesLightNotchAppearance ? .black : NSColor(Defaults[.terminalForegroundColor])
+        view.caretColor = usesLightNotchAppearance ? .black : NSColor(Defaults[.terminalCursorColor])
 
         // Cursor style
         let cursorStyle = TerminalCursorStyleOption(rawValue: Defaults[.terminalCursorStyle])
@@ -560,13 +566,16 @@ class TerminalManager: ObservableObject {
     /// Updates foreground color on the live terminal view.
     func applyForegroundColor(_ color: SwiftUI.Color) {
         guard let view = terminalView else { return }
-        view.nativeForegroundColor = NSColor(color)
+        view.nativeForegroundColor = usesLightNotchAppearance ? .black : NSColor(color)
         synchronizeTerminalTranslucencyPresentation(to: view)
     }
 
     /// Called by UI lifecycle hooks after tab re-appearance to keep opacity stable.
     func refreshTerminalAppearanceIfNeeded() {
         guard let view = terminalView else { return }
+        view.appearance = NSAppearance(named: usesLightNotchAppearance ? .aqua : .darkAqua)
+        applyForegroundColor(Defaults[.terminalForegroundColor])
+        applyCursorColor(Defaults[.terminalCursorColor])
         refreshTerminalOpacityAndTranslucency(for: view)
     }
 
@@ -619,7 +628,7 @@ class TerminalManager: ObservableObject {
     /// Updates cursor color on the live terminal view.
     func applyCursorColor(_ color: SwiftUI.Color) {
         guard let view = terminalView else { return }
-        view.caretColor = NSColor(color)
+        view.caretColor = usesLightNotchAppearance ? .black : NSColor(color)
     }
 
     // MARK: - Environment

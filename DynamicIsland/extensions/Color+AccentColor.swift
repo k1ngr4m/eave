@@ -25,6 +25,20 @@ import SwiftUI
 import Defaults
 
 extension Color {
+    /// The notch surface follows its own color scheme, independently of macOS.
+    static let notchBackground = Color(nsColor: NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            ? .black : NSColor(white: 0.96, alpha: 1)
+    })
+
+    func notchReadableTint() -> Color {
+        let base = NSColor(self)
+        return Color(nsColor: NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+                ? base : (base.blended(withFraction: 0.7, of: .black) ?? .black)
+        })
+    }
+
     /// Returns the accent color configured in settings, falling back to the system accent color.
     static var effectiveAccent: Color {
         Defaults[.accentColor]

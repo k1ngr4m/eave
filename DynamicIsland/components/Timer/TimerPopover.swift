@@ -184,7 +184,7 @@ private struct ActiveTimerSection: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(Color.white.opacity(0.08))
+        .background(Color.primary.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .animation(.smooth, value: timerManager.isPaused)
     }
@@ -262,7 +262,7 @@ private struct CustomTimerSection: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(Color.white.opacity(0.05))
+        .background(Color.primary.opacity(0.05))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
     
@@ -309,7 +309,7 @@ private struct PresetList: View {
                     .foregroundStyle(.secondary)
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.white.opacity(0.05))
+                    .background(Color.primary.opacity(0.05))
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             } else {
                 ScrollView {
@@ -340,7 +340,7 @@ private struct TimerPresetRow: View {
                     .frame(width: 20, height: 20)
                     .overlay(
                         Circle()
-                            .stroke(Color.white.opacity(0.5), lineWidth: 1)
+                            .stroke(Color.primary.opacity(0.5), lineWidth: 1)
                     )
                 
                 VStack(alignment: .leading, spacing: 2) {
@@ -367,7 +367,7 @@ private struct TimerPresetRow: View {
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(isActive ? preset.color.opacity(0.18) : Color.white.opacity(0.05))
+                    .fill(isActive ? preset.color.opacity(0.18) : Color.primary.opacity(0.05))
             )
         }
         .buttonStyle(.plain)
@@ -378,5 +378,5 @@ private struct TimerPresetRow: View {
     TimerPopover()
     .frame(width: 300)
         .padding()
-        .background(Color.black)
+        .background(Color.notchBackground)
 }

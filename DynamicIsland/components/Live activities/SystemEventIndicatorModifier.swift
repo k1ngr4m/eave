@@ -59,29 +59,29 @@ struct SystemEventIndicatorModifier: View {
                     Image(systemName: "sun.max.fill")
                         .contentTransition(.symbolEffect)
                         .frame(width: 20, height: 15)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.primary)
                 case .backlight:
                     Image(systemName: BacklightSymbol(value))
                         .contentTransition(.symbolEffect)
                         .frame(width: 20, height: 15)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.primary)
                 case .mic:
                     Image(systemName: "mic")
                         .symbolVariant(value > 0 ? .none : .slash)
                         .contentTransition(.interpolate)
                         .frame(width: 20, height: 15)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.primary)
                 case .bluetoothAudio:
                     if value < 0, let mode = AirPodsListeningMode.fromHUDSymbol(icon) {
                         AirPodsListeningModeSymbol(mode: mode)
                             .contentTransition(.interpolate)
                             .frame(width: 20, height: 15)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color.primary)
                     } else if !icon.isEmpty {
                         Image(systemName: icon)
                             .contentTransition(.interpolate)
                             .frame(width: 20, height: 15)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color.primary)
                     }
                 default:
                     EmptyView()
@@ -104,7 +104,7 @@ struct SystemEventIndicatorModifier: View {
                     Text(mode.displayName)
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.primary)
                         .lineLimit(1)
                         .allowsTightening(true)
                 } else {
@@ -187,7 +187,7 @@ struct PercentageLabel: View {
                     .font(.caption)
                     .fontWeight(.semibold)
                     .monospacedDigit()
-                    .foregroundStyle(.white.opacity(0.9))
+                    .foregroundStyle(Color.primary.opacity(0.9))
                     .contentTransition(.numericText())
                     .frame(width: 28, alignment: .trailing)
             }
@@ -285,7 +285,7 @@ struct DraggableProgressBar: View {
             if useAccentColor {
                 return accentColor.ensureMinimumBrightness(factor: 0.7)
             }
-            return .white
+            return Color.primary
         }()
 
         return Group {
@@ -301,7 +301,7 @@ struct DraggableProgressBar: View {
                         .fill(LinearGradient(
                             colors: useAccentColor
                                 ? [accentColor, accentColor.ensureMinimumBrightness(factor: 0.2)]
-                                : [.white, .white.opacity(0.2)],
+                                : [Color.primary, Color.primary.opacity(0.2)],
                             startPoint: .trailing,
                             endPoint: .leading
                         ))
@@ -309,7 +309,7 @@ struct DraggableProgressBar: View {
                         .shadow(color: shadowColor, radius: useShadow ? 8 : 0, x: 3)
                 case .hierarchical:
                     Capsule()
-                        .fill(useAccentColor ? accentColor : .white)
+                        .fill(useAccentColor ? accentColor : Color.primary)
                         .frame(width: clampedWidth)
                         .shadow(color: shadowColor, radius: useShadow ? 8 : 0, x: 3)
                 case .segmented:
@@ -376,9 +376,9 @@ struct SegmentedProgressContent: View {
             if Defaults[.systemEventIndicatorUseAccent] {
                 return Defaults[.accentColor]
             }
-            return .white
+            return Color.primary
         } else {
-            return .white.opacity(0.15)
+            return Color.primary.opacity(0.15)
         }
     }
     
@@ -387,11 +387,11 @@ struct SegmentedProgressContent: View {
             if let glowIndex = glowIndex, index == glowIndex {
                 return Defaults[.systemEventIndicatorUseAccent]
                     ? Defaults[.accentColor].ensureMinimumBrightness(factor: 0.8)
-                    : .white
+                    : Color.primary
             } else {
                 return Defaults[.systemEventIndicatorUseAccent]
                     ? Defaults[.accentColor].ensureMinimumBrightness(factor: 0.7)
-                    : .white
+                    : Color.primary
             }
         }
         return .clear

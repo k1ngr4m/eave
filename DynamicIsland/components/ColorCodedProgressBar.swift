@@ -54,7 +54,7 @@ struct ColorCodedProgressBar: View {
             ZStack(alignment: .leading) {
                 // Background track
                 RoundedRectangle(cornerRadius: height / 2)
-                    .fill(Color.white.opacity(0.2))
+                    .fill(Color.primary.opacity(0.2))
                     .frame(width: width, height: height)
                 
                 // Filled track with color gradient or solid color

@@ -468,12 +468,12 @@ struct NoteListView: View {
             HStack {
                 Text("Notes")
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.primary)
 
                 if enableAppleNotesSync {
                     Image(systemName: appleNotesSync.isSyncing ? "arrow.triangle.2.circlepath" : "apple.logo")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(appleNotesSync.isSyncing ? .yellow : .white.opacity(0.45))
+                        .foregroundStyle(appleNotesSync.isSyncing ? .yellow : Color.primary.opacity(0.45))
                         .rotationEffect(.degrees(appleNotesSync.isSyncing ? 360 : 0))
                         .animation(
                             appleNotesSync.isSyncing
@@ -490,9 +490,9 @@ struct NoteListView: View {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.system(size: 13))
                             .frame(width: 16, height: 16)
-                            .foregroundStyle(appleNotesSync.isSyncing ? .yellow : .white.opacity(0.6))
+                            .foregroundStyle(appleNotesSync.isSyncing ? .yellow : Color.primary.opacity(0.6))
                             .padding(5)
-                            .background(Color.white.opacity(0.1))
+                            .background(Color.primary.opacity(0.1))
                             .clipShape(Circle())
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -510,9 +510,9 @@ struct NoteListView: View {
                             .font(.system(size: 14, weight: isSearchExpanded ? .bold : .medium))
                             .symbolVariant(isSearchExpanded ? .circle.fill : .none)
                             .frame(width: 16, height: 16) // Fixed frame to stabilize
-                            .foregroundStyle(isSearchExpanded ? .blue : .white.opacity(0.6))
+                            .foregroundStyle(isSearchExpanded ? .blue : Color.primary.opacity(0.6))
                             .padding(5)
-                            .background(Color.white.opacity(0.1))
+                            .background(Color.primary.opacity(0.1))
                             .clipShape(Circle())
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -523,9 +523,9 @@ struct NoteListView: View {
                         Image(systemName: "doc.on.clipboard")
                             .font(.system(size: 13))
                             .frame(width: 16, height: 16)
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(Color.primary.opacity(0.6))
                             .padding(5)
-                            .background(Color.white.opacity(0.1))
+                            .background(Color.primary.opacity(0.1))
                             .clipShape(Circle())
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -539,7 +539,7 @@ struct NoteListView: View {
                             .frame(width: 16, height: 16)
                             .foregroundStyle(.red)
                             .padding(5)
-                            .background(Color.white.opacity(0.1))
+                            .background(Color.primary.opacity(0.1))
                             .clipShape(Circle())
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -549,9 +549,9 @@ struct NoteListView: View {
                     Image(systemName: "plus")
                         .font(.system(size: 14, weight: .bold))
                         .frame(width: 16, height: 16)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.primary)
                         .padding(5)
-                        .background(Color.white.opacity(0.1))
+                        .background(Color.primary.opacity(0.1))
                         .clipShape(Circle())
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -570,7 +570,7 @@ struct NoteListView: View {
                             TextField("Search notes...", text: $searchText)
                                 .textFieldStyle(.plain)
                                 .font(.system(size: 12))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Color.primary)
                             if !searchText.isEmpty {
                                 Button(action: { searchText = "" }) {
                                     Image(systemName: "xmark.circle.fill")
@@ -582,7 +582,7 @@ struct NoteListView: View {
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4) // Reduced from 6
-                        .background(Color.white.opacity(0.05))
+                        .background(Color.primary.opacity(0.05))
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .padding(.horizontal, 16)
                     }
@@ -595,7 +595,7 @@ struct NoteListView: View {
                                         .font(.system(size: 10, weight: .medium))
                                         .padding(.horizontal, 6)
                                         .padding(.vertical, 3)
-                                        .background(selectedColorFilter == nil ? Color.blue.opacity(0.3) : Color.white.opacity(0.1))
+                                        .background(selectedColorFilter == nil ? Color.blue.opacity(0.3) : Color.primary.opacity(0.1))
                                         .clipShape(Capsule())
                                 }
                                 .buttonStyle(.plain)
@@ -606,7 +606,7 @@ struct NoteListView: View {
                                         .frame(width: 14, height: 14)
                                         .overlay(
                                             Circle()
-                                                .stroke(Color.white, lineWidth: selectedColorFilter == index ? 2 : 0)
+                                                .stroke(Color.primary, lineWidth: selectedColorFilter == index ? 2 : 0)
                                                 .padding(-2)
                                         )
                                         .onTapGesture {
@@ -662,12 +662,12 @@ struct NoteListView: View {
                         .padding(.bottom, 20)
                     }
 
-                    LinearGradient(colors: [Color.black.opacity(0.65), .clear], startPoint: .top, endPoint: .bottom)
+                    LinearGradient(colors: [Color.notchBackground.opacity(0.65), .clear], startPoint: .top, endPoint: .bottom)
                         .frame(height: 16)
                         .allowsHitTesting(false)
                         .frame(maxHeight: .infinity, alignment: .top)
 
-                    LinearGradient(colors: [.clear, Color.black.opacity(0.65)], startPoint: .top, endPoint: .bottom)
+                    LinearGradient(colors: [.clear, Color.notchBackground.opacity(0.65)], startPoint: .top, endPoint: .bottom)
                         .frame(height: 16)
                         .allowsHitTesting(false)
                         .frame(maxHeight: .infinity, alignment: .bottom)
@@ -728,13 +728,13 @@ struct NoteRow: View {
                         }
                         Text(note.title)
                             .font(.system(size: isCompact ? 12 : 14, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color.primary)
                             .lineLimit(1)
                     }
                     
                     Text(note.content.isEmpty ? "No content" : note.content)
                         .font(.system(size: isCompact ? 10 : 12))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(0.7))
                         .lineLimit(isCompact ? 1 : 2)
                         .multilineTextAlignment(.leading)
                 }
@@ -749,7 +749,7 @@ struct NoteRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(isHovered ? 0.12 : 0.08))
+                .fill(Color.primary.opacity(isHovered ? 0.12 : 0.08))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(note.color.opacity(0.2), lineWidth: 1)
@@ -764,9 +764,9 @@ struct NoteRow: View {
                             Button(action: onTogglePin) {
                                 Image(systemName: note.isPinned ? "pin.slash.fill" : "pin.fill")
                                     .font(.system(size: isCompact ? 9 : 11))
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(Color.primary)
                                     .padding(isCompact ? 5 : 6)
-                                    .background(Color.white.opacity(0.2))
+                                    .background(Color.primary.opacity(0.2))
                                     .clipShape(Circle())
                             }
                             .buttonStyle(PlainButtonStyle())
@@ -794,9 +794,9 @@ struct NoteRow: View {
                         }) {
                             Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
                                 .font(.system(size: isCompact ? 9 : 11))
-                                .foregroundStyle(isCopied ? .green : .white)
+                                .foregroundStyle(isCopied ? .green : Color.primary)
                                 .padding(isCompact ? 5 : 6)
-                                .background(Color.white.opacity(0.2))
+                                .background(Color.primary.opacity(0.2))
                                 .clipShape(Circle())
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -806,7 +806,7 @@ struct NoteRow: View {
                                 .font(.system(size: isCompact ? 9 : 11))
                                 .foregroundStyle(.red)
                                 .padding(isCompact ? 5 : 6)
-                                .background(Color.white.opacity(0.2))
+                                .background(Color.primary.opacity(0.2))
                                 .clipShape(Circle())
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -815,10 +815,10 @@ struct NoteRow: View {
                     .padding(.vertical, isCompact ? 2 : 3)
                     .background(
                         Capsule()
-                            .fill(Color(white: 0.12)) // Softer dark gray, not solid black
+                            .fill(Color.primary.opacity(0.08))
                             .overlay(
                                 Capsule()
-                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    .stroke(Color.primary.opacity(0.1), lineWidth: 1)
                             )
                             .shadow(color: .black.opacity(0.3), radius: 3)
                     )
@@ -836,7 +836,7 @@ struct NoteRow: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(width: isCompact ? 32 : 50, height: isCompact ? 32 : 50)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.2), lineWidth: 1))
+                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(0.2), lineWidth: 1))
                         .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
                         .padding(.trailing, isCompact ? 4 : 8)
                 }
@@ -894,7 +894,7 @@ struct NoteEditorView: View {
                         Text("Notes")
                     }
                     .font(.system(size: 15, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.primary)
                 }
                 .buttonStyle(PlainButtonStyle())
                 
@@ -914,7 +914,7 @@ struct NoteEditorView: View {
                 TextField("Title", text: $title)
                     .font(.system(size: 17, weight: .bold, design: .rounded))
                     .textFieldStyle(.plain)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.primary)
                 
                 Spacer()
                 
@@ -927,7 +927,7 @@ struct NoteEditorView: View {
                                 .frame(width: 16, height: 16)
                                 .overlay(
                                     Circle()
-                                        .stroke(Color.white, lineWidth: colorIndex == index ? 2 : 0)
+                                        .stroke(Color.primary, lineWidth: colorIndex == index ? 2 : 0)
                                         .padding(-2)
                                 )
                                 .onTapGesture {
@@ -947,7 +947,7 @@ struct NoteEditorView: View {
             .padding(.bottom, 8)
             
             Divider()
-                .background(Color.white.opacity(0.1))
+                .background(Color.primary.opacity(0.1))
 
 
             
@@ -956,7 +956,7 @@ struct NoteEditorView: View {
                 if content.isEmpty { // Placeholder
                     Text("Start typing...")
                         .font(.system(size: 13, design: .rounded)) // Reduced from 14
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(Color.primary.opacity(0.5))
                         .padding(.top, 10)
                         .padding(.leading, 12)
                         .allowsHitTesting(false)
@@ -964,7 +964,7 @@ struct NoteEditorView: View {
                 
                 TextEditor(text: $content)
                     .font(.system(size: 13, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.primary)
                     .lineSpacing(4)
                     .scrollContentBackground(.hidden)
                     .padding(8)
@@ -972,7 +972,7 @@ struct NoteEditorView: View {
                     .padding(.trailing, imageData != nil ? 75 : 0) // Reduced from 100
                     .focused($isContentFocused)
                     .frame(maxHeight: .infinity)
-                    .background(Color.white.opacity(0.05))
+                    .background(Color.primary.opacity(0.05))
                 
                 // Image Overlay in Bottom Right
                 if let data = imageData, let nsImage = NSImage(data: data) {
@@ -986,7 +986,7 @@ struct NoteEditorView: View {
                                     .aspectRatio(contentMode: .fill)
                                     .frame(width: 55, height: 55) // Reduced from 80
                                     .clipShape(RoundedRectangle(cornerRadius: 10))
-                                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.2), lineWidth: 1))
+                                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.2), lineWidth: 1))
                                     .shadow(color: .black.opacity(0.5), radius: 5, x: 0, y: 2)
                                 
                                 Button(action: {
@@ -1014,9 +1014,9 @@ struct NoteEditorView: View {
                             Spacer()
                             Text("\(content.count) chars")
                                 .font(.system(size: 10, weight: .medium, design: .monospaced))
-                                .foregroundStyle(.secondary.opacity(0.5))
+                                .foregroundStyle(.secondary)
                                 .padding(4)
-                                .background(Color.black.opacity(0.5))
+                                .background(Color.notchBackground.opacity(0.9))
                                 .clipShape(RoundedRectangle(cornerRadius: 4))
                                 .padding(8)
                         }
@@ -1026,7 +1026,7 @@ struct NoteEditorView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity) // Ensure VStack takes full space
-        .background(Color.black) // Ensure solid background
+        .background(Color.notchBackground) // Ensure solid background
         .onHover { hovering in
             updateSuppression(for: hovering)
         }

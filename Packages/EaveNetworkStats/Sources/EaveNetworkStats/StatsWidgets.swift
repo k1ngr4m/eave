@@ -40,6 +40,14 @@ public class StatsWidgets: NSObject, ObservableObject {
         scheduleRender()
     }
 
+    public func setDarkAppearance(_ dark: Bool) {
+        let name: NSAppearance.Name = dark ? .darkAqua : .aqua
+        guard canvas.appearance?.name != name else { return }
+        canvas.appearance = NSAppearance(named: name)
+        livePreview.layer?.backgroundColor = (dark ? NSColor.black : NSColor(white: 0.96, alpha: 1)).cgColor
+        scheduleRender()
+    }
+
     func selector(changed: @escaping () -> Void) -> NSView {
         WidgetSelectorView(module: module, widgets: items) { [weak self] in
             self?.reloadEditor()
@@ -57,7 +65,7 @@ public class StatsWidgets: NSObject, ObservableObject {
         livePreview.imageScaling = .scaleProportionallyDown
         livePreview.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         livePreview.wantsLayer = true
-        livePreview.layer?.backgroundColor = NSColor.black.cgColor
+        livePreview.layer?.backgroundColor = (canvas.appearance?.name == .aqua ? NSColor(white: 0.96, alpha: 1) : .black).cgColor
         livePreview.layer?.cornerRadius = 6
         livePreview.setAccessibilityLabel(localizedString(module))
         if livePreview.constraints.isEmpty { livePreview.heightAnchor.constraint(equalToConstant: 38).isActive = true }

@@ -113,7 +113,7 @@ struct NotchStatsView: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, minHeight: 112, maxHeight: 112, alignment: .topLeading)
-        .background(Color.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(module.color.opacity(0.15), lineWidth: 0.5))
         .contentShape(RoundedRectangle(cornerRadius: 12))
     }

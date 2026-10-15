@@ -123,13 +123,13 @@ private struct AllDayEventsStrip: View {
             Text(event.title)
                 .font(.caption)
                 .fontWeight(.medium)
-                .foregroundColor(.white)
+                .foregroundColor(Color.primary)
                 .lineLimit(1)
 
             if event.isAllDay {
                 Text("All-day")
                     .font(.caption2)
-                    .foregroundColor(Color(white: 0.6))
+                    .foregroundColor(Color.secondary)
                     .lineLimit(1)
             }
 
@@ -139,7 +139,7 @@ private struct AllDayEventsStrip: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, AllDayStripMetrics.verticalPadding)
-        .background(Capsule().fill(Color.white.opacity(0.08)))
+        .background(Capsule().fill(Color.primary.opacity(0.08)))
         .contentShape(Capsule())
         .onTapGesture {
             if let url = event.calendarAppURL() {
@@ -298,7 +298,7 @@ struct WheelPicker: View {
     private func dayText(date: String, isToday: Bool, isSelected: Bool) -> some View {
         Text(date)
             .font(.caption)
-            .foregroundColor(isSelected ? .white : Color(white: 0.65))
+            .foregroundColor(isSelected ? .primary : .secondary)
     }
 
     private func dateCircle(date: Date, isToday: Bool, isSelected: Bool) -> some View {
@@ -309,7 +309,7 @@ struct WheelPicker: View {
             Text(date.date)
                 .font(.body)
                 .fontWeight(.medium)
-                .foregroundColor(isSelected ? .white : Color(white: isToday ? 0.9 : 0.65))
+                .foregroundColor(isToday ? .white : .primary)
         }
     }
 
@@ -389,18 +389,18 @@ struct CalendarView: View {
                         Text(selectedDate.formatted(.dateTime.month(.abbreviated)))
                             .font(.headline)
                             .fontWeight(.semibold)
-                            .foregroundColor(.white)
+                            .foregroundColor(Color.primary)
                         Text(selectedDate.formatted(.dateTime.year()))
                             .font(.caption)
                             .fontWeight(.regular)
-                            .foregroundColor(Color(white: 0.65))
+                            .foregroundColor(Color.secondary)
                     } else {
                         Text(selectedDate.formatted(.dateTime.weekday(.abbreviated))
                              + ", " + selectedDate.formatted(.dateTime.month(.abbreviated))
                              + " " + selectedDate.formatted(.dateTime.day()))
                             .font(.subheadline)
                             .fontWeight(.medium)
-                            .foregroundColor(.white)
+                            .foregroundColor(Color.primary)
                     }
                 }
                 .frame(width: 72, alignment: .leading)
@@ -410,11 +410,11 @@ struct CalendarView: View {
                         .frame(maxWidth: .infinity)
                     // Edge fades indicating the date strip is horizontally
                     // scrollable. Subtle (0.45) so they hint without hiding text.
-                    LinearGradient(colors: [Color.black.opacity(0.45), .clear], startPoint: .leading, endPoint: .trailing)
+                    LinearGradient(colors: [Color.notchBackground.opacity(0.45), .clear], startPoint: .leading, endPoint: .trailing)
                         .frame(width: 16)
                         .allowsHitTesting(false)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    LinearGradient(colors: [.clear, Color.black.opacity(0.45)], startPoint: .leading, endPoint: .trailing)
+                    LinearGradient(colors: [.clear, Color.notchBackground.opacity(0.45)], startPoint: .leading, endPoint: .trailing)
                         .frame(width: 16)
                         .allowsHitTesting(false)
                         .frame(maxWidth: .infinity, alignment: .trailing)
@@ -604,11 +604,11 @@ struct StandaloneCalendarView: View {
                         Text(monthTitle)
                             .font(.title3)
                             .fontWeight(.semibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color.primary)
                         Text(yearTitle)
                             .font(.subheadline)
                             .fontWeight(.medium)
-                            .foregroundStyle(Color(white: 0.65))
+                            .foregroundStyle(Color.secondary)
                     }
                     Spacer()
                     HStack(spacing: 6) {
@@ -626,7 +626,7 @@ struct StandaloneCalendarView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.primary)
                 }
 
                 ScrollViewReader { proxy in
@@ -636,7 +636,7 @@ struct StandaloneCalendarView: View {
                                 Text(symbol.prefix(1))
                                     .font(.caption2)
                                     .fontWeight(.semibold)
-                                    .foregroundStyle(Color(white: 0.55))
+                                    .foregroundStyle(Color.secondary)
                                     .frame(maxWidth: .infinity)
                             }
                         }
@@ -656,12 +656,12 @@ struct StandaloneCalendarView: View {
                                 centerDatePicker(on: target, proxy: proxy)
                             }
 
-                            LinearGradient(colors: [Color.black.opacity(0.65), .clear], startPoint: .top, endPoint: .bottom)
+                            LinearGradient(colors: [Color.notchBackground.opacity(0.65), .clear], startPoint: .top, endPoint: .bottom)
                                 .frame(height: 16)
                                 .allowsHitTesting(false)
                                 .frame(maxHeight: .infinity, alignment: .top)
 
-                            LinearGradient(colors: [.clear, Color.black.opacity(0.65)], startPoint: .top, endPoint: .bottom)
+                            LinearGradient(colors: [.clear, Color.notchBackground.opacity(0.65)], startPoint: .top, endPoint: .bottom)
                                 .frame(height: 16)
                                 .allowsHitTesting(false)
                                 .frame(maxHeight: .infinity, alignment: .bottom)
@@ -735,7 +735,7 @@ struct StandaloneCalendarView: View {
         if isSelected { return .white }
         if !isCurrentMonth { return Color(white: 0.35) }
         if isToday { return Color.effectiveAccent }
-        return .white
+        return Color.primary
     }
 
     private func showPreviousMonth() {
@@ -781,14 +781,14 @@ struct EmptyEventsView: View {
         VStack(spacing: 0) {
             Image(systemName: "calendar.badge.checkmark")
                 .font(.system(size: 20, weight: .regular))
-                .foregroundColor(Color(white: 0.65))
+                .foregroundColor(Color.secondary)
                 .padding(.bottom, 7)
             Text(Calendar.current.isDateInToday(selectedDate) ? "No events today" : "No events")
                 .font(.subheadline)
-                .foregroundColor(.white)
+                .foregroundColor(Color.primary)
             Text("Enjoy your free time!")
                 .font(.caption)
-                .foregroundColor(Color(white: 0.65))
+                .foregroundColor(Color.secondary)
                 .padding(.top, 1)
         }
         .multilineTextAlignment(.center)
@@ -904,7 +904,7 @@ private struct StandaloneEventCardList: View {
                     events: allDayEvents,
                     onToggleReminder: onToggleReminder
                 )
-                .background(Color.black.opacity(0.95))
+                .background(Color.notchBackground.opacity(0.95))
             }
         }
         .clipped()
@@ -955,13 +955,13 @@ private struct StandaloneEventCardList: View {
                 Text(event.title)
                     .font(.callout)
                     .fontWeight(.medium)
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.primary)
                     .lineLimit(showFullEventTitles ? nil : 2)
 
                 if event.isAllDay {
                     Text("All-day")
                         .font(.caption)
-                        .foregroundColor(Color(white: 0.65))
+                        .foregroundColor(Color.secondary)
                 }
             }
 
@@ -970,7 +970,7 @@ private struct StandaloneEventCardList: View {
             if !event.isAllDay {
                 Text(event.start, style: .time)
                     .font(.caption)
-                    .foregroundColor(Color(white: 0.75))
+                    .foregroundColor(Color.secondary)
             }
         }
         .padding(.horizontal, 11)
@@ -978,7 +978,7 @@ private struct StandaloneEventCardList: View {
         .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.primary.opacity(0.05))
         )
         .opacity(isCompleted ? 0.55 : 1)
     }
@@ -993,13 +993,13 @@ private struct StandaloneEventCardList: View {
                 Text(event.title)
                     .font(.callout)
                     .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.primary)
                     .lineLimit(showFullEventTitles ? nil : 2)
 
                 if let location = event.location, !location.isEmpty {
                     Text(location)
                         .font(.caption)
-                        .foregroundColor(Color(white: 0.65))
+                        .foregroundColor(Color.secondary)
                         .lineLimit(1)
                 }
 
@@ -1015,14 +1015,14 @@ private struct StandaloneEventCardList: View {
                     Text("All-day")
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundColor(.white)
+                        .foregroundColor(Color.primary)
                 } else {
                     Text(event.start, style: .time)
                         .font(.caption)
-                        .foregroundColor(.white)
+                        .foregroundColor(Color.primary)
                     Text(event.end, style: .time)
                         .font(.caption2)
-                        .foregroundColor(Color(white: 0.65))
+                        .foregroundColor(Color.secondary)
                 }
             }
         }
@@ -1031,7 +1031,7 @@ private struct StandaloneEventCardList: View {
         .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.primary.opacity(0.05))
         )
         .opacity(event.eventStatus == .ended && Calendar.current.isDateInToday(event.start) ? 0.6 : 1)
     }
@@ -1177,7 +1177,7 @@ struct EventListView: View {
                         }
                     }
                 )
-                .background(Color.black.opacity(0.95))
+                .background(Color.notchBackground.opacity(0.95))
             }
         }
         Spacer(minLength: 0)
@@ -1210,7 +1210,7 @@ struct EventListView: View {
                     HStack {
                         Text(event.title)
                             .font(.callout)
-                            .foregroundColor(.white)
+                            .foregroundColor(Color.primary)
                             .lineLimit(showFullEventTitles ? nil : 1)
                         Spacer(minLength: 0)
                         VStack(alignment: .trailing, spacing: 4) {
@@ -1218,11 +1218,11 @@ struct EventListView: View {
                                 Text("All-day")
                                     .font(.caption)
                                     .fontWeight(.medium)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(Color.primary)
                                     .lineLimit(1)
                             } else {
                                 Text(event.start, style: .time)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(Color.primary)
                                     .font(.caption)
                             }
                         }
@@ -1248,13 +1248,13 @@ struct EventListView: View {
                         Text(event.title)
                             .font(.callout)
                             .fontWeight(.medium)
-                            .foregroundColor(.white)
+                            .foregroundColor(Color.primary)
                             .lineLimit(showFullEventTitles ? nil : 2)
 
                         if let location = event.location, !location.isEmpty {
                             Text(location)
                                 .font(.caption)
-                                .foregroundColor(Color(white: 0.65))
+                                .foregroundColor(Color.secondary)
                                 .lineLimit(1)
                         }
                         
@@ -1269,13 +1269,13 @@ struct EventListView: View {
                             Text("All-day")
                                 .font(.caption)
                                 .fontWeight(.medium)
-                                .foregroundColor(.white)
+                                .foregroundColor(Color.primary)
                                 .lineLimit(1)
                         } else {
                             Text(event.start, style: .time)
-                                .foregroundColor(.white)
+                                .foregroundColor(Color.primary)
                             Text(event.end, style: .time)
-                                .foregroundColor(Color(white: 0.65))
+                                .foregroundColor(Color.secondary)
                         }
                     }
                     .font(.caption)
@@ -1427,7 +1427,7 @@ struct ConferenceJoinButton: View {
                     .font(.caption2)
                     .fontWeight(.medium)
             }
-            .foregroundColor(isJoinable ? .white : Color(white: 0.5))
+            .foregroundColor(isJoinable ? .white : Color.secondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(isJoinable ? provider.color.opacity(0.85) : Color.gray.opacity(0.3))
@@ -1443,6 +1443,6 @@ struct ConferenceJoinButton: View {
     CalendarView()
         .frame(width: 250)
         .padding(.horizontal)
-        .background(.black)
+        .background(Color.notchBackground)
         .environmentObject(DynamicIslandViewModel.init())
 }

@@ -78,7 +78,7 @@ struct LocalSendLiveActivity: View {
             
             // Center: closed notch body (slightly wider during transfers)
             Rectangle()
-                .fill(.black)
+                .fill(Color.notchBackground)
                 .frame(
                     width: vm.closedNotchSize.width
                         + (isHovering ? 8 : 0)
@@ -151,7 +151,7 @@ private struct LocalSendProgressRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.2), lineWidth: 2.5)
+                .stroke(Color.primary.opacity(0.2), lineWidth: 2.5)
             
             Circle()
                 .trim(from: 0, to: min(max(progress, 0), 1))

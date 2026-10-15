@@ -34,7 +34,7 @@ struct TimerIconAnimation: View {
             
             Image(systemName: "timer")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.primary)
         }
     }
 
@@ -70,7 +70,7 @@ struct TimerIconView: NSViewRepresentable {
 #Preview {
     TimerIconAnimation()
         .frame(width: 50, height: 50)
-        .background(.black)
+        .background(Color.notchBackground)
         .onAppear {
             // Start a demo timer for preview
             TimerManager.shared.startDemoTimer(duration: 300)

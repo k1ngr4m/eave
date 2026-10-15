@@ -106,7 +106,7 @@ struct NetworkConnectivityHUD: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("No Internet Connection")
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.primary)
 
                     Text("Connect to Wi-Fi, Ethernet, or Personal Hotspot.")
                         .font(.system(size: 11, weight: .semibold))
@@ -123,8 +123,8 @@ struct NetworkConnectivityHUD: View {
             HStack(spacing: 8) {
                 connectivityButton(
                     title: "OK",
-                    foreground: .white,
-                    background: Color.white.opacity(0.13),
+                    foreground: Color.primary,
+                    background: Color.primary.opacity(0.13),
                     action: manager.dismissNoConnection
                 )
                 .accessibilityIdentifier("ConnectivityHUD.OK")
@@ -176,7 +176,7 @@ struct NetworkConnectivityHUD: View {
 
                 Text(name)
                     .font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
                     .truncationMode(.tail)

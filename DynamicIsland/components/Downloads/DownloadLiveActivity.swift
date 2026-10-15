@@ -92,7 +92,7 @@ struct DownloadLiveActivity: View {
             
             // Center: closed notch body (slightly wider during downloads)
             Rectangle()
-                .fill(.black)
+                .fill(Color.notchBackground)
                 .frame(
                     width: vm.closedNotchSize.width
                         + (isHovering ? 8 : 0)

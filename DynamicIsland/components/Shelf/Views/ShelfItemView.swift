@@ -161,7 +161,7 @@ struct ShelfItemView: View {
     private var textView: some View {
         Text(viewModel.displayName)
             .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(Color.white)
+            .foregroundStyle(Color.primary)
             .lineLimit(2)
             .truncationMode(.middle)
             .multilineTextAlignment(.center)

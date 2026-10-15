@@ -97,7 +97,7 @@ struct MinimalisticMusicPlayerView: View {
                                         isExplicit: musicManager.isCurrentTrackExplicit,
                                         font: .system(size: 12, weight: .semibold),
                                         nsFont: .subheadline,
-                                        textColor: .white,
+                                        textColor: Color.primary,
                                         frameWidth: textWidth,
                                         badgeHeight: 13
                                     )
@@ -105,7 +105,7 @@ struct MinimalisticMusicPlayerView: View {
 
                                 Text(musicManager.artistName)
                                     .font(.system(size: 10, weight: .regular))
-                                    .foregroundColor(Defaults[.playerColorTinting] ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6) : .gray)
+                                    .foregroundColor(Defaults[.playerColorTinting] ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6).notchReadableTint() : .gray)
                                     .lineLimit(1)
 
                             }
@@ -246,7 +246,7 @@ struct MinimalisticMusicPlayerView: View {
         } else {
             baseColor = timerManager.timerColor
         }
-        return baseColor.ensureMinimumBrightness(factor: 0.75)
+        return baseColor.ensureMinimumBrightness(factor: 0.75).notchReadableTint()
     }
 
     private var timerCountdownText: String {
@@ -373,7 +373,7 @@ struct MinimalisticMusicPlayerView: View {
                             isExplicit: musicManager.isCurrentTrackExplicit,
                             font: .system(size: 12, weight: .semibold),
                             nsFont: .subheadline,
-                            textColor: .white,
+                            textColor: Color.primary,
                             frameWidth: textAreaWidth,
                             badgeHeight: 13
                         )
@@ -381,7 +381,7 @@ struct MinimalisticMusicPlayerView: View {
 
                     Text(musicManager.artistName)
                         .font(.system(size: 10, weight: .regular))
-                        .foregroundColor(Defaults[.playerColorTinting] ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6) : .gray)
+                        .foregroundColor(Defaults[.playerColorTinting] ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6).notchReadableTint() : .gray)
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -468,12 +468,12 @@ struct MinimalisticMusicPlayerView: View {
             if !line.isEmpty {
                 Image(systemName: "music.note")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(Color.primary.opacity(0.7))
                     .symbolRenderingMode(.monochrome)
 
                 Text(line)
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.88))
+                    .foregroundColor(Color.primary.opacity(0.88))
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -533,13 +533,13 @@ private struct MinimalisticReminderEventRow: View {
             HStack(spacing: 6) {
                 Text(entry.event.title)
                     .font(textFont)
-                    .foregroundStyle(Color.white)
+                    .foregroundStyle(Color.primary)
                     .lineLimit(1)
 
                 if let timeText {
                     Text(timeText)
                         .font(.system(size: 12, weight: .regular))
-                        .foregroundStyle(Color.white.opacity(0.6))
+                        .foregroundStyle(Color.primary.opacity(0.6))
                         .lineLimit(1)
                 }
             }
@@ -555,7 +555,7 @@ private struct MinimalisticReminderEventRow: View {
                     } label: {
                         Image(systemName: didCopyLink ? "checkmark.circle.fill" : "link")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(didCopyLink ? Color.green : Color.white.opacity(0.85))
+                            .foregroundStyle(didCopyLink ? Color.green : Color.primary.opacity(0.85))
                             .symbolRenderingMode(.monochrome)
                             .animation(.easeInOut(duration: 0.2), value: didCopyLink)
                     }
@@ -569,7 +569,7 @@ private struct MinimalisticReminderEventRow: View {
                     } label: {
                         Image(systemName: "info.circle")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Color.white.opacity(0.85))
+                            .foregroundStyle(Color.primary.opacity(0.85))
                     }
                     .buttonStyle(.plain)
                     .popover(isPresented: $isDetailsPopoverPresented, arrowEdge: .top) {
@@ -608,7 +608,7 @@ private struct MinimalisticReminderEventRow: View {
     }
 
     private var eventColor: Color {
-        Color(nsColor: entry.event.calendar.color).ensureMinimumBrightness(factor: 0.7)
+        Color(nsColor: entry.event.calendar.color).ensureMinimumBrightness(factor: 0.7).notchReadableTint()
     }
 
     private var hasDetails: Bool {
@@ -684,7 +684,7 @@ private struct MinimalisticReminderDetailsView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(entry.event.title)
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color.white)
+                .foregroundStyle(Color.primary)
                 .lineLimit(2)
 
             VStack(alignment: .leading, spacing: 6) {
@@ -716,7 +716,7 @@ private struct MinimalisticReminderDetailsView: View {
         .frame(minWidth: 220)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.black.opacity(0.92))
+                .fill(Color.notchBackground.opacity(0.92))
         )
         .onHover { hovering in
             onHoverChanged(hovering)
@@ -730,10 +730,10 @@ private struct MinimalisticReminderDetailsView: View {
         VStack(alignment: .leading, spacing: 4) {
             Label(label, systemImage: icon)
                 .font(smallLabelFont)
-                .foregroundStyle(Color.white.opacity(0.8))
+                .foregroundStyle(Color.primary.opacity(0.8))
             Text(value)
                 .font(detailFont)
-                .foregroundStyle(Color.white)
+                .foregroundStyle(Color.primary)
         }
     }
 
@@ -880,7 +880,7 @@ private struct MinimalisticReminderDetailsView: View {
                     }
                 ),
                 range: 0...1,
-                color: .white,
+                color: Color.primary,
                 dragging: $hudDragging,
                 lastDragged: $hudLastDragged,
                 onValueChange: { newValue in
@@ -949,7 +949,7 @@ private struct MinimalisticReminderDetailsView: View {
             fontWeight: .semibold,
             frameSize: CGSize(width: 54, height: 54),
             cornerRadius: 22,
-            foregroundColor: .white,
+            foregroundColor: Color.primary,
             pressEffect: .none,
             symbolEffectStyle: .replace,
             action: {
@@ -980,7 +980,7 @@ private struct MinimalisticReminderDetailsView: View {
             fontWeight: .medium,
             frameSize: CGSize(width: 36, height: 36),
             cornerRadius: 14,
-            foregroundColor: isActive ? resolvedActiveColor : .white.opacity(0.85),
+            foregroundColor: isActive ? resolvedActiveColor : Color.primary.opacity(0.85),
             pressEffect: pressEffect,
             symbolEffectStyle: symbolEffect,
             externalTriggerToken: trigger?.token,
@@ -1111,7 +1111,7 @@ private struct MinimalisticReminderDetailsView: View {
                 fontWeight: .medium,
                 frameSize: CGSize(width: 36, height: 36),
                 cornerRadius: 14,
-                foregroundColor: .white.opacity(0.85),
+                foregroundColor: Color.primary.opacity(0.85),
                 symbolEffectStyle: .replace
             ) {
                 isPopoverPresented.toggle()
@@ -1170,7 +1170,7 @@ private struct MinimalisticReminderDetailsView: View {
                 fontWeight: .medium,
                 frameSize: CGSize(width: 36, height: 36),
                 cornerRadius: 14,
-                foregroundColor: .white.opacity(0.85),
+                foregroundColor: Color.primary.opacity(0.85),
                 symbolEffectStyle: .replace
             ) {
                 isPopoverPresented.toggle()
@@ -1358,7 +1358,7 @@ private struct MinimalisticSquircircleButton: View {
                 .frame(width: frameSize.width, height: frameSize.height)
                 .background(
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(isHovering ? Color.white.opacity(0.18) : .clear)
+                        .fill(isHovering ? Color.primary.opacity(0.18) : .clear)
                 )
                 .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         }

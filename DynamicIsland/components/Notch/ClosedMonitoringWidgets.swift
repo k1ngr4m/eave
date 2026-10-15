@@ -16,6 +16,8 @@ extension MonitoringModule {
 }
 
 struct MonitoringWidgetPreview: View {
+    @Default(.notchAppearance) private var notchAppearance
+    @Environment(\.colorScheme) private var systemColorScheme
     @ObservedObject var widgets: StatsWidgets
 
     var body: some View {
@@ -30,7 +32,8 @@ struct MonitoringWidgetPreview: View {
         }
         .frame(minWidth: 48, minHeight: 32)
         .padding(8)
-        .background(.black, in: RoundedRectangle(cornerRadius: 8))
+        .background(Color.notchBackground, in: RoundedRectangle(cornerRadius: 8))
+        .environment(\.colorScheme, notchAppearance.colorScheme(for: systemColorScheme))
         .accessibilityHidden(true)
     }
 }

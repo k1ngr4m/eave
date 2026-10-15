@@ -56,7 +56,7 @@ struct BatteryView: View {
         } else if isCharging || isPluggedIn || levelBattery == 100 {
             return .green
         } else {
-            return .white
+            return showPercentInside ? .white : .primary
         }
     }
 
@@ -153,7 +153,7 @@ struct BatteryView: View {
                 .resizable()
                 .fontWeight(.thin)
                 .aspectRatio(contentMode: .fit)
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(Color.primary.opacity(0.5))
                 .frame(
                     width: batteryWidth + 1
                 )
@@ -207,7 +207,7 @@ struct MinimalisticBatteryView: View {
         } else if isCharging || isPluggedIn || clamped == 100 {
             return .green
         } else {
-            return .white
+            return showPercentInside ? .white : .primary
         }
     }
 
@@ -391,7 +391,7 @@ struct DynamicIslandBatteryView: View {
                     
                     Text("\(Int32(levelBattery))%")
                         .font(.callout)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                 }
                 .fixedSize(horizontal: true, vertical: false)
@@ -505,7 +505,7 @@ private struct BatteryCompactStatusRow: View {
         HStack {
             Text(verbatim: title)
                 .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(Color.primary.opacity(0.8))
 
             Spacer()
 
@@ -661,7 +661,7 @@ struct BatteryTemporaryActivityView: View {
         HStack(spacing: 5) {
             Text(verbatim: kind == .lowBattery ? String(localized: "Battery Low") : String(localized: "Full Battery"))
                 .font(.system(size: kind == .lowBattery ? 13 : 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.82))
+                .foregroundStyle(Color.primary.opacity(0.82))
                 .lineLimit(1)
 
             Text("\(batteryLevel)%")
@@ -849,7 +849,7 @@ struct BatteryTemporaryActivityView: View {
             }
 
             Rectangle()
-                .fill(.white.opacity(0.4))
+                .fill(Color.primary.opacity(0.4))
                 .frame(width: 3, height: 32)
         }
     }

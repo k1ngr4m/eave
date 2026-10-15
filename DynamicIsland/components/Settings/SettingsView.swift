@@ -363,6 +363,7 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .shelf, title: "LocalSend Device Picker Style", keywords: ["localsend", "glass", "picker", "material"], highlightID: SettingsTab.shelf.highlightID(for: "Device Picker Style")),
 
         // Appearance
+        SettingsSearchEntry(tab: .appearance, title: "Notch appearance", keywords: ["light", "dark", "system", "theme", "浅色", "深色", "跟随系统", "淺色", "跟隨系統", "刘海", "瀏海"], highlightID: SettingsTab.appearance.highlightID(for: "Notch appearance")),
         SettingsSearchEntry(tab: .appearance, title: "Main screen style", keywords: ["dynamic island", "pill", "non-notch", "display style", "notch style"], highlightID: SettingsTab.appearance.highlightID(for: "Main screen style")),
         SettingsSearchEntry(tab: .appearance, title: "Settings icon in notch", keywords: ["settings button", "toolbar"], highlightID: SettingsTab.appearance.highlightID(for: "Settings icon in notch")),
         SettingsSearchEntry(tab: .appearance, title: "Enable window shadow", keywords: ["shadow", "appearance"], highlightID: SettingsTab.appearance.highlightID(for: "Enable window shadow")),
@@ -4873,6 +4874,8 @@ struct Appearance: View {
     var body: some View {
         Form {
             Section {
+                NotchAppearanceSettings()
+                .settingsHighlight(id: highlightID("Notch appearance"))
                 Toggle("Always show tabs", isOn: $coordinator.alwaysShowTabs)
                 Defaults.Toggle(key: .settingsIconInNotch) {
                     Text("Settings icon in notch")

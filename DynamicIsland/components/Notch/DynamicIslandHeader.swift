@@ -65,7 +65,7 @@ struct DynamicIslandHeader: View {
     /// One glyph in the header row, on a common centre.
     ///
     /// The 20pt box leaves room for the symbols' full frames.
-    private func headerGlyph(_ name: String, color: Color = .white) -> some View {
+    private func headerGlyph(_ name: String, color: Color = Color.primary) -> some View {
         Image(systemName: name)
             .foregroundColor(color)
             .font(.system(size: Self.headerGlyphSizes[name] ?? 14.4, weight: .medium))
@@ -93,7 +93,7 @@ struct DynamicIslandHeader: View {
                 let spacerWidth = min(vm.closedNotchSize.width, 300)
                 Rectangle()
                     .fill(enableMinimalisticUI ? .clear : (NSScreen.screens
-                        .first(where: { $0.localizedName == coordinator.selectedScreen })?.safeAreaInsets.top ?? 0 > 0 ? .black : .clear))
+                        .first(where: { $0.localizedName == coordinator.selectedScreen })?.safeAreaInsets.top ?? 0 > 0 ? Color.notchBackground : .clear))
                     .frame(width: spacerWidth)
                     .mask {
                         NotchShape()
@@ -110,7 +110,7 @@ struct DynamicIslandHeader: View {
                             vm.toggleCameraPreview()
                         }) {
                             Capsule()
-                                .fill(.black)
+                                .fill(Color.notchBackground)
                                 .frame(width: 30, height: 30)
                                 .overlay {
                                     headerGlyph("web.camera")
@@ -126,7 +126,7 @@ struct DynamicIslandHeader: View {
                             }
                         }) {
                             Capsule()
-                                .fill(.black)
+                                .fill(Color.notchBackground)
                                 .frame(width: 30, height: 30)
                                 .overlay {
                                     headerGlyph("timer")
@@ -153,7 +153,7 @@ struct DynamicIslandHeader: View {
                             }
                         }) {
                             Capsule()
-                                .fill(.black)
+                                .fill(Color.notchBackground)
                                 .frame(width: 30, height: 30)
                                 .overlay {
                                     headerGlyph("slider.vertical.3")
@@ -181,7 +181,7 @@ struct DynamicIslandHeader: View {
                             }
                         }) {
                             Capsule()
-                                .fill(.black)
+                                .fill(Color.notchBackground)
                                 .frame(width: 30, height: 30)
                                 .overlay {
                                     // Tinting the active state is the only
@@ -190,7 +190,7 @@ struct DynamicIslandHeader: View {
                                     // just a filled-vs-hollow glyph swap.
                                     headerGlyph(
                                         caffeinateManager.isActive ? "cup.and.saucer.fill" : "cup.and.saucer",
-                                        color: caffeinateManager.isActive ? .yellow : .white
+                                        color: caffeinateManager.isActive ? .yellow : Color.primary
                                     )
                                 }
                         }
@@ -214,7 +214,7 @@ struct DynamicIslandHeader: View {
                             SettingsWindowController.shared.showWindow()
                         }) {
                             Capsule()
-                                .fill(.black)
+                                .fill(Color.notchBackground)
                                 .frame(width: 30, height: 30)
                                 .overlay {
                                     headerGlyph("gearshape")

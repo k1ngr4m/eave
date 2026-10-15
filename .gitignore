@@ -145,6 +145,7 @@ PrivateWorks
 !tests/test_settings_localization.py
 !tests/test_reopen_tab.py
 !tests/test_osd_appearance.py
+!tests/test_notch_appearance.py
 *.sh
 comparison_report.json
 *.txt

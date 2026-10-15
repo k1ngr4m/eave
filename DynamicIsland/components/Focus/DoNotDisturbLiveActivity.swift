@@ -44,7 +44,7 @@ struct DoNotDisturbLiveActivity: View {
                 .frame(width: iconWingWidth, height: wingHeight)
 
             Rectangle()
-                .fill(Color.black)
+                .fill(Color.notchBackground)
                 .frame(width: centerSegmentWidth)
 
             labelWing
@@ -259,7 +259,7 @@ struct DoNotDisturbLiveActivity: View {
         if manager.isDoNotDisturbActive {
             return activeAccentColor
         } else if showInactiveIcon {
-            return .white
+            return Color.primary
         } else {
             return activeAccentColor
         }
@@ -315,7 +315,7 @@ struct DoNotDisturbLiveActivity: View {
 
     private var labelColor: Color {
         if focusToastMode {
-            return manager.isDoNotDisturbActive ? activeAccentColor : .white
+            return manager.isDoNotDisturbActive ? activeAccentColor : Color.primary
         }
         return activeAccentColor
     }
@@ -490,7 +490,7 @@ struct DoNotDisturbLiveActivity: View {
     DoNotDisturbLiveActivity()
         .environmentObject(DynamicIslandViewModel())
         .frame(width: 320, height: 54)
-        .background(Color.black)
+        .background(Color.notchBackground)
 }
 
 private final class SymbolAvailabilityCache {

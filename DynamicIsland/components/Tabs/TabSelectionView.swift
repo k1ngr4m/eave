@@ -96,7 +96,7 @@ struct TabSelectionView: View {
                     coordinator.currentView = tab.view
                 }
                 .frame(height: 26)
-                .foregroundStyle(isSelected ? .white : .gray)
+                .foregroundStyle(isSelected ? Color.primary : .gray)
                 .background {
                     if isSelected {
                         Capsule()

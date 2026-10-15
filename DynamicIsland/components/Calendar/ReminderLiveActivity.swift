@@ -59,7 +59,7 @@ struct ReminderLiveActivity: View {
                 }
 
             Rectangle()
-                .fill(.black)
+                .fill(Color.notchBackground)
                 .frame(width: vm.closedNotchSize.width, height: notchContentHeight)
 
             Color.clear
@@ -103,7 +103,7 @@ struct ReminderLiveActivity: View {
 
         return ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.15), lineWidth: ringStrokeWidth)
+                .stroke(Color.primary.opacity(0.15), lineWidth: ringStrokeWidth)
             Circle()
                 .trim(from: 0, to: progressValue)
                 .stroke(accent, style: StrokeStyle(lineWidth: ringStrokeWidth, lineCap: .round))
@@ -159,7 +159,7 @@ struct ReminderLiveActivity: View {
         if isCritical(for: reminder, now: now) {
             return .red
         }
-        return Color(nsColor: reminder.event.calendar.color).ensureMinimumBrightness(factor: 0.7)
+        return Color(nsColor: reminder.event.calendar.color).ensureMinimumBrightness(factor: 0.7).notchReadableTint()
     }
 
     private var leftWingWidth: CGFloat {

@@ -110,7 +110,7 @@ struct NotchTimerView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(14)
-                    .background(Color.white.opacity(0.05))
+                    .background(Color.primary.opacity(0.05))
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             } else {
                 let computedHeight = CGFloat(timerPresets.count) * 60 + 4
@@ -176,7 +176,7 @@ struct NotchTimerView: View {
                 if !timerManager.isOvertime {
                     TimerControlButton(
                         icon: pauseIconName,
-                        foreground: .white.opacity(0.95),
+                        foreground: Color.primary.opacity(0.95),
                         background: timerAccentColor.opacity(0.32),
                         accessibilityLabel: pauseAccessibilityLabel,
                         action: togglePauseAction
@@ -184,16 +184,16 @@ struct NotchTimerView: View {
 
                     TimerControlButton(
                         icon: "xmark",
-                        foreground: .white.opacity(0.95),
-                        background: Color.white.opacity(0.16),
+                        foreground: Color.primary.opacity(0.95),
+                        background: Color.primary.opacity(0.16),
                         accessibilityLabel: String(localized: "Cancel"),
                         action: stopTimerAction
                     )
                 } else {
                     TimerControlButton(
                         icon: "stop.fill",
-                        foreground: .white.opacity(0.95),
-                        background: Color.white.opacity(0.16),
+                        foreground: Color.primary.opacity(0.95),
+                        background: Color.primary.opacity(0.16),
                         accessibilityLabel: String(localized: "Stop"),
                         action: stopTimerAction
                     )
@@ -216,7 +216,7 @@ struct NotchTimerView: View {
                     .constant(timerDisplayName),
                     font: .system(size: 20, weight: .semibold),
                     nsFont: .title3,
-                    textColor: .white,
+                    textColor: Color.primary,
                     minDuration: 0.2,
                     frameWidth: marqueeWidth
                 )
@@ -246,7 +246,7 @@ struct NotchTimerView: View {
             VStack(alignment: .trailing, spacing: 4) {
                 Text(timerManager.formattedRemainingTime())
                     .font(.system(size: 36, weight: .black, design: .monospaced))
-                    .foregroundStyle(timerManager.isOvertime ? Color.red : .white)
+                    .foregroundStyle(timerManager.isOvertime ? Color.red : Color.primary)
                     .contentTransition(.numericText())
                     .animation(.smooth(duration: 0.25), value: timerManager.remainingTime)
                     .lineLimit(1)
@@ -266,7 +266,7 @@ struct NotchTimerView: View {
     private var progressSection: some View {
         if showsProgress && progressStyle == .bar {
             Capsule()
-                .fill(Color.white.opacity(0.12))
+                .fill(Color.primary.opacity(0.12))
                 .frame(height: 4)
                 .overlay(alignment: .leading) {
                     Capsule()
@@ -337,7 +337,7 @@ struct NotchTimerView: View {
             }
         }
         .padding(12)
-        .background(Color.white.opacity(0.04))
+        .background(Color.primary.opacity(0.04))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
@@ -485,7 +485,7 @@ struct NotchTimerView: View {
         .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                .stroke(Color.primary.opacity(0.15), lineWidth: 1)
         )
         .opacity(isStartDisabled ? 0.7 : 1)
         .disabled(isStartDisabled)
@@ -495,12 +495,12 @@ struct NotchTimerView: View {
         Button(action: resetCustomTimerInputs) {
             Label(String(localized: "Reset"), systemImage: "arrow.counterclockwise")
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(Color.primary.opacity(0.9))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.white.opacity(0.16))
+                        .fill(Color.primary.opacity(0.16))
                 )
         }
         .buttonStyle(.plain)
@@ -508,7 +508,7 @@ struct NotchTimerView: View {
         .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
         )
     }
 
@@ -587,7 +587,7 @@ private struct TimerProgressRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.12), lineWidth: 8)
+                .stroke(Color.primary.opacity(0.12), lineWidth: 8)
 
             Circle()
                 .trim(from: 0, to: clampedProgress)
@@ -597,7 +597,7 @@ private struct TimerProgressRing: View {
 
             Text(timeText)
                 .font(.system(size: 28, weight: .black, design: .monospaced))
-                .foregroundStyle(isOvertime ? Color.red : .white)
+                .foregroundStyle(isOvertime ? Color.red : Color.primary)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
                 .contentTransition(.numericText())
@@ -638,7 +638,7 @@ private struct DurationInputRow: View {
     private var colon: some View {
         Text(":")
             .font(.system(size: 26, weight: .black, design: .monospaced))
-            .foregroundStyle(Color.white.opacity(0.65))
+            .foregroundStyle(Color.primary.opacity(0.65))
     }
 }
 
@@ -666,15 +666,15 @@ private struct DurationField: View {
                 .font(.system(size: 28, weight: .semibold, design: .monospaced))
                 .multilineTextAlignment(.center)
                 .textFieldStyle(.plain)
-                .foregroundColor(.white)
-                .tint(.white)
+                .foregroundColor(Color.primary)
+                .tint(Color.primary)
                 .frame(width: width, height: 46)
-                .background(Color.white.opacity(0.08))
+                .background(Color.primary.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             Text(label)
                 .font(.caption)
-                .foregroundStyle(Color.white.opacity(0.65))
+                .foregroundStyle(Color.primary.opacity(0.65))
         }
     }
 
@@ -703,7 +703,7 @@ private struct TimerPresetCard: View {
                     .frame(width: 30, height: 30)
                     .overlay(
                         Circle()
-                            .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            .stroke(Color.primary.opacity(0.3), lineWidth: 1)
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -722,14 +722,14 @@ private struct TimerPresetCard: View {
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(isActive ? preset.color : Color.secondary)
                     .padding(6)
-                    .background(isActive ? preset.color.opacity(0.2) : Color.white.opacity(0.08))
+                    .background(isActive ? preset.color.opacity(0.2) : Color.primary.opacity(0.08))
                     .clipShape(Circle())
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(isActive ? preset.color.opacity(0.12) : Color.white.opacity(0.04))
+                    .fill(isActive ? preset.color.opacity(0.12) : Color.primary.opacity(0.04))
             )
         }
         .buttonStyle(.plain)
@@ -740,5 +740,5 @@ private struct TimerPresetCard: View {
     NotchTimerView()
         .environmentObject(DynamicIslandViewModel())
         .frame(width: 600, height: 320)
-        .background(.black)
+        .background(Color.notchBackground)
 }

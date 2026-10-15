@@ -43,7 +43,7 @@ struct RecordingLiveActivity: View {
                         .frame(width: leadingWidth, height: rowHeight)
 
                     Rectangle()
-                        .fill(.black)
+                        .fill(Color.notchBackground)
                         .frame(width: centerWidth, height: vm.effectiveClosedNotchHeight)
 
                     trailingStatus
@@ -155,7 +155,7 @@ struct RecordingLiveActivity: View {
                 HStack(spacing: 6) {
                     Text(verbatim: String(localized: "Screen Recording"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.84))
+                        .foregroundStyle(Color.primary.opacity(0.84))
                         .lineLimit(1)
 
                     Text(recordingManager.formattedDuration)
@@ -195,7 +195,7 @@ struct RecordingLiveActivity: View {
         } label: {
             ZStack {
                 Circle()
-                    .strokeBorder(Color.white.opacity(recordingManager.isSendingStopRequest ? 0.5 : 0.95), lineWidth: lineWidth)
+                    .strokeBorder(Color.primary.opacity(recordingManager.isSendingStopRequest ? 0.5 : 0.95), lineWidth: lineWidth)
 
                 RoundedRectangle(cornerRadius: max(3, size * 0.1), style: .continuous)
                     .fill(Color.red)

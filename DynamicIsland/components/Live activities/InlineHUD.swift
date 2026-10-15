@@ -297,7 +297,7 @@ struct InlineHUD: View {
                             EmptyView()
                     }
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.primary)
                 .symbolVariant(.fill)
                 
                 // Use marquee text for device names to handle long names
@@ -309,7 +309,7 @@ struct InlineHUD: View {
                             $displayName,
                             font: .system(size: 13, weight: .medium),
                             nsFont: .body,
-                            textColor: .white,
+                            textColor: Color.primary,
                             minDuration: 0.2,
                             frameWidth: infoWidth
                         )
@@ -321,13 +321,13 @@ struct InlineHUD: View {
                         .lineLimit(1)
                         .allowsTightening(true)
                         .contentTransition(.numericText())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.primary)
                 }
             }
             .frame(width: infoWidth, height: vm.notchSize.height - (hoverAnimation ? 0 : 12), alignment: .leading)
             
             Rectangle()
-                .fill(.black)
+                .fill(Color.notchBackground)
                 .frame(width: vm.closedNotchSize.width - 20)
             
             HStack {
@@ -372,7 +372,7 @@ struct InlineHUD: View {
                         // visible. A scaling Text keeps every mode on screen.
                         Text(listeningMode.displayName)
                             .font(.caption.weight(.medium))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.6)
                             .truncationMode(.tail)
@@ -411,7 +411,7 @@ struct InlineHUD: View {
                                 Text("\(Int(value * 100))%")
                                     .font(.caption)
                                     .fontWeight(.medium)
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(Color.primary)
                                     .lineLimit(1)
                             }
                         }
@@ -478,13 +478,13 @@ struct InlineHUD: View {
             if useColorCoding {
                 return ColorCodedProgressBar.paletteColor(for: clampedValue, mode: .battery, smoothGradient: smoothGradient)
             }
-            return .white
+            return Color.primary
         }
 
         var body: some View {
             ZStack {
                 Circle()
-                    .stroke(Color.white.opacity(0.18), lineWidth: 2)
+                    .stroke(Color.primary.opacity(0.18), lineWidth: 2)
 
                 Circle()
                     .trim(from: 0, to: max(clampedValue, 0.015))
@@ -512,13 +512,13 @@ struct InlineHUD: View {
             if useColorCoding {
                 return ColorCodedProgressBar.paletteColor(for: clampedValue, mode: .battery, smoothGradient: smoothGradient)
             }
-            return .white
+            return Color.primary
         }
 
         var body: some View {
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color.white.opacity(0.18))
+                    .fill(Color.primary.opacity(0.18))
                     .frame(width: trackWidth, height: trackHeight)
 
                 Capsule()
@@ -586,7 +586,7 @@ struct InlineHUD: View {
 #Preview {
     InlineHUD(type: .constant(.brightness), value: .constant(0.4), icon: .constant(""), hoverAnimation: .constant(false), gestureProgress: .constant(0))
         .padding(.horizontal, 8)
-        .background(Color.black)
+        .background(Color.notchBackground)
         .padding()
         .environmentObject(DynamicIslandViewModel())
 }

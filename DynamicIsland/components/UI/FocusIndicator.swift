@@ -23,7 +23,7 @@ struct FocusIndicator: View {
 
     var body: some View {
         Capsule()
-            .fill(Color.black)
+            .fill(Color.notchBackground)
             .overlay {
                 focusIcon
                     .font(.system(size: 12, weight: .semibold))

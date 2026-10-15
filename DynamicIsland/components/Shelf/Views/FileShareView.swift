@@ -79,14 +79,14 @@ struct FileShareView: View {
         ZStack {
             RoundedRectangle(cornerRadius: 12)
                 .fill(
-                    LinearGradient(colors: [Color.black.opacity(0.35), Color.black.opacity(0.20)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    LinearGradient(colors: [Color.primary.opacity(0.04), Color.primary.opacity(0.02)], startPoint: .topLeading, endPoint: .bottomTrailing)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(
                             vm.dropZoneTargeting
                                 ? Color.accentColor.opacity(0.9)
-                                : Color.white.opacity(0.1),
+                                : Color.primary.opacity(0.1),
                             style: StrokeStyle(lineWidth: 3, lineCap: .round, dash: [10])
                         )
                 )
@@ -96,7 +96,7 @@ struct FileShareView: View {
             VStack(spacing: 5) {
                 ZStack {
                     Circle()
-                        .fill(Color.white.opacity(
+                        .fill(Color.primary.opacity(
                             vm.dropZoneTargeting ? 0.11 : 0.09
                         ))
                         .frame(width: 55, height: 55)
@@ -126,7 +126,7 @@ struct FileShareView: View {
 
                 Text(selectedProvider.id)
                     .font(.system(.headline, design: .rounded))
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(Color.primary.opacity(0.8))
                     .multilineTextAlignment(.center)
                     .lineLimit(1)
                     .truncationMode(.tail)
@@ -236,10 +236,10 @@ struct FileShareView: View {
             // Loading overlay
             if isProcessing || quickShare.isPickerOpen {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(.black.opacity(0.3))
+                    .fill(Color.notchBackground.opacity(0.7))
                     .overlay(
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .progressViewStyle(CircularProgressViewStyle(tint: Color.primary))
                             .scaleEffect(0.8)
                     )
             }
@@ -250,12 +250,12 @@ struct FileShareView: View {
                         Spacer()
                         ZStack {
                             Circle()
-                                .stroke(Color.white.opacity(0.16), lineWidth: 3)
+                                .stroke(Color.primary.opacity(0.16), lineWidth: 3)
 
                             Circle()
                                 .trim(from: 0, to: min(max(localSend.sendProgress, 0), 1))
                                 .stroke(
-                                    Color.white,
+                                    Color.primary,
                                     style: StrokeStyle(lineWidth: 3, lineCap: .round)
                                 )
                                 .rotationEffect(.degrees(-90))
@@ -264,7 +264,7 @@ struct FileShareView: View {
                             if localSend.sendProgress > 0.99 {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 9, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(Color.primary)
                             }
                         }
                         .frame(width: 24, height: 24)

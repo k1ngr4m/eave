@@ -292,7 +292,7 @@ struct TimerLiveActivity: View {
     @ViewBuilder
     private func middleSectionView() -> some View {
         Rectangle()
-            .fill(.black)
+            .fill(Color.notchBackground)
             .frame(width: middleSectionWidth, height: notchContentHeight)
     }
 
@@ -328,7 +328,7 @@ struct TimerLiveActivity: View {
         return ZStack {
             if ringWrapsIcon {
                 Circle()
-                    .stroke(Color.white.opacity(0.15), lineWidth: ringStrokeWidth)
+                    .stroke(Color.primary.opacity(0.15), lineWidth: ringStrokeWidth)
                     .frame(width: ringDiameter, height: ringDiameter)
 
                 Circle()
@@ -358,7 +358,7 @@ struct TimerLiveActivity: View {
         let barWidth = shouldDisplayLabel ? resolvedTextWidth : availableWidth
 
         return Rectangle()
-            .fill(.black)
+            .fill(Color.notchBackground)
             .frame(width: infoWidth, height: notchContentHeight)
             .overlay(alignment: .leading) {
                 VStack(alignment: .leading, spacing: showsBarHere ? 4 : 0) {
@@ -368,7 +368,7 @@ struct TimerLiveActivity: View {
                                 .constant(timerManager.timerName),
                                 font: .system(size: 12, weight: .medium),
                                 nsFont: .callout,
-                                textColor: .white,
+                                textColor: Color.primary,
                                 minDuration: 0.25,
                                 frameWidth: resolvedTextWidth
                             )
@@ -376,7 +376,7 @@ struct TimerLiveActivity: View {
                             Text(timerManager.timerName)
                                 .font(.system(size: 12, weight: .medium))
                                 .lineLimit(1)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Color.primary)
                                 .transition(.opacity.combined(with: .move(edge: .top)))
                                 .frame(width: resolvedTextWidth, alignment: .leading)
                         }
@@ -384,7 +384,7 @@ struct TimerLiveActivity: View {
 
                     if showsBarHere {
                         Capsule()
-                            .fill(Color.white.opacity(0.12))
+                            .fill(Color.primary.opacity(0.12))
                             .frame(width: barWidth, height: 3)
                             .overlay(alignment: .leading) {
                                 Capsule()
@@ -404,7 +404,7 @@ struct TimerLiveActivity: View {
         let diameter = max(min(notchContentHeight - 4, 26), 20)
         return ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.15), lineWidth: ringStrokeWidth)
+                .stroke(Color.primary.opacity(0.15), lineWidth: ringStrokeWidth)
             Circle()
                 .trim(from: 0, to: clampedProgress)
                 .stroke(glyphColor, style: StrokeStyle(lineWidth: ringStrokeWidth, lineCap: .round))
@@ -420,7 +420,7 @@ struct TimerLiveActivity: View {
         return VStack(spacing: 4) {
             Text(timerManager.formattedRemainingTime())
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                .foregroundColor(timerManager.isOvertime ? .red : .white)
+                .foregroundColor(timerManager.isOvertime ? .red : Color.primary)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
                 .contentTransition(.numericText())
@@ -429,7 +429,7 @@ struct TimerLiveActivity: View {
 
             if showsBarProgress {
                 Capsule()
-                    .fill(Color.white.opacity(0.12))
+                    .fill(Color.primary.opacity(0.12))
                     .frame(width: barWidth, height: 3)
                     .overlay(alignment: .leading) {
                         Capsule()
@@ -453,8 +453,8 @@ struct TimerLiveActivity: View {
             if !timerManager.isOvertime {
                 inlineControlButton(
                     icon: timerManager.isPaused ? "play.fill" : "pause.fill",
-                    foreground: .white,
-                    background: Color.white.opacity(0.14),
+                    foreground: Color.primary,
+                    background: Color.primary.opacity(0.14),
                     help: timerManager.isPaused ? String(localized: "Resume") : String(localized: "Pause"),
                     action: togglePause
                 )
@@ -462,8 +462,8 @@ struct TimerLiveActivity: View {
 
             inlineControlButton(
                 icon: timerManager.isOvertime ? "stop.fill" : "xmark",
-                foreground: .white,
-                background: timerManager.isOvertime ? Color.red.opacity(0.24) : Color.white.opacity(0.14),
+                foreground: Color.primary,
+                background: timerManager.isOvertime ? Color.red.opacity(0.24) : Color.primary.opacity(0.14),
                 help: timerManager.isOvertime ? String(localized: "Stop") : String(localized: "Cancel"),
                 action: stopTimer
             )
@@ -535,7 +535,7 @@ struct TimerLiveActivity: View {
     TimerLiveActivity()
         .environmentObject(DynamicIslandViewModel())
         .frame(width: 300, height: 32)
-        .background(.black)
+        .background(Color.notchBackground)
         .onAppear {
             TimerManager.shared.startDemoTimer(duration: 300)
         }

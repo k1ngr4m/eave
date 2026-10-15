@@ -56,7 +56,6 @@ struct NotchLLMUsageView: View {
         }
         .padding(.horizontal, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        .environment(\.colorScheme, .dark)
         .onAppear { manager.refreshAll() }
         .onDisappear { coordinator.codexDetailPresented = false }
         .onChange(of: enableCodexProvider) { _, enabled in if !enabled { coordinator.codexDetailPresented = false } }
@@ -78,7 +77,7 @@ struct NotchLLMUsageView: View {
                         .font(.caption2.weight(.semibold))
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)
-                        .background(.white.opacity(0.12), in: Capsule())
+                        .background(Color.primary.opacity(0.12), in: Capsule())
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -111,7 +110,7 @@ struct NotchLLMUsageView: View {
         // (the intent behind the former fixed card height) without a hard-coded size
         // that either clips content or leaves blank space.
         .frame(maxHeight: .infinity, alignment: .topLeading)
-        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
     }
 
     @ViewBuilder
@@ -231,7 +230,7 @@ struct NotchLLMUsageView: View {
                     .overlay(alignment: .bottom) {
                         if account.id != snap.newAPIAccounts.last?.id {
                             Rectangle()
-                                .fill(.white.opacity(0.1))
+                                .fill(Color.primary.opacity(0.1))
                                 .frame(height: 1)
                         }
                     }
@@ -279,7 +278,7 @@ struct NotchLLMUsageView: View {
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(.white.opacity(0.15))
+                    Capsule().fill(Color.primary.opacity(0.15))
                     Capsule().fill(gaugeTint(limit.fraction)).frame(width: max(4, geo.size.width * limit.fraction))
                 }
             }
