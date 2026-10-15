@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-15
+
+- Provide separate Intel and Apple Silicon installation ZIPs, retaining the universal ZIP for automatic updates.
+- Add a desktop signal wheel with sound, a visual layout editor, and local emotes.
+- Show live Codex activity in the closed notch with configurable agent presentation.
+- Add a clock and date to the idle home view, live battery power consumption, and colored battery detail icons.
+- Preserve monitoring toggles, refresh bundled animations, improve Chinese AirPods labels, and keep lyrics visible during HUDs.
+- Remove the clipboard, screen assistant, and color picker features.
+
 ## [0.1.1] - 2026-10-13
 
 - Add adjustable pinned lyric font sizes with matching layout and hit areas.

@@ -67,8 +67,13 @@ with tempfile.TemporaryDirectory() as directory:
     assert enclosure.attrib['length'] == str(package.stat().st_size)
     assert enclosure.attrib['url'] == 'https://github.com/k1ngr4m/eave/releases/download/v0.1.2/Eave-0.1.2.zip'
     assert enclosure.attrib[f'{{{release.SPARKLE}}}edSignature'] == 'test-signature'
+    artifacts = [package, feed]
+    for label in release.ARCHITECTURES:
+        variant = prepared / f'Eave-0.1.2-{label}.zip'
+        variant.write_bytes(label.encode())
+        artifacts.append(variant)
     manifest = {'version': '0.1.2', 'commit': 'a' * 40,
-                'sha256': {p.name: release.digest(p) for p in (package, feed)}}
+                'sha256': {p.name: release.digest(p) for p in artifacts}}
     (prepared / 'release.json').write_text(json.dumps(manifest))
     notes = root / 'notes.md'
     notes.write_text('Test release')
@@ -124,6 +129,8 @@ with tempfile.TemporaryDirectory() as directory:
         settings.extend(build_settings)
         app = repo / f'build/Eave-{version}.xcarchive/Products/Applications/Eave.app'
         (app / 'Contents').mkdir(parents=True)
+        (app / 'Contents/MacOS').mkdir()
+        (app / 'Contents/MacOS/Eave').write_bytes(b'\xca\xfe\xba\xbe')
         (app / 'Contents/Info.plist').write_bytes(plistlib.dumps({
             'CFBundleIdentifier': release.ACCOUNT, 'EaveBuildChannel': 'release',
             'CFBundleVersion': version, 'CFBundleShortVersionString': version,
@@ -138,6 +145,11 @@ with tempfile.TemporaryDirectory() as directory:
             return public_key
         if str(command[0]).endswith('/sign_update'):
             return 'fixture-signature'
+        if command[:2] == ('lipo', '-archs'):
+            data = Path(command[2]).read_bytes()
+            return 'x86_64 arm64' if data == b'\xca\xfe\xba\xbe' else data[4:].decode()
+        if command[0] == 'lipo':
+            Path(command[-1]).write_bytes(b'\xcf\xfa\xed\xfe' + command[3].encode())
         if command[0] == 'ditto':
             if command[1] == '-c':
                 Path(command[-1]).write_bytes(b'signed app archive')
@@ -157,6 +169,13 @@ with tempfile.TemporaryDirectory() as directory:
         assert 'com.apple.security.mach-services' in plistlib.loads((root / 'DynamicIsland/DynamicIsland.entitlements').read_bytes())
         manifest = json.loads((root / 'build/release-0.1.0/release.json').read_text())
         assert manifest['signing'] == 'local'
+        for label, architecture in release.ARCHITECTURES.items():
+            assert f'Eave-0.1.0-{label}.zip' in manifest['sha256']
+            binary = root / f'build/release-0.1.0/{label}/Eave.app/Contents/MacOS/Eave'
+            assert binary.read_bytes()[4:].decode() == architecture
+        assert (root / 'build/release-0.1.0/export/Eave.app/Contents/MacOS/Eave').read_bytes() == b'\xca\xfe\xba\xbe'
+        rejected(lambda: release.architecture_app(
+            root / 'build/release-0.1.0/Intel/Eave.app', root / 'wrong-architecture/Eave.app', 'arm64'))
         assert any('--verify' in c and c[0].endswith('/sign_update') for c in commands)
         args.signing = 'notarized'
         rejected(lambda: release.prepare(args))  # Explicit notarization still requires credentials.

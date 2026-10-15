@@ -18,6 +18,7 @@ ACCOUNT = 'com.eave.app'
 SPARKLE = 'http://www.andymatuschak.org/xml-namespaces/sparkle'
 FEED = f'https://github.com/{REPO}/releases/latest/download/appcast.xml'
 ET.register_namespace('sparkle', SPARKLE)
+ARCHITECTURES = {'Intel': 'x86_64', 'AppleSilicon': 'arm64'}
 
 
 def run(*args, cwd=ROOT):
@@ -30,6 +31,30 @@ def digest(path):
         for chunk in iter(lambda: stream.read(1024 * 1024), b''):
             checksum.update(chunk)
         return checksum.hexdigest()
+
+
+def architecture_app(source, destination, architecture):
+    run('ditto', source, destination)
+    for binary in destination.rglob('*'):
+        if binary.is_symlink() or not binary.is_file():
+            continue
+        with binary.open('rb') as stream:
+            magic = stream.read(4)
+        if magic not in (b'\xca\xfe\xba\xbe', b'\xbe\xba\xfe\xca',
+                         b'\xca\xfe\xba\xbf', b'\xbf\xba\xfe\xca',
+                         b'\xcf\xfa\xed\xfe', b'\xfe\xed\xfa\xcf'):
+            continue
+        architectures = run('lipo', '-archs', binary).split()
+        if architecture not in architectures:
+            raise ValueError(f'{binary} is missing {architecture}')
+        if len(architectures) > 1:
+            temporary = binary.with_name(binary.name + '.thin')
+            run('lipo', binary, '-thin', architecture, '-output', temporary)
+            temporary.replace(binary)
+        if run('lipo', '-archs', binary) != architecture:
+            raise ValueError(f'{binary} was not thinned to {architecture}')
+    # lipo preserves each slice's signature; verify all nested code and resources.
+    run('codesign', '--verify', '--deep', '--strict', destination)
 
 
 def available_version(version, releases):
@@ -145,8 +170,18 @@ def prepare(args):
     run(binaries / 'sign_update', '--account', ACCOUNT, '--verify', package, signature)
     feed = output / 'appcast.xml'
     feed.write_bytes(appcast(args.version, package, signature, info['LSMinimumSystemVersion']))
+    artifacts = [package, feed]
+    for label, architecture in ARCHITECTURES.items():
+        variant = output / label / 'Eave.app'
+        architecture_app(app, variant, architecture)
+        if args.signing == 'notarized':
+            run('xcrun', 'stapler', 'validate', variant)
+            run('spctl', '--assess', '--type', 'execute', variant)
+        package = output / f'Eave-{args.version}-{label}.zip'
+        run('ditto', '-c', '-k', '--keepParent', variant, package)
+        artifacts.append(package)
     (output / 'release.json').write_text(json.dumps({'version': args.version, 'commit': commit, 'signing': args.signing,
-        'sha256': {p.name: digest(p) for p in (package, feed)}}, indent=2) + '\n')
+        'sha256': {p.name: digest(p) for p in artifacts}}, indent=2) + '\n')
     print(f'Ready: {output}. Review artifacts, then use publish with a release notes file.')
 
 
@@ -154,7 +189,8 @@ def publish(args):
     version_parts(args.version)
     output = ROOT / 'build' / f'release-{args.version}'
     manifest = json.loads((output / 'release.json').read_text())
-    names = {f'Eave-{args.version}.zip', 'appcast.xml'}
+    names = {f'Eave-{args.version}.zip', 'appcast.xml',
+             *(f'Eave-{args.version}-{label}.zip' for label in ARCHITECTURES)}
     if manifest['version'] != args.version or set(manifest['sha256']) != names:
         raise ValueError('Release manifest does not match the requested version')
     for name, checksum in manifest['sha256'].items():
