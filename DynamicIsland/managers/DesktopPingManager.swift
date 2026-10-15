@@ -188,7 +188,9 @@ final class DesktopPingManager: ObservableObject {
         case "cancel":
             wheelOverlay?.send("cancel"); wheelOverlay = nil
         case "wheelOpen", "wheelMove", "wheelRelease", "click":
-            guard !configuration.paused, event["wheel"] as? String != "emote",
+            let kind = event["wheel"] as? String ?? "ping"
+            guard configuration.enabled, !configuration.paused, ["ping", "emote"].contains(kind),
+                  kind != "emote" || (configuration.emote.enabled && configuration.emote.trigger != configuration.trigger),
                   let x = event["x"] as? Double, let y = event["y"] as? Double, x.isFinite, y.isFinite,
                   let primary = NSScreen.screens.first else { return }
             let point = CGPoint(x: x, y: y)
@@ -199,16 +201,23 @@ final class DesktopPingManager: ObservableObject {
             if type == "wheelOpen" { wheelOverlay = underPointer }
             let overlay = type == "click" ? underPointer : wheelOverlay
             guard let overlay else { return }
+            if kind == "emote", type == "click" || type == "wheelRelease" {
+                for other in overlays where other !== overlay { other.send("clearEmote") }
+            }
             let local = DesktopPingConfiguration.localPoint(point, screen: overlay.screen.frame, primaryHeight: primary.frame.height)
-            overlay.send(type, ["x": local.x, "y": local.y, "id": configuration.normalized.clickPingID])
+            overlay.send(type, ["x": local.x, "y": local.y, "wheel": kind,
+                                "id": kind == "emote" ? configuration.normalized.emote.center : configuration.normalized.clickPingID])
             if type == "wheelRelease" { wheelOverlay = nil }
         default: break
         }
         if failure == nil { status = configuration.paused ? String(localized: "Paused") : String(localized: "Ready") }
     }
 
-    func preview(_ id: String) {
-        guard !sleeping, !locked, DesktopPingConfiguration.pingIDs.contains(id), let screen = NSScreen.main, let root else { return }
+    func preview(_ id: String) { preview(id, emote: false) }
+    func previewEmote(_ id: String) { preview(id, emote: true) }
+
+    private func preview(_ id: String, emote: Bool) {
+        guard !sleeping, !locked, emote ? configuration.emote.contains(id) : DesktopPingConfiguration.pingIDs.contains(id), let screen = NSScreen.main, let root else { return }
         closePreview()
         // An explicit settings preview needs no global input access and never starts the helper.
         let overlay = DesktopPingOverlay(screen: screen, root: root)
@@ -218,8 +227,8 @@ final class DesktopPingManager: ObservableObject {
         overlay.onReady = { [weak self, weak overlay] in
             guard let self, let overlay else { return }
             overlay.send("settings", self.configuration.overlaySettings)
-            overlay.send("click", ["id": id, "x": screen.frame.width / 2, "y": screen.frame.height / 2])
-            self.expirePreview(after: self.configuration.normalized.duration + 0.3)
+            overlay.send("click", ["id": id, "wheel": emote ? "emote" : "ping", "x": screen.frame.width / 2, "y": screen.frame.height / 2])
+            self.expirePreview(after: emote ? 3.5 : self.configuration.normalized.duration + 0.3)
         }
         expirePreview(after: 10)
     }
@@ -238,9 +247,17 @@ final class DesktopPingManager: ObservableObject {
     }
 
     private func play(_ name: String, preview: Bool = false) {
-        guard (preview || (configuration.enabled && !configuration.paused)), !configuration.muted,
-              DesktopPingConfiguration.sounds.contains(name), let root else { return }
-        if sounds[name] == nil { sounds[name] = NSSound(contentsOf: root.appendingPathComponent("sounds/\(name).wav"), byReference: false) }
+        guard (preview || (configuration.enabled && !configuration.paused)), !configuration.muted, let root else { return }
+        let file: URL
+        if name.hasPrefix("emote:") {
+            let id = String(name.dropFirst(6))
+            guard configuration.emote.sound, DesktopEmote.ids.contains(id) else { return }
+            file = root.appendingPathComponent("emotes/\(id).wav")
+        } else {
+            guard DesktopPingConfiguration.sounds.contains(name) else { return }
+            file = root.appendingPathComponent("sounds/\(name).wav")
+        }
+        if sounds[name] == nil { sounds[name] = NSSound(contentsOf: file, byReference: false) }
         guard let sound = sounds[name], sounds.values.filter(\.isPlaying).count < 8 else { return }
         sound.stop()
         sound.volume = Float(configuration.normalized.volume / 100)

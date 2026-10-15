@@ -1,5 +1,4 @@
 // Geometry and interaction adapted from lolPing's WheelEditor (MIT; see ../LICENSE).
-import { ALL_PINGS, textureUrl } from '../overlay/pings.js';
 const post = (body) => window.webkit.messageHandlers.editor.postMessage(body);
 const svg = document.getElementById('wheel');
 const pool = document.getElementById('signals');
@@ -29,7 +28,7 @@ function choose(id, source, preview) {
   selection();
 }
 function assign(id, slot) {
-  if (!ALL_PINGS.some((ping) => ping.id === id)) return;
+  if (!state.items.some((ping) => ping.id === id)) return;
   post({ type: 'assign', id, slot });
   picked = null;
   selection();
@@ -61,11 +60,11 @@ function target(slot, id, center = false) {
   const angle = slot * Math.PI / 4;
   const x = center ? 150 : 150 + 100 * Math.sin(angle);
   const y = center ? 141 : 150 - 100 * Math.cos(angle);
-  const ping = ALL_PINGS.find((item) => item.id === id);
+  const ping = state.items.find((item) => item.id === id);
   // HTML inside foreignObject provides native WebKit dragging, including from SVG slots.
   const object = el('foreignObject', { x: x - 21, y: y - 21, width: 42, height: 42 }, node);
   const image = document.createElement('img');
-  image.src = textureUrl(ping.icon); image.alt = ''; image.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block';
+  image.src = ping.icon; image.alt = ''; image.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block';
   object.append(image);
   draggable(image, id);
   if (center) el('text', { x: 150, y: 173, 'text-anchor': 'middle' }, node).textContent = state.labels.click;
@@ -83,19 +82,21 @@ function target(slot, id, center = false) {
 }
 window.updateEditor = (value) => {
   state = value;
+  document.getElementById('editor').classList.toggle('emotes', !!state.emotes);
+  if (picked && !state.items.some((i) => i.id === picked.id)) picked = null;
   const labels = state.labels;
   for (const name of ['title', 'description', 'poolTitle', 'poolDescription', 'reset']) document.getElementById(name).textContent = labels[name];
   svg.setAttribute('aria-label', labels.title);
   svg.replaceChildren(); pool.replaceChildren();
   state.wheel.forEach((id, i) => target(i, id));
   target(8, state.clickPingID, true);
-  ALL_PINGS.forEach((ping) => {
+  state.items.forEach((ping) => {
     const button = document.createElement('button');
     button.type = 'button'; button.className = 'tile'; button.dataset.source = `pool:${ping.id}`;
     const where = document.createElement('span'); where.className = 'where';
     const slot = state.wheel.indexOf(ping.id);
     where.textContent = slot < 0 ? '' : state.directions[slot];
-    const icon = document.createElement('img'); icon.src = textureUrl(ping.icon); icon.alt = '';
+    const icon = document.createElement('img'); icon.src = ping.icon; icon.alt = '';
     const name = document.createElement('span'); name.className = 'name'; name.textContent = state.names[ping.id];
     button.append(where, icon, name); pool.append(button);
     activate(button, () => choose(ping.id, `pool:${ping.id}`, true));
@@ -103,6 +104,19 @@ window.updateEditor = (value) => {
   });
   selection();
 };
+// WebKit consumes wheel events even where this embedded page cannot scroll.
+// Keep the palette's own scrolling; hand everything else to the native settings page.
+document.addEventListener('wheel', (event) => {
+  if (!event.deltaY || event.ctrlKey) return;
+  const insidePool = event.target instanceof Node && pool.contains(event.target);
+  const canScrollPool = pool.scrollHeight > pool.clientHeight &&
+    (event.deltaY < 0 ? pool.scrollTop > 0 : pool.scrollTop + pool.clientHeight < pool.scrollHeight - 1);
+  if (insidePool && canScrollPool) return;
+  event.preventDefault();
+  const unit = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 :
+    event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? window.innerHeight : 1;
+  post({ type: 'scroll', delta: event.deltaY * unit });
+}, { passive: false });
 document.getElementById('reset').addEventListener('click', () => { picked = null; post({ type: 'reset' }); selection(); });
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { picked = null; selection(); } });
 new ResizeObserver(() => post({ type: 'height', value: Math.ceil(document.getElementById('editor').getBoundingClientRect().height) }))

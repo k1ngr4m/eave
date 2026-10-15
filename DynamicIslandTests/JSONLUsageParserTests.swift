@@ -325,9 +325,9 @@ final class CodexUsageDetailsTests: XCTestCase {
         details.tasks = [second, old, first]
         XCTAssertEqual(details.activityStarted(at: now), first.started)
         XCTAssertNil(details.activityStarted(at: now.addingTimeInterval(-1000)))
-        XCTAssertEqual(CodexLiveActivity.elapsed(since: first.started, at: now), "14:02")
-        XCTAssertEqual(CodexLiveActivity.elapsed(since: now, at: now.addingTimeInterval(3600)), "1:00:00")
-        XCTAssertEqual(CodexLiveActivity.elapsed(since: now, at: now.addingTimeInterval(-1)), "00:00")
+        XCTAssertEqual(AgentReadout.elapsedText(since: first.started, at: now), "14:02")
+        XCTAssertEqual(AgentReadout.elapsedText(since: now, at: now.addingTimeInterval(3600)), "1:00:00")
+        XCTAssertEqual(AgentReadout.elapsedText(since: now, at: now.addingTimeInterval(-1)), "00:00")
     }
 
     func testModernDedupArchiveAndModelSwitch() throws {
@@ -687,5 +687,57 @@ final class CodexLogStorePersistenceTests: XCTestCase {
             XCTAssertEqual(restored.snapshot(now: now).today.totalTokens, 24)
             XCTAssertEqual(restored.bytesRead, 0)
         }
+    }
+}
+
+
+final class AgentPresentationTests: XCTestCase {
+    func testCardOrderVisibilityAndRows() {
+        let saved = ["models", "unknown", "models", "spend"]
+        XCTAssertEqual(AgentCard.ordered(saved), [.models, .spend, .limits, .live, .trend, .projects, .activity])
+        let moved = AgentCard.moving(.models, to: .activity, in: saved)
+        XCTAssertEqual(AgentCard.ordered(moved), [.spend, .limits, .live, .trend, .projects, .activity, .models])
+        XCTAssertEqual(AgentCard.moving(.models, to: .spend, in: moved).first, "models")
+        let rows = AgentCard.rows(order: [], hidden: [], wide: true)
+        XCTAssertEqual(rows, [[.limits], [.spend, .live], [.trend], [.models, .projects], [.activity]])
+        XCTAssertEqual(AgentCard.rows(order: [], hidden: ["spend", "unknown"], wide: true),
+                       [[.limits], [.live], [.trend], [.models, .projects], [.activity]])
+        XCTAssertEqual(AgentCard.rows(order: moved, hidden: [], wide: false).flatMap { $0 }, AgentCard.ordered(moved))
+        XCTAssertTrue(AgentCard.rows(order: moved, hidden: [], wide: false).allSatisfy { $0.count == 1 })
+        XCTAssertTrue(AgentCard.rows(order: [], hidden: AgentCard.allCases.map(\.rawValue), wide: true).isEmpty)
+    }
+
+    func testLiveReadoutsAndQuotaSelection() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let start = now.addingTimeInterval(-72)
+        var details = CodexUsageDetails()
+        details.tasks = [
+            CodexLiveTask(id: "one", started: start, lastActivity: now, model: "", project: "",
+                          totals: UsageTotals(outputTokens: 20, costUSD: 1.25)),
+            CodexLiveTask(id: "two", started: start, lastActivity: now, model: "", project: "",
+                          totals: UsageTotals(outputTokens: 30, costUSD: 2.25)),
+            CodexLiveTask(id: "stale", started: now.addingTimeInterval(-1000), lastActivity: now.addingTimeInterval(-600), model: "", project: "",
+                          totals: UsageTotals(outputTokens: 90, costUSD: 90))
+        ]
+        var snapshot = UsageSnapshot()
+        snapshot.codexDetails = details
+        snapshot.sessionLimit = UsageLimit(used: 20, limit: 100)
+        snapshot.weekLimit = UsageLimit(used: 70, limit: 100)
+        func read(_ choice: AgentReadout, display: AgentLimitDisplay = .remaining, focus: AgentLimitFocus = .mostUsed) -> String {
+            choice.reading(snapshot, started: start, now: now, display: display, focus: focus)
+        }
+        XCTAssertEqual(read(.elapsed), "01:12")
+        XCTAssertEqual(read(.tokens), 50.formatted(.number.notation(.compactName).precision(.fractionLength(0...1))))
+        XCTAssertEqual(read(.cost), 3.5.formatted(.currency(code: "USD")))
+        XCTAssertEqual(read(.limit), 0.3.formatted(.percent.precision(.fractionLength(0))))
+        XCTAssertEqual(read(.limit, display: .used), 0.7.formatted(.percent.precision(.fractionLength(0))))
+        XCTAssertEqual(read(.limit, focus: .session), 0.8.formatted(.percent.precision(.fractionLength(0))))
+        snapshot.weekLimit?.resetsAt = now
+        XCTAssertEqual(AgentLimitFocus.mostUsed.limit(in: snapshot, at: now)?.used, 20)
+        XCTAssertEqual(read(.limit, focus: .week), "01:12")
+        snapshot.sessionLimit = nil
+        XCTAssertEqual(read(.limit), "01:12")
+        XCTAssertEqual(AgentLimitDisplay.used.fraction(UsageLimit(used: -10, limit: 100)), 0)
+        XCTAssertEqual(AgentLimitDisplay.remaining.fraction(UsageLimit(used: 120, limit: 100)), 0)
     }
 }

@@ -57,6 +57,7 @@ struct DesktopPingSettings: View {
             Section {
                 DesktopPingWheelEditor(configuration: $manager.configuration, preview: manager.preview)
             } header: { Text("Signal Wheel") }
+            DesktopEmoteSettings(manager: manager)
         }
         .formStyle(.grouped)
     }

@@ -33,6 +33,12 @@ struct DesktopPingConfiguration: Codable, Equatable {
     var volume = 70.0
     var muted = false
     var tickSound = true
+    // Optional storage preserves pre-emote settings without discarding the user's ping wheel.
+    var emotes: DesktopEmoteConfiguration?
+    var emote: DesktopEmoteConfiguration {
+        get { emotes ?? .init() }
+        set { emotes = newValue }
+    }
 
     var normalized: Self {
         var copy = self
@@ -47,6 +53,7 @@ struct DesktopPingConfiguration: Codable, Equatable {
         if wheel.count != 8 || Set(wheel).count != 8 || !wheel.allSatisfy(Self.pingIDs.contains) {
             copy.wheel = Self.defaultWheel
         }
+        if let emotes { copy.emotes = emotes.normalized }
         return copy
     }
 
@@ -61,15 +68,17 @@ struct DesktopPingConfiguration: Codable, Equatable {
     var helperCommand: [String: Any] {
         let c = normalized
         return ["type": "config", "trigger": c.trigger.rawValue, "triggerVk": 0,
-                "clickPing": c.clickPing, "emoteTrigger": "off", "emoteTriggerVk": 0,
-                "emoteClick": false, "gameCheck": false, "dragThresholdPx": Int(c.dragThreshold),
+                "clickPing": c.clickPing, "emoteTrigger": c.emote.enabled && c.emote.trigger != c.trigger ? c.emote.trigger.rawValue : "off", "emoteTriggerVk": 0,
+                "emoteClick": c.emote.click, "gameCheck": false, "dragThresholdPx": Int(c.dragThreshold),
                 "toggleMods": 3, "toggleVk": 80, "enabled": c.enabled && !c.paused]
     }
 
     var overlaySettings: [String: Any] {
         let c = normalized
         return ["wheel": c.wheel, "size": c.size, "duration": c.duration, "tickSound": c.tickSound,
-                "wheelLabel": String(localized: "PING"), "cancelLabel": String(localized: "CANCEL")]
+                "emote": ["wheel": c.emote.wheel, "center": c.emote.center, "size": c.emote.size,
+                           "sound": c.emote.sound, "items": c.emote.items],
+                "emoteLabel": String(localized: "EMOTE"), "wheelLabel": String(localized: "PING"), "cancelLabel": String(localized: "CANCEL")]
     }
 
     /// CGEvent uses a top-left origin; AppKit screens use the primary screen's bottom-left origin.

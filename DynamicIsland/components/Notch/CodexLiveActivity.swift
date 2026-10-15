@@ -4,12 +4,17 @@
 
 import AppKit
 import SwiftUI
+import Defaults
 
 struct CodexLiveActivity: View {
     let started: Date
     let centerWidth: CGFloat
     let height: CGFloat
+    var snapshot = UsageSnapshot()
     var openDetails: () -> Void
+    @Default(.agentReadout) private var readout
+    @Default(.agentLimitDisplay) private var limitDisplay
+    @Default(.agentLimitFocus) private var limitFocus
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var breathing = false
     private let tint = Color(red: 0.49, green: 0.60, blue: 1)
@@ -26,7 +31,8 @@ struct CodexLiveActivity: View {
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
-            let elapsed = Self.elapsed(since: started, at: context.date)
+            let elapsed = readout.reading(snapshot, started: started, now: context.date,
+                                          display: limitDisplay, focus: limitFocus)
             let fontSize = min(16, max(12, height - 16))
             let wingWidth = max(58, (elapsed as NSString).size(withAttributes: [
                 .font: NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .medium)
@@ -70,10 +76,4 @@ struct CodexLiveActivity: View {
         .onAppear { breathing = true }
     }
 
-    static func elapsed(since started: Date, at now: Date) -> String {
-        let seconds = max(0, Int(now.timeIntervalSince(started)))
-        return seconds >= 3600
-            ? String(format: "%d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
-            : String(format: "%02d:%02d", seconds / 60, seconds % 60)
-    }
 }

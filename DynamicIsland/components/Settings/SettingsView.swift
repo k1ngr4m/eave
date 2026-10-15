@@ -436,6 +436,8 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .stats, title: "Sensors", keywords: ["temperature", "power", "fans", "传感器"], highlightID: SettingsTab.stats.highlightID(for: "Sensors")),
         SettingsSearchEntry(tab: .stats, title: "Enable system stats monitoring", keywords: ["stats", "monitoring"], highlightID: SettingsTab.stats.highlightID(for: "Enable system stats monitoring")),
         SettingsSearchEntry(tab: .llmAgents, title: "Enable LLM Usage Monitor", keywords: ["llm", "usage", "ai", "monitor"], highlightID: SettingsTab.llmAgents.highlightID(for: "Enable LLM Usage Monitor")),
+        SettingsSearchEntry(tab: .llmAgents, title: "Agent cards", keywords: ["codex", "cards", "reorder", "卡片", "排序"], highlightID: SettingsTab.llmAgents.highlightID(for: "Agent cards")),
+        SettingsSearchEntry(tab: .llmAgents, title: "While agents work", keywords: ["codex", "live", "elapsed", "智能体", "工作"], highlightID: SettingsTab.llmAgents.highlightID(for: "While agents work")),
         SettingsSearchEntry(tab: .llmAgents, title: "Claude Provider", keywords: ["llm", "claude", "provider", "toggle"], highlightID: SettingsTab.llmAgents.highlightID(for: "Claude Provider")),
         SettingsSearchEntry(tab: .llmAgents, title: "Codex Provider", keywords: ["llm", "codex", "provider", "toggle"], highlightID: SettingsTab.llmAgents.highlightID(for: "Codex Provider")),
         SettingsSearchEntry(tab: .llmAgents, title: "Cursor Provider", keywords: ["llm", "cursor", "provider", "toggle"], highlightID: SettingsTab.llmAgents.highlightID(for: "Cursor Provider")),
@@ -649,7 +651,7 @@ struct SettingsView: View {
         .toolbar { toolbarSpacingShim }
         .environmentObject(highlightCoordinator)
         .formStyle(.grouped)
-        .frame(width: 700)
+        .frame(minWidth: 700, maxWidth: .infinity)
         .onChange(of: searchText) { _, newValue in
             let matches = tabsMatchingSearch(newValue)
             guard let firstMatch = matches.first else { return }
@@ -7987,13 +7989,7 @@ struct LLMAgentsSettings: View {
             }
 
             if enableLLMUsageFeature {
-                Section {
-                    Defaults.Toggle(key: .showCodexLiveActivity) {
-                        Text("Show Codex activity in the closed notch")
-                    }
-                } footer: {
-                    Text("Shows a breathing Codex icon and elapsed task time. Click to open Codex details.")
-                }
+                AgentPresentationSettings(highlightID: highlightID)
                 Section {
                     Defaults.Toggle(key: .enableClaudeProvider) {
                         Text("Claude")

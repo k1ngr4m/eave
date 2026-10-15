@@ -36,3 +36,5 @@ Desktop ping wheel
 Input helper and signal rendering adapted from lolPing, Copyright 2026 Danrui Meng,
 MIT License. See Support/DesktopPing/LICENSE, also bundled with the app.
 Signal textures and sounds are copyright Riot Games and are excluded from MIT.
+
+The lolPing adaptation also includes local animated emotes and their sounds (Riot Games assets), and an image library stored only on this Mac.

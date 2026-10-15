@@ -12,11 +12,11 @@ final class DesktopPingOverlay: NSObject, WKScriptMessageHandler, WKNavigationDe
     var onSound: ((String) -> Void)?
     var onFailure: ((String) -> Void)?
 
-    init(screen: NSScreen, root: URL) {
+    init(screen: NSScreen, root: URL, customRoot: URL = DesktopEmoteLibrary.directory) {
         self.screen = screen
         panel = NSPanel(contentRect: screen.frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         let config = WKWebViewConfiguration()
-        config.setURLSchemeHandler(DesktopPingResources(root: root), forURLScheme: "eave-ping")
+        config.setURLSchemeHandler(DesktopPingResources(root: root, customRoot: customRoot), forURLScheme: "eave-ping")
         webView = WKWebView(frame: NSRect(origin: .zero, size: screen.frame.size), configuration: config)
         super.init()
         panel.isReleasedWhenClosed = false
@@ -77,19 +77,27 @@ final class DesktopPingOverlay: NSObject, WKScriptMessageHandler, WKNavigationDe
 
 final class DesktopPingResources: NSObject, WKURLSchemeHandler {
     let root: URL
-    init(root: URL) { self.root = root.resolvingSymlinksInPath().standardizedFileURL }
+    let customRoot: URL
+    init(root: URL, customRoot: URL = DesktopEmoteLibrary.directory) {
+        self.root = root.resolvingSymlinksInPath().standardizedFileURL
+        self.customRoot = customRoot.resolvingSymlinksInPath().standardizedFileURL
+    }
 
     func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
-        guard let url = urlSchemeTask.request.url, url.host == "bundle" else {
+        guard let url = urlSchemeTask.request.url, ["bundle", "custom"].contains(url.host ?? "") else {
             urlSchemeTask.didFailWithError(URLError(.badURL)); return
         }
-        let file = root.appendingPathComponent(url.path).resolvingSymlinksInPath().standardizedFileURL
-        guard file.path.hasPrefix(root.path + "/") else {
+        let base = url.host == "custom" ? customRoot : root
+        if url.host == "custom", url.path.range(of: "^/[0-9a-f]{32}\\.(png|gif|webp)$", options: .regularExpression) == nil {
+            urlSchemeTask.didFailWithError(URLError(.badURL)); return
+        }
+        let file = base.appendingPathComponent(url.path).resolvingSymlinksInPath().standardizedFileURL
+        guard file.path.hasPrefix(base.path + "/") else {
             urlSchemeTask.didFailWithError(URLError(.noPermissionsToReadFile)); return
         }
         do {
             let data = try Data(contentsOf: file)
-            let mime = ["html": "text/html", "js": "text/javascript", "css": "text/css", "png": "image/png"][file.pathExtension] ?? "application/octet-stream"
+            let mime = ["html": "text/html", "js": "text/javascript", "css": "text/css", "png": "image/png", "webp": "image/webp", "gif": "image/gif"][file.pathExtension] ?? "application/octet-stream"
             urlSchemeTask.didReceive(URLResponse(url: url, mimeType: mime, expectedContentLength: data.count, textEncodingName: "utf-8"))
             urlSchemeTask.didReceive(data)
             urlSchemeTask.didFinish()

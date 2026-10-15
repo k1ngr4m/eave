@@ -19,7 +19,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #wheel .picked .segment, #wheel .hot .segment, #wheel [role=button]:focus-visible .segment { fill: var(--hover); stroke: var(--accent); stroke-width: 2; }
 #wheel image { pointer-events: none; }
 #wheel text { fill: #3886a8; font-size: 10px; font-weight: 600; pointer-events: none; }
-#wheel .off img, #wheel .off text { opacity: .45; }
+#wheel .off { opacity: .45; }
 #signals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 3px; margin-top: 12px; }
 .tile { position: relative; min-width: 0; padding: 14px 2px 5px; border: 1px solid transparent; border-radius: 7px; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .tile:hover { background: var(--hover); }
@@ -30,3 +30,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #hint { min-height: 18px; margin-top: 10px; color: var(--accent); }
 @media (min-width: 600px) { #signals { gap: 14px 8px; } .name { font-size: 12px; } }
 @media (max-width: 360px) { .layout { grid-template-columns: 1fr; } #wheel { width: 260px; max-width: 100%; justify-self: center; } }
+
+.emotes #signals { max-height: 370px; overflow-y: auto; scrollbar-width: thin; }
+.emotes .tile img { border-radius: 50%; }

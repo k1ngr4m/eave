@@ -3,6 +3,7 @@
 // Copyright (C) 2026 Vorssaint.
 
 import SwiftUI
+import Defaults
 
 struct CodexUsageDetailView: View {
     @ObservedObject private var manager = LLMUsageManager.shared
@@ -12,6 +13,9 @@ struct CodexUsageDetailView: View {
     @State private var allProjects = false
     @State private var hoveredBucket: Date?
     @State private var hoveredDay: Date?
+    @Default(.agentCardOrder) private var cardOrder
+    @Default(.agentHiddenCards) private var hiddenCards
+    @Default(.agentLimitDisplay) private var limitDisplay
     let onBack: () -> Void
     private let accent = Color(red: 0.49, green: 0.56, blue: 0.94)
 
@@ -66,28 +70,43 @@ struct CodexUsageDetailView: View {
 
     private func dashboard(_ snapshot: UsageSnapshot, wide: Bool) -> some View {
         VStack(spacing: 10) {
-            limits(snapshot)
             if snapshot.isLocalUsageLoading {
                 HStack { ProgressView().controlSize(.small); Text("Loading local usage…").font(.caption) }.padding()
             }
             if let error = snapshot.localUsageError {
                 Text(error).font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
             }
-            if let details = snapshot.codexDetails {
-                let usage = details.periods[period] ?? CodexPeriodUsage()
-                pair(wide: wide) {
-                    spend(usage.totals)
-                    live(details.tasks)
+            let rows = AgentCard.rows(order: cardOrder, hidden: hiddenCards, wide: wide)
+            if rows.isEmpty {
+                Text("Choose cards in Agent settings to show them here.")
+                    .font(.caption).foregroundStyle(.secondary).padding()
+            }
+            ForEach(rows, id: \.self) { row in
+                HStack(alignment: .top, spacing: 10) {
+                    ForEach(row) { item in
+                        dashboardCard(item, snapshot: snapshot, wide: wide)
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                    }
                 }
-                trend(details, totals: usage.totals)
-                pair(wide: wide) {
-                    shares("Models", symbol: "cpu", values: usage.models, byCost: !usage.totals.hasUnpricedModel, expanded: $allModels)
-                    shares("Projects", symbol: "folder", values: usage.projects, byCost: !usage.totals.hasUnpricedModel, expanded: $allProjects)
-                }
-                activity(details, wide: wide)
             }
         }
         .padding(.trailing, 3)
+    }
+
+    @ViewBuilder private func dashboardCard(_ item: AgentCard, snapshot: UsageSnapshot, wide: Bool) -> some View {
+        if item == .limits { limits(snapshot) }
+        else if let details = snapshot.codexDetails {
+            let usage = details.periods[period] ?? CodexPeriodUsage()
+            switch item {
+            case .limits: EmptyView()
+            case .spend: spend(usage.totals)
+            case .live: live(details.tasks)
+            case .trend: trend(details, totals: usage.totals)
+            case .models: shares("Models", symbol: "cpu", values: usage.models, byCost: !usage.totals.hasUnpricedModel, expanded: $allModels)
+            case .projects: shares("Projects", symbol: "folder", values: usage.projects, byCost: !usage.totals.hasUnpricedModel, expanded: $allProjects)
+            case .activity: activity(details, wide: wide)
+            }
+        }
     }
 
     @ViewBuilder private func pair<Content: View>(wide: Bool, @ViewBuilder content: () -> Content) -> some View {
@@ -137,6 +156,7 @@ struct CodexUsageDetailView: View {
 
     private func limitRow(_ title: LocalizedStringKey, limit: UsageLimit, now: Date) -> some View {
         let remaining = max(0, min(1, 1 - limit.fraction))
+        let fraction = limitDisplay.fraction(limit)
         return VStack(spacing: 4) {
             HStack(spacing: 6) {
                 Text(title).font(.caption.weight(.semibold))
@@ -148,12 +168,12 @@ struct CodexUsageDetailView: View {
                     } else { Text("Awaiting quota refresh").font(.caption2).foregroundStyle(.secondary) }
                 }
                 Spacer(minLength: 2)
-                Text("Remaining").font(.caption2).foregroundStyle(.secondary)
-                Text(remaining.formatted(.percent.precision(.fractionLength(0)))).font(.system(size: 16, weight: .bold, design: .rounded))
+                Text(limitDisplay.title).font(.caption2).foregroundStyle(.secondary)
+                Text(fraction.formatted(.percent.precision(.fractionLength(0)))).font(.system(size: 16, weight: .bold, design: .rounded))
             }
             GeometryReader { geometry in
                 Capsule().fill(.white.opacity(0.12)).overlay(alignment: .leading) {
-                    Capsule().fill(remaining <= 0.1 ? .orange : accent).frame(width: geometry.size.width * remaining)
+                    Capsule().fill(remaining <= 0.1 ? .orange : accent).frame(width: geometry.size.width * fraction)
                 }
             }.frame(height: 7)
         }

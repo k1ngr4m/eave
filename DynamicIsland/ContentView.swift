@@ -1174,10 +1174,12 @@ struct ContentView: View {
                       } else if vm.notchState == .closed && capsLockManager.isCapsLockActive && Defaults[.enableCapsLockIndicator] && !vm.hideOnClosed && !lockScreenManager.isLocked {
                           InlineHUD(type: .constant(.capsLock), value: .constant(1.0), icon: .constant(""), hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(AnyTransition.move(edge: .trailing).combined(with: .opacity))
-                      } else if showClosedAgent, let started = codexActivityStarted {
+                      } else if showClosedAgent, let started = codexActivityStarted,
+                                case .success(let snapshot) = llmUsageManager.results[.codex] {
                           CodexLiveActivity(started: started,
                                             centerWidth: vm.closedNotchSize.width + (isHovering ? 8 : 0),
-                                            height: vm.effectiveClosedNotchHeight + (isHovering ? 8 : 0)) {
+                                            height: vm.effectiveClosedNotchHeight + (isHovering ? 8 : 0),
+                                            snapshot: snapshot) {
                               coordinator.codexDetailPresented = true
                               vm.open(target: .llmUsage)
                           }
