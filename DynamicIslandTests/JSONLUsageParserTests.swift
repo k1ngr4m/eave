@@ -83,6 +83,25 @@ final class JSONLUsageParserTests: XCTestCase {
         XCTAssertEqual(offline.today.totalTokens, 25)
     }
 
+    func testCodexWeeklyPrimaryWindowReachesWeeklyLiveReadout() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CodexQuotaStub.self]
+        let now = Date()
+        for reversed in [false, true] {
+            let client = CodexQuotaClient(session: URLSession(configuration: configuration),
+                                          loadCredentials: { (reversed ? "reversed-windows" : "weekly-only", nil) })
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            let snapshot = try await CodexUsageProvider(root: directory, quotaClient: client).fetchSnapshot(now: now)
+            XCTAssertEqual(snapshot.weekLimit?.used, 1)
+            XCTAssertEqual(snapshot.weekLimit?.limit, 100)
+            XCTAssertGreaterThan(try XCTUnwrap(snapshot.weekLimit?.resetsAt), now)
+            XCTAssertEqual(snapshot.sessionLimit?.used, reversed ? 20 : nil)
+            XCTAssertEqual(AgentReadout.limit.reading(snapshot, started: now.addingTimeInterval(-72), now: now,
+                                                    display: .remaining, focus: .week),
+                           0.99.formatted(.percent.precision(.fractionLength(0))))
+        }
+    }
+
     private func makeTempFile(content: String) throws -> URL {
         let tempDir = FileManager.default.temporaryDirectory
         let file = tempDir.appendingPathComponent("test_\(UUID().uuidString).jsonl")
@@ -235,7 +254,16 @@ private final class CodexQuotaStub: URLProtocol {
     override func startLoading() {
         let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: Data(#"{"plan_type":"pro","rate_limit":{"primary_window":{"used_percent":25},"secondary_window":{"used_percent":60}}}"#.utf8))
+        let payload: String
+        switch request.value(forHTTPHeaderField: "Authorization") {
+        case "Bearer weekly-only":
+            payload = #"{"plan_type":"prolite","rate_limit":{"primary_window":{"used_percent":1,"limit_window_seconds":604800,"reset_after_seconds":539470},"secondary_window":null}}"#
+        case "Bearer reversed-windows":
+            payload = #"{"plan_type":"pro","rate_limit":{"primary_window":{"used_percent":1,"limit_window_seconds":604800,"reset_after_seconds":539470},"secondary_window":{"used_percent":20,"limit_window_seconds":18000}}}"#
+        default:
+            payload = #"{"plan_type":"pro","rate_limit":{"primary_window":{"used_percent":25},"secondary_window":{"used_percent":60}}}"#
+        }
+        client?.urlProtocol(self, didLoad: Data(payload.utf8))
         client?.urlProtocolDidFinishLoading(self)
     }
     override func stopLoading() {}
@@ -734,9 +762,14 @@ final class AgentPresentationTests: XCTestCase {
         XCTAssertEqual(read(.limit, focus: .session), 0.8.formatted(.percent.precision(.fractionLength(0))))
         snapshot.weekLimit?.resetsAt = now
         XCTAssertEqual(AgentLimitFocus.mostUsed.limit(in: snapshot, at: now)?.used, 20)
-        XCTAssertEqual(read(.limit, focus: .week), "01:12")
+        XCTAssertEqual(read(.limit, focus: .week), String(localized: "quota unavailable"))
         snapshot.sessionLimit = nil
-        XCTAssertEqual(read(.limit), "01:12")
+        XCTAssertEqual(read(.limit), String(localized: "quota unavailable"))
+        XCTAssertEqual(read(.elapsed), "01:12")
+        snapshot.weekLimit = nil
+        XCTAssertEqual(read(.limit), String(localized: "quota unavailable"))
+        snapshot.sessionLimit = UsageLimit(used: 0, limit: 100)
+        XCTAssertEqual(read(.limit), 1.0.formatted(.percent.precision(.fractionLength(0))))
         XCTAssertEqual(AgentLimitDisplay.used.fraction(UsageLimit(used: -10, limit: 100)), 0)
         XCTAssertEqual(AgentLimitDisplay.remaining.fraction(UsageLimit(used: 120, limit: 100)), 0)
     }

@@ -60,7 +60,7 @@ struct AgentPresentationSettings: View {
         } header: {
             Text("While agents work")
         } footer: {
-            Text("Shows running Codex tasks. Click the notch activity to open details. If quota is unavailable, elapsed time is shown.")
+            Text("Shows running Codex tasks. Click the notch activity to open details. If quota is unavailable, it is marked as unavailable.")
         }
     }
 

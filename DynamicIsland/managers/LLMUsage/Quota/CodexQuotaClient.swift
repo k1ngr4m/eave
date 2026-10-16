@@ -26,6 +26,7 @@ struct CodexQuotaClient {
 
     private struct RateLimitWindow: Decodable {
         let usedPercent: Double
+        let limitWindowSeconds: Int?
         let resetAt: Double?
         let resetAfterSeconds: Double?
     }
@@ -75,9 +76,15 @@ struct CodexQuotaClient {
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             let now = Date()
             if let decoded = try? decoder.decode(UsageResponse.self, from: data) {
-                let sessionLimit = decoded.rateLimit?.primaryWindow.map { limit(from: $0, now: now) }
-                let weekLimit = decoded.rateLimit?.secondaryWindow.map { limit(from: $0, now: now) }
-                if sessionLimit != nil || weekLimit != nil { return Reading(session: sessionLimit, week: weekLimit, plan: decoded.planType) }
+                var reading = Reading(plan: decoded.planType)
+                for (window, defaultIsWeek) in [(decoded.rateLimit?.primaryWindow, false), (decoded.rateLimit?.secondaryWindow, true)] {
+                    guard let window else { continue }
+                    // Some plans return only a weekly primary window; position is not its duration.
+                    let isWeek = window.limitWindowSeconds.map { $0 >= 7 * 24 * 60 * 60 } ?? defaultIsWeek
+                    if isWeek { reading.week = limit(from: window, now: now) }
+                    else { reading.session = limit(from: window, now: now) }
+                }
+                if reading.session != nil || reading.week != nil { return reading }
             }
             let sessionLimit = headerFallback(http, key: "x-codex-primary-used-percent")
             let weekLimit = headerFallback(http, key: "x-codex-secondary-used-percent")

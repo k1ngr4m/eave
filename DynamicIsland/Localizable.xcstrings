@@ -145,18 +145,18 @@
         }
       }
     },
-    "Shows running Codex tasks. Click the notch activity to open details. If quota is unavailable, elapsed time is shown." : {
+    "Shows running Codex tasks. Click the notch activity to open details. If quota is unavailable, it is marked as unavailable." : {
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "顯示執行中的 Codex 任務。點擊瀏海活動可開啟詳細資訊。額度無法取得時顯示已執行時間。"
+            "value" : "顯示執行中的 Codex 任務。點擊瀏海活動可開啟詳細資訊。無法取得額度時會標示為不可用。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "显示正在运行的 Codex 任务，点击刘海活动打开详情。额度不可用时显示运行时间。"
+            "value" : "显示正在运行的 Codex 任务，点击刘海活动打开详情。无法获取额度时会标记为不可用。"
           }
         }
       }

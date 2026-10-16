@@ -108,7 +108,7 @@ enum AgentReadout: String, CaseIterable, Defaults.Serializable {
             let amount = tasks.reduce(0) { $0 + $1.totals.costUSD }.formatted(.currency(code: "USD"))
             return (tasks.contains { $0.totals.hasUnpricedModel } ? "≈" : "") + amount
         case .limit:
-            guard let limit = focus.limit(in: snapshot, at: now) else { return Self.elapsedText(since: started, at: now) }
+            guard let limit = focus.limit(in: snapshot, at: now) else { return String(localized: "quota unavailable") }
             return display.fraction(limit).formatted(.percent.precision(.fractionLength(0)))
         }
     }
