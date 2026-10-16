@@ -857,6 +857,7 @@ extension Defaults.Keys {
     static let didMigrateMusicControlSlots = Key<Bool>("didMigrateMusicControlSlots", default: false)
     static let musicSkipBehavior = Key<MusicSkipBehavior>("musicSkipBehavior", default: .track)
     static let musicControlWindowEnabled = Key<Bool>("musicControlWindowEnabled", default: false)
+    static let showMusicPerimeterProgress = Key<Bool>("showMusicPerimeterProgress", default: true)
     static let showStandardMediaControls = Key<Bool>("showStandardMediaControls", default: true)
     static let autoHideInactiveNotchMediaPlayer = Key<Bool>("autoHideInactiveNotchMediaPlayer", default: true)
     static let cachedMusicLiveActivityPreference = Key<Bool?>("cachedMusicLiveActivityPreference", default: nil)

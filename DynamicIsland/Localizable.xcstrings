@@ -67653,6 +67653,28 @@
         }
       }
     },
+    "Show music perimeter progress" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show music perimeter progress"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示歌曲外围进度条"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示歌曲外圍進度條"
+          }
+        }
+      }
+    },
     "Show floating media controls" : {
       "localizations" : {
         "ko" : {

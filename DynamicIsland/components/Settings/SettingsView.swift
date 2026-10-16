@@ -218,6 +218,7 @@ enum LockScreenSettingsSection: String, CaseIterable, Identifiable {
 private enum SettingsSearchIndex {
     static let entries: [SettingsSearchEntry] = [
         SettingsSearchEntry(tab: .desktopPing, title: "Desktop Pings", keywords: ["lolping", "ping", "wheel", "signal", "pause", "轮盘", "信号", "暫停", "訊號"], highlightID: nil),
+        SettingsSearchEntry(tab: .media, title: "Show music perimeter progress", keywords: ["music", "progress", "perimeter", "歌曲", "外围", "进度条", "外圍", "進度條"], highlightID: SettingsTab.media.highlightID(for: "Show music perimeter progress")),
         // General
         SettingsSearchEntry(tab: .general, title: "Enable Minimalistic UI", keywords: ["minimalistic", "ui mode", "general"], highlightID: SettingsTab.general.highlightID(for: "Enable Minimalistic UI")),
         SettingsSearchEntry(tab: .general, title: "Menubar icon", keywords: ["menu bar", "status bar", "icon"], highlightID: SettingsTab.general.highlightID(for: "Menubar icon")),
@@ -3354,6 +3355,10 @@ struct Media: View {
                 )
                 .disabled(standardControlsSuppressed)
                 .help(standardControlsSuppressed ? "Standard notch media controls are hidden while this toggle is off." : "")
+                Defaults.Toggle(key: .showMusicPerimeterProgress) {
+                    Text("Show music perimeter progress")
+                }
+                .settingsHighlight(id: highlightID("Show music perimeter progress"))
                 Defaults.Toggle(key: .musicControlWindowEnabled) {
                     Text("Show floating media controls")
                 }

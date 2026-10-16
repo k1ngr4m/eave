@@ -48,6 +48,7 @@ struct ContentView: View {
     @Default(.stockChartCollapsed) private var stockChartCollapsed
     @Default(.pinLyricsWhenClosed) private var pinLyricsWhenClosed
     @Default(.enableLyrics) private var enableLyrics
+    @Default(.showMusicPerimeterProgress) private var showMusicPerimeterProgress
     @EnvironmentObject var vm: DynamicIslandViewModel
     @EnvironmentObject var webcamManager: WebcamManager
 
@@ -743,7 +744,7 @@ struct ContentView: View {
             .clipShape(resolvedClipShape)
             .overlay {
                 // Playback progress belongs to the surface, even when another activity occupies it.
-                if vm.notchState == .closed && hasActiveMusicSnapshotForClosedPairing
+                if showMusicPerimeterProgress && vm.notchState == .closed && hasActiveMusicSnapshotForClosedPairing
                     && !vm.hideOnClosed && !lockScreenManager.isLocked && !coordinator.firstLaunch
                     && !(shouldHideUntilHover && !isHovering) {
                     ClosedMusicPerimeterProgress(surface: resolvedClipShape, isPill: isDynamicIslandMode)
