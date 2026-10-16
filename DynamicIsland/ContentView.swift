@@ -573,6 +573,32 @@ struct ContentView: View {
         return !musicManager.isPlayerIdle && hasMusicMetadata
     }
 
+    private var isAirPodsListeningModeSneak: Bool {
+        coordinator.sneakPeek.type == .bluetoothAudio
+            && coordinator.sneakPeek.value < 0
+            && AirPodsListeningMode.fromHUDSymbol(coordinator.sneakPeek.icon) != nil
+    }
+
+    private var inlineHUDReplacesMusic: Bool {
+        isSneakPeekVisibleOnCurrentScreen && (Defaults[.inlineHUD] || isAirPodsListeningModeSneak) && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && (coordinator.sneakPeek.type != .timer) && (coordinator.sneakPeek.type != .reminder) && ((coordinator.sneakPeek.type != .volume && coordinator.sneakPeek.type != .brightness && coordinator.sneakPeek.type != .backlight) || vm.notchState == .closed)
+    }
+
+    private var closedMusicLiveActivityVisible: Bool {
+        guard closedMusicPairingEligible(hasActiveMusicSnapshot: hasActiveMusicSnapshotForClosedPairing),
+              !coordinator.firstLaunch, !isConnectivityHUDVisible,
+              !isBatteryHUDVisibleOnCurrentScreen, !inlineHUDReplacesMusic,
+              !(capsLockManager.isCapsLockActive && enableCapsLockIndicator),
+              !showClosedAgent, !showClosedStock else { return false }
+        guard isCurrentScreenExpansionVisible, currentScreenExpansionType != .music else { return true }
+        switch resolveMusicSecondaryLiveActivity() {
+        case .timer: return currentScreenExpansionType == .timer
+        case .reminder: return currentScreenExpansionType == .reminder
+        case .recording: return currentScreenExpansionType == .recording
+        case .focus: return currentScreenExpansionType == .doNotDisturb
+        default: return false
+        }
+    }
+
     private var recordingLiveActivityVisibleOnClosedNotch: Bool {
         recordingHUDLayout.isVisible
     }
@@ -715,6 +741,14 @@ struct ContentView: View {
             .padding([.horizontal, .bottom], vm.notchState == .open ? 12 : 0)
             .background(Color.notchBackground)
             .clipShape(resolvedClipShape)
+            .overlay {
+                // Playback progress belongs to the surface, even when another activity occupies it.
+                if vm.notchState == .closed && hasActiveMusicSnapshotForClosedPairing
+                    && !vm.hideOnClosed && !lockScreenManager.isLocked && !coordinator.firstLaunch
+                    && !(shouldHideUntilHover && !isHovering) {
+                    ClosedMusicPerimeterProgress(surface: resolvedClipShape, isPill: isDynamicIslandMode)
+                }
+            }
             // Keep the anti-gap fill outside the clipped notch. The window sits
             // this far above screen.maxY, so placing the spacer after clipShape
             // leaves the notch's top corners anchored to the visible screen edge.
@@ -1125,38 +1159,9 @@ struct ContentView: View {
                       .padding(.top, 40)
                       Spacer()
                   } else {
-                        let hasMusicMetadata = !musicManager.songTitle.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty
-                            || !musicManager.artistName.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty
-                      let hasActiveMusicSnapshot: Bool = {
-                          if musicManager.isPlaying { return true }
-                          return !musicManager.isPlayerIdle && hasMusicMetadata
-                      }()
-                      let musicPairingEligible = closedMusicPairingEligible(hasActiveMusicSnapshot: hasActiveMusicSnapshot)
+                      let musicPairingEligible = closedMusicPairingEligible(hasActiveMusicSnapshot: hasActiveMusicSnapshotForClosedPairing)
                       let musicSecondary = resolveMusicSecondaryLiveActivity()
                       let activeSneakPeekStyle = resolvedSneakPeekStyle()
-                      let expansionMatchesSecondary: Bool = {
-                          guard let musicSecondary else { return false }
-                          switch musicSecondary {
-                          case .timer:
-                              return currentScreenExpansionType == .timer
-                          case .reminder:
-                              return currentScreenExpansionType == .reminder
-                          case .recording:
-                              return currentScreenExpansionType == .recording
-                          case .focus:
-                              return currentScreenExpansionType == .doNotDisturb
-                          case .capsLock:
-                              return false
-                          case .shelf:
-                              return false
-                          }
-                      }()
-                      let canShowMusicDuringExpansion = !isCurrentScreenExpansionVisible
-                          || currentScreenExpansionType == .music
-                          || expansionMatchesSecondary
-                      let isAirPodsListeningModeSneak = coordinator.sneakPeek.type == .bluetoothAudio
-                          && coordinator.sneakPeek.value < 0
-                          && AirPodsListeningMode.fromHUDSymbol(coordinator.sneakPeek.icon) != nil
 
                       if currentScreenExpansionType == .battery
                             && isBatteryHUDVisibleOnCurrentScreen
@@ -1174,7 +1179,7 @@ struct ContentView: View {
                             styleOverride: batteryModel.activeTemporaryHUDKind.map { resolvedBatteryNotificationStyle(for: $0) }
                         )
                         .id(batteryModel.activeTemporaryHUDToken)
-                      } else if isSneakPeekVisibleOnCurrentScreen && (Defaults[.inlineHUD] || isAirPodsListeningModeSneak) && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && (coordinator.sneakPeek.type != .timer) && (coordinator.sneakPeek.type != .reminder) && ((coordinator.sneakPeek.type != .volume && coordinator.sneakPeek.type != .brightness && coordinator.sneakPeek.type != .backlight) || vm.notchState == .closed) {
+                      } else if inlineHUDReplacesMusic {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(
                                   coordinator.sneakPeek.type == .capsLock
@@ -1198,7 +1203,7 @@ struct ContentView: View {
                           ClosedStockView(code: code,
                                           centerWidth: vm.closedNotchSize.width + (isHovering ? 8 : 0),
                                           height: vm.effectiveClosedNotchHeight + (isHovering ? 8 : 0))
-                      } else if canShowMusicDuringExpansion && musicPairingEligible {
+                      } else if closedMusicLiveActivityVisible {
                           MusicLiveActivity(secondary: musicSecondary)
                               .id("closed-music-live-activity")
                               .transition(closedLiveActivitySwapTransition)
@@ -3015,5 +3020,40 @@ struct FullScreenDropDelegate: DropDelegate {
         isTargeted = false
         onDrop()
         return true
+    }
+}
+
+
+private struct ClosedMusicPerimeterProgress: View {
+    @ObservedObject private var musicManager = MusicManager.shared
+    let surface: AnyShape
+    let isPill: Bool
+
+    var body: some View {
+        if musicPerimeterFraction(position: 0, duration: musicManager.songDuration,
+                                  isLiveStream: musicManager.isLiveStream) != nil {
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0,
+                                    paused: !musicManager.isPlaying || musicManager.playbackRate <= 0)) { timeline in
+                let progress = musicPerimeterFraction(
+                    position: musicManager.estimatedPlaybackPosition(at: timeline.date),
+                    duration: musicManager.songDuration, isLiveStream: musicManager.isLiveStream
+                ) ?? 0
+                let outline = MusicPerimeterOutline(surface: surface, isPill: isPill)
+                ZStack {
+                    outline.stroke(.gray.opacity(0.22), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    if progress > 0 {
+                        outline.trim(from: 0, to: progress)
+                            .stroke(Color(nsColor: musicManager.avgColor)
+                                .ensureMinimumBrightness(factor: 0.7).notchReadableTint(),
+                                    style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                            // A seek or track change must jump directly, even inside a parent animation.
+                            .transaction { $0.animation = nil }
+                    }
+                }
+                .opacity(musicManager.isPlaying ? 1 : 0.45)
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
     }
 }
