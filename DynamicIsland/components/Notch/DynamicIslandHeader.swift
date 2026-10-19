@@ -24,7 +24,6 @@ struct DynamicIslandHeader: View {
     @EnvironmentObject var webcamManager: WebcamManager
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
-    @ObservedObject var shelfState = ShelfStateViewModel.shared
     @ObservedObject var timerManager = TimerManager.shared
     @ObservedObject var doNotDisturbManager = DoNotDisturbManager.shared
     @ObservedObject var caffeinateManager = CaffeinateManager.shared
@@ -76,10 +75,7 @@ struct DynamicIslandHeader: View {
         HStack(spacing: 0) {
             HStack {
                 if !enableMinimalisticUI {
-                    let shouldShowTabs = coordinator.alwaysShowTabs || vm.notchState == .open || !shelfState.items.isEmpty
-                    if shouldShowTabs {
-                        TabSelectionView()
-                    }
+                    TabSelectionView()
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

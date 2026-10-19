@@ -4796,7 +4796,6 @@ struct LiveActivitiesSettings: View {
 }
 
 struct Appearance: View {
-    @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
     @ObservedObject var webcamManager = WebcamManager.shared
     @Default(.mirrorShape) var mirrorShape
     @Default(.selectedCameraID) var selectedCameraID
@@ -4860,7 +4859,6 @@ struct Appearance: View {
             Section {
                 NotchAppearanceSettings()
                 .settingsHighlight(id: highlightID("Notch appearance"))
-                Toggle("Always show tabs", isOn: $coordinator.alwaysShowTabs)
                 Defaults.Toggle(key: .settingsIconInNotch) {
                     Text("Settings icon in notch")
                 }

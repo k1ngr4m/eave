@@ -95,8 +95,6 @@ class DynamicIslandViewCoordinator: ObservableObject {
     @Default(.enableTimerFeature) private var enableTimerFeature
     @Default(.timerDisplayMode) private var timerDisplayMode
     
-    @AppStorage("alwaysShowTabs") var alwaysShowTabs: Bool = true
-
     var availableTabs: [TabModel] {
         TabModel.availableTabs()
     }
