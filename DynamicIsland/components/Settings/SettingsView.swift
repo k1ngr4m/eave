@@ -3616,17 +3616,17 @@ struct Media: View {
                         .opacity(enableLockScreenMediaWidget ? 1 : 0.5)
                         .settingsHighlight(id: highlightID("Enable media panel blur"))
                 }
+                Defaults.Toggle(key: .lockScreenMusicFullscreenArtworkEnabled) {
+                    Text("Fullscreen artwork on right-click")
+                }
+                .disabled(!enableLockScreenMediaWidget)
+                .settingsHighlight(id: highlightID("Fullscreen artwork on right-click"))
+                Defaults.Toggle(key: .lockScreenUseArtworkLayoutOverFullscreenCanvas) {
+                    Text("Use album art layout over fullscreen canvas")
+                }
+                .disabled(!enableLockScreenMediaWidget || !lockScreenMusicFullscreenArtworkEnabled)
+                .settingsHighlight(id: highlightID("Use album art layout over fullscreen canvas"))
                 VStack(alignment: .leading, spacing: 4) {
-                    Defaults.Toggle(key: .lockScreenMusicFullscreenArtworkEnabled) {
-                        Text("Fullscreen artwork on right-click")
-                    }
-                    .disabled(!enableLockScreenMediaWidget)
-                    .settingsHighlight(id: highlightID("Fullscreen artwork on right-click"))
-                    Defaults.Toggle(key: .lockScreenUseArtworkLayoutOverFullscreenCanvas) {
-                        Text("Use album art layout over fullscreen canvas")
-                    }
-                    .disabled(!enableLockScreenMediaWidget || !lockScreenMusicFullscreenArtworkEnabled)
-                    .settingsHighlight(id: highlightID("Use album art layout over fullscreen canvas"))
                     Defaults.Toggle(key: .lockScreenKeepAlbumArtVisibleDuringFullscreenArtwork) {
                         Text("Keep album art visible during fullscreen artwork")
                     }
@@ -5929,17 +5929,17 @@ struct LockScreenSettings: View {
                             .opacity(enableLockScreenMediaWidget ? 1 : 0.5)
                             .settingsHighlight(id: highlightID("Enable media panel blur"))
                     }
+                    Defaults.Toggle(key: .lockScreenMusicFullscreenArtworkEnabled) {
+                        Text("Fullscreen artwork on right-click")
+                    }
+                    .disabled(!enableLockScreenMediaWidget)
+                    .settingsHighlight(id: highlightID("Fullscreen artwork on right-click"))
+                    Defaults.Toggle(key: .lockScreenUseArtworkLayoutOverFullscreenCanvas) {
+                        Text("Use album art layout over fullscreen canvas")
+                    }
+                    .disabled(!enableLockScreenMediaWidget || !lockScreenMusicFullscreenArtworkEnabled)
+                    .settingsHighlight(id: highlightID("Use album art layout over fullscreen canvas"))
                     VStack(alignment: .leading, spacing: 4) {
-                        Defaults.Toggle(key: .lockScreenMusicFullscreenArtworkEnabled) {
-                            Text("Fullscreen artwork on right-click")
-                        }
-                        .disabled(!enableLockScreenMediaWidget)
-                        .settingsHighlight(id: highlightID("Fullscreen artwork on right-click"))
-                        Defaults.Toggle(key: .lockScreenUseArtworkLayoutOverFullscreenCanvas) {
-                            Text("Use album art layout over fullscreen canvas")
-                        }
-                        .disabled(!enableLockScreenMediaWidget || !lockScreenMusicFullscreenArtworkEnabled)
-                        .settingsHighlight(id: highlightID("Use album art layout over fullscreen canvas"))
                         Defaults.Toggle(key: .lockScreenKeepAlbumArtVisibleDuringFullscreenArtwork) {
                             Text("Keep album art visible during fullscreen artwork")
                         }
