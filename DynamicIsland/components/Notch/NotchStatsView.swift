@@ -36,7 +36,7 @@ struct NotchStatsView: View {
         Group {
             if !enabled || manager.enabledModules.isEmpty {
                 ContentUnavailableView(enabled ? String(localized: "No Graphs Enabled") : String(localized: "Stats Disabled"),
-                                       systemImage: "chart.xyaxis.line",
+                                       systemImage: "gauge.with.dots.needle.33percent",
                                        description: Text("Enable graph visibility in Settings → Stats to view performance data."))
             } else {
                 let columns = manager.enabledModules.count == 4 ? 2 : min(3, manager.enabledModules.count)

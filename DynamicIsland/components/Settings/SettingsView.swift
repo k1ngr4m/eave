@@ -122,7 +122,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .battery: return "battery.100.bolt"
         case .desktopPing: return "scope"
         case .stocks: return "chart.line.uptrend.xyaxis"
-        case .stats: return "chart.xyaxis.line"
+        case .stats: return "gauge.with.dots.needle.33percent"
         case .llmAgents: return "sparkles"
         case .downloads: return "square.and.arrow.down"
         case .shelf: return "books.vertical"
@@ -609,17 +609,15 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationSplitView {
-            VStack(spacing: 12) {
+            VStack(spacing: 0) {
                 SettingsSidebarSearchBar(
                     text: $searchText,
                     suggestions: searchSuggestions,
                     onSuggestionSelected: handleSearchSuggestionSelection
                 )
-                .padding(.horizontal, 12)
-                .padding(.top, 12)
-
-                Divider()
-                    .padding(.horizontal, 12)
+                .padding(.horizontal, 10)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
 
                 List(selection: selectionBinding) {
                     ForEach(groupedFilteredTabs, id: \.group) { section in
@@ -632,16 +630,18 @@ struct SettingsView: View {
                         } header: {
                             if let title = section.group.title {
                                 Text(title)
+                                    .foregroundStyle(.secondary)
+                                    .textCase(nil)
                             }
                         }
                     }
                 }
                 .listStyle(SidebarListStyle())
+                .tint(.blue)
                 .frame(minWidth: 200)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .toolbar(removing: .sidebarToggle)
                 .navigationSplitViewColumnWidth(min: 200, ideal: 210, max: 240)
-                .environment(\.defaultMinListRowHeight, 44)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         } detail: {
@@ -722,40 +722,19 @@ struct SettingsView: View {
         )
     }
 
-    @ViewBuilder
     private func sidebarIcon(for tab: SettingsTab) -> some View {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: [
-                        tab.tint.opacity(1),
-                        tab.tint.opacity(0.7)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .frame(width: 26, height: 26)
-            .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.2), lineWidth: 0.7)
-                    .blendMode(.plusLighter)
-            }
-            .shadow(color: tab.tint.opacity(0.35), radius: 2, x: 0, y: 1)
-            .overlay {
-                Image(systemName: tab.systemImage)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.white)
-            }
+        Image(systemName: tab.systemImage)
+            .foregroundStyle(resolvedSelection == tab ? Color.white : Color.blue)
+            .frame(width: 18)
+            .accessibilityHidden(true)
     }
 
-    @ViewBuilder
     private func sidebarRow(for tab: SettingsTab) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 9) {
             sidebarIcon(for: tab)
             Text(LocalizedStringKey(tab.title))
+                .foregroundStyle(resolvedSelection == tab ? Color.white : Color.primary)
         }
-        .padding(.vertical, 4)
     }
 
     private var availableTabs: [SettingsTab] {
@@ -856,7 +835,7 @@ struct SettingsView: View {
         }
 
         private var searchField: some View {
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(Color.secondary)
 
@@ -876,16 +855,16 @@ struct SettingsView: View {
                     .accessibilityLabel("Clear search")
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 5)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                Capsule()
                     .fill(.ultraThinMaterial)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(Capsule())
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Color.white.opacity(0.08))
+                Capsule()
+                    .stroke(Color.primary.opacity(0.12))
             )
         }
 

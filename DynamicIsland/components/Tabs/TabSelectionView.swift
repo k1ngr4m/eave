@@ -57,7 +57,7 @@ struct TabModel: Identifiable {
 
         // Stats tab only shown when stats feature is enabled
         if Defaults[.enableStatsFeature] {
-            tabsArray.append(TabModel(label: "Stats", icon: "chart.xyaxis.line", view: .stats))
+            tabsArray.append(TabModel(label: "Stats", icon: "gauge.with.dots.needle.33percent", view: .stats))
         }
 
         if Defaults[.enableStocksFeature] {

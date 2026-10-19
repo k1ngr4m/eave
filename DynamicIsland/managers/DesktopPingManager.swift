@@ -156,7 +156,10 @@ final class DesktopPingManager: ObservableObject {
             var pending = Data()
             let reader = stdout.fileHandleForReading
             defer { try? reader.close() }
-            while let data = try? reader.read(upToCount: 8192), !data.isEmpty {
+            while true {
+                // read(upToCount:) waits to fill its buffer, blocking the helper's ready handshake.
+                let data = reader.availableData
+                guard !data.isEmpty else { break }
                 pending.append(data)
                 if pending.count > 65536 { break }
                 while let newline = pending.firstIndex(of: 10) {

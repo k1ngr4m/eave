@@ -72,6 +72,8 @@ class SettingsWindowController: NSWindowController {
         hostingView.sizingOptions = []
         window.contentMinSize = NSSize(width: 700, height: 600)
         window.contentView = hostingView
+        window.setFrameUsingName("EaveSettingsWindow")
+        window.setFrameAutosaveName("EaveSettingsWindow")
         
         // Handle window closing
         window.delegate = self

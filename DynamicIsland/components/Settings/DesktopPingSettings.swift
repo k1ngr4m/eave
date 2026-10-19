@@ -7,16 +7,12 @@ struct DesktopPingSettings: View {
         Form {
             Section {
                 Toggle("Enable Desktop Pings", isOn: $manager.configuration.enabled)
-                LabeledContent("Status") { Text(manager.status).foregroundStyle(.secondary) }
                 if manager.needsPermission {
                     Button("Open Accessibility Settings") { manager.requestPermission() }
                 }
                 if let failure = manager.failure {
                     Text(failure).font(.caption).foregroundStyle(.red).textSelection(.enabled)
                     Button("Try Again") { manager.retry() }
-                }
-                if manager.configuration.enabled {
-                    Toggle("Pause Desktop Pings", isOn: $manager.configuration.paused)
                 }
             } footer: {
                 Text("Hold the trigger and drag to open the wheel. Release on a signal to send it. Release in the center, right-click, or press Esc to cancel. ⌃⌥P pauses or resumes.")
