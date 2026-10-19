@@ -75,9 +75,9 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .media, .liveActivities, .lockScreen, .devices:                 return .mediaAndDisplay
         case .hudAndOSD, .battery, .stats:                                   return .system
         case .timer, .calendar, .notes:                                      return .productivity
-        case .shelf, .downloads, .shortcuts, .stocks, .desktopPing:                         return .utilities
+        case .shelf, .downloads, .stocks, .desktopPing:                         return .utilities
         case .llmAgents, .terminal:                                          return .developer
-        case .about:                                                         return .info
+        case .shortcuts, .about:                                             return .info
         }
     }
 
@@ -782,13 +782,13 @@ struct SettingsView: View {
             // Utilities
             .shelf,
             .downloads,
-            .shortcuts,
             .stocks,
             .desktopPing,
             // Developer
             .llmAgents,
             .terminal,
             // Info
+            .shortcuts,
             .about
         ]
 

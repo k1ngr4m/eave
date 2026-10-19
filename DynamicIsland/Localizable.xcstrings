@@ -66368,14 +66368,14 @@
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "快捷方式"
+            "state" : "translated",
+            "value" : "快捷键"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "快捷方式"
+            "state" : "translated",
+            "value" : "快捷鍵"
           }
         }
       }
