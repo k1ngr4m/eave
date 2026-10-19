@@ -59,7 +59,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     case llmAgents
     case stocks
     case desktopPing
-    case downloads
     case shelf
     case shortcuts
     case notes
@@ -75,7 +74,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .media, .liveActivities, .lockScreen, .devices:                 return .mediaAndDisplay
         case .hudAndOSD, .battery, .stats:                                   return .system
         case .timer, .calendar, .notes:                                      return .productivity
-        case .shelf, .downloads, .stocks, .desktopPing:                         return .utilities
+        case .shelf, .stocks, .desktopPing:                         return .utilities
         case .llmAgents, .terminal:                                          return .developer
         case .shortcuts, .about:                                             return .info
         }
@@ -98,7 +97,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .stocks: return String(localized: "Stocks")
         case .stats: return String(localized: "Monitoring")
         case .llmAgents: return String(localized: "LLM Agents")
-        case .downloads: return String(localized: "Downloads")
         case .shelf: return String(localized: "Shelf")
         case .shortcuts: return String(localized: "Shortcuts")
         case .notes: return String(localized: "Notes")
@@ -124,7 +122,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .stocks: return "chart.line.uptrend.xyaxis"
         case .stats: return "gauge.with.dots.needle.33percent"
         case .llmAgents: return "sparkles"
-        case .downloads: return "square.and.arrow.down"
         case .shelf: return "books.vertical"
         case .shortcuts: return "keyboard"
         case .notes: return "note.text"
@@ -150,7 +147,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .stocks: return .red
         case .stats: return .teal
         case .llmAgents: return .purple
-        case .downloads: return .gray
         case .shelf: return .brown
         case .shortcuts: return .orange
         case .notes: return Color(red: 0.979, green: 0.716, blue: 0.153, opacity: 1.000)
@@ -246,6 +242,9 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .general, title: "Notch display height", keywords: ["display height", "menu bar size"], highlightID: SettingsTab.general.highlightID(for: "Notch display height")),
 
         // Live Activities
+        SettingsSearchEntry(tab: .liveActivities, title: "Enable download detection", keywords: ["downloads", "下载", "detection"], highlightID: SettingsTab.liveActivities.highlightID(for: "Enable download detection")),
+        SettingsSearchEntry(tab: .liveActivities, title: "Download indicator style", keywords: ["downloads", "下载", "progress ring"], highlightID: SettingsTab.liveActivities.highlightID(for: "Download indicator style")),
+        SettingsSearchEntry(tab: .liveActivities, title: "Show download speed", keywords: ["downloads", "下载", "speed"], highlightID: SettingsTab.liveActivities.highlightID(for: "Show download speed")),
         SettingsSearchEntry(tab: .liveActivities, title: "Enable Screen Recording Detection", keywords: ["screen recording", "indicator"], highlightID: SettingsTab.liveActivities.highlightID(for: "Enable Screen Recording Detection")),
         SettingsSearchEntry(tab: .liveActivities, title: "Show Recording Indicator", keywords: ["recording indicator", "red dot"], highlightID: SettingsTab.liveActivities.highlightID(for: "Show Recording Indicator")),
         SettingsSearchEntry(tab: .liveActivities, title: "Recording Controls", keywords: ["screen recording", "stop button", "indicator"], highlightID: SettingsTab.liveActivities.highlightID(for: "Recording Controls")),
@@ -760,7 +759,6 @@ struct SettingsView: View {
             .notes,
             // Utilities
             .shelf,
-            .downloads,
             .stocks,
             .desktopPing,
             // Developer
@@ -803,11 +801,10 @@ struct SettingsView: View {
     }
 
     private var searchSuggestions: [SettingsSearchEntry] {
-        Array(searchEntries(matching: searchText).filter { $0.tab != .downloads }.prefix(8))
+        Array(searchEntries(matching: searchText).prefix(8))
     }
 
     private func handleSearchSuggestionSelection(_ suggestion: SettingsSearchEntry) {
-        guard suggestion.tab != .downloads else { return }
         highlightCoordinator.focus(on: suggestion)
         selectedTab = suggestion.tab
     }
@@ -1025,10 +1022,6 @@ struct SettingsView: View {
         case .llmAgents:
             SettingsForm(tab: .llmAgents) {
                 LLMAgentsSettings()
-            }
-        case .downloads:
-            SettingsForm(tab: .downloads) {
-                Downloads()
             }
         case .shelf:
             SettingsForm(tab: .shelf) {
@@ -1676,71 +1669,68 @@ struct Charge: View {
     }
 }
 
-struct Downloads: View {
+struct DownloadSettingsSection: View {
     @Default(.selectedDownloadIndicatorStyle) var selectedDownloadIndicatorStyle
     @Default(.selectedDownloadIconStyle) var selectedDownloadIconStyle
     @Default(.enableDownloadListener) var enableDownloadListener
 
     private func highlightID(_ title: String) -> String {
-        SettingsTab.downloads.highlightID(for: title)
+        SettingsTab.liveActivities.highlightID(for: title)
     }
 
     var body: some View {
-        SwiftUI.Form {
-            Section {
-                Defaults.Toggle(key: .enableDownloadListener) {
-                    Text("Enable download detection")
-                }
-                .settingsHighlight(id: highlightID("Enable download detection"))
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Download indicator style")
-                        .font(.system(size: 13, weight: .semibold))
-                        // .white is invisible against a light Settings window;
-                        // the label follows the appearance like every other one.
-                        .foregroundStyle(enableDownloadListener ? Color.primary : Color.secondary)
-
-                    HStack(spacing: 16) {
-                        DownloadStyleButton(
-                            style: .progress,
-                            isSelected: selectedDownloadIndicatorStyle == .progress,
-                            disabled: !enableDownloadListener
-                        ) {
-                            selectedDownloadIndicatorStyle = .progress
-                        }
-
-                        DownloadStyleButton(
-                            style: .circle,
-                            isSelected: selectedDownloadIndicatorStyle == .circle,
-                            disabled: !enableDownloadListener
-                        ) {
-                            selectedDownloadIndicatorStyle = .circle
-                        }
-                    }
-
-                    Text("A bar that fills as the download runs, or a ring around the notch's corner.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-                .settingsHighlight(id: highlightID("Download indicator style"))
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Defaults.Toggle(key: .showDownloadSpeed) {
-                        Text("Show download speed")
-                    }
-                    .disabled(!enableDownloadListener)
-
-                    Text("Adds the current rate beside the indicator, measured from how fast the files in your Downloads folder are growing.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-                .settingsHighlight(id: highlightID("Show download speed"))
-            } header: {
-                Text("Download Detection")
-            } footer: {
-                Text("Shows a live activity in the Dynamic Island while a file is downloading. Works with Safari, Firefox, and Chrome and the browsers built on it — Edge, Brave, Arc, Vivaldi and Opera. Only your Downloads folder is watched, so a file saved anywhere else will not appear.")
+        Section {
+            Defaults.Toggle(key: .enableDownloadListener) {
+                Text("Enable download detection")
             }
+            .settingsHighlight(id: highlightID("Enable download detection"))
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Download indicator style")
+                    .font(.system(size: 13, weight: .semibold))
+                    // .white is invisible against a light Settings window;
+                    // the label follows the appearance like every other one.
+                    .foregroundStyle(enableDownloadListener ? Color.primary : Color.secondary)
+
+                HStack(spacing: 16) {
+                    DownloadStyleButton(
+                        style: .progress,
+                        isSelected: selectedDownloadIndicatorStyle == .progress,
+                        disabled: !enableDownloadListener
+                    ) {
+                        selectedDownloadIndicatorStyle = .progress
+                    }
+
+                    DownloadStyleButton(
+                        style: .circle,
+                        isSelected: selectedDownloadIndicatorStyle == .circle,
+                        disabled: !enableDownloadListener
+                    ) {
+                        selectedDownloadIndicatorStyle = .circle
+                    }
+                }
+
+                Text("A bar that fills as the download runs, or a ring around the notch's corner.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            .settingsHighlight(id: highlightID("Download indicator style"))
+
+            VStack(alignment: .leading, spacing: 6) {
+                Defaults.Toggle(key: .showDownloadSpeed) {
+                    Text("Show download speed")
+                }
+                .disabled(!enableDownloadListener)
+
+                Text("Adds the current rate beside the indicator, measured from how fast the files in your Downloads folder are growing.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            .settingsHighlight(id: highlightID("Show download speed"))
+        } header: {
+            Text("Download Detection")
+        } footer: {
+            Text("Shows a live activity in the Dynamic Island while a file is downloading. Works with Safari, Firefox, and Chrome and the browsers built on it — Edge, Brave, Arc, Vivaldi and Opera. Only your Downloads folder is watched, so a file saved anywhere else will not appear.")
         }
-        .navigationTitle("Downloads")
     }
 
     struct DownloadStyleButton: View {
@@ -3147,7 +3137,6 @@ struct Media: View {
     @Default(.lockScreenMusicFullscreenArtworkEnabled) private var lockScreenMusicFullscreenArtworkEnabled
     @Default(.showStandardMediaControls) private var showStandardMediaControls
     @Default(.autoHideInactiveNotchMediaPlayer) private var autoHideInactiveNotchMediaPlayer
-    @Default(.showCalendar) private var showCalendar
     @Default(.enableLyrics) private var enableLyrics
     @Default(.pinLyricsWhenClosed) private var pinLyricsWhenClosed
     @Default(.pinnedLyricFontSize) private var pinnedLyricFontSize
@@ -3485,11 +3474,7 @@ struct Media: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Text(
-                    showCalendar
-                        ? "Lyrics sit on one line under the artist name, since the calendar is using the rest of the notch. Turn the calendar off to give them a full panel beside the player."
-                        : "Lyrics get their own panel beside the player. Turn the calendar on to move them under the artist name instead."
-                )
+                Text("Lyrics get their own panel beside the player.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -3503,7 +3488,7 @@ struct Media: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                if enableLyrics && !enableMinimalisticUI && !showCalendar && showStandardMediaControls {
+                if enableLyrics && !enableMinimalisticUI && showStandardMediaControls {
                     Slider(value: $lyricsPanelWidth, in: 180...420, step: 10) {
                         HStack {
                             Text("Side lyrics width")
@@ -3701,7 +3686,6 @@ struct Media: View {
 struct CalendarSettings: View {
     @ObservedObject private var calendarManager = CalendarManager.shared
     @Default(.showCalendar) var showCalendar: Bool
-    @Default(.enableLyrics) private var enableLyrics
     @Default(.enableReminderLiveActivity) var enableReminderLiveActivity
     @Default(.reminderPresentationStyle) var reminderPresentationStyle
     @Default(.reminderLeadTime) var reminderLeadTime
@@ -3800,12 +3784,6 @@ struct CalendarSettings: View {
                     Text("Show calendar")
                 }
                 .settingsHighlight(id: highlightID("Show calendar"))
-                if enableLyrics {
-                    Text("Lyrics are on too, so the two share the notch and lyrics drop to a single line under the artist name.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
 
                 Section(header: Text("Event List")) {
                     Toggle("Hide completed reminders", isOn: $hideCompletedReminders)
@@ -4569,6 +4547,8 @@ struct LiveActivitiesSettings: View {
 
     var body: some View {
         Form {
+            DownloadSettingsSection()
+
             Section {
                 Defaults.Toggle(key: .enableScreenRecordingDetection) {
                     Text("Enable Screen Recording Detection")

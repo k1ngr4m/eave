@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CA1E20260000000000000001 /* CalendarPageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA1E20260000000000000002 /* CalendarPageTests.swift */; };
 		63A78415C5726BE9C806EFAF /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 47C39E67B09152F6665ED683 /* Cocoa.framework */; };
 		6B8DE5BE065E4BFE9E531A74 /* MarqueeTextMeasurementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DC2ACF06B40405DB1A8F99E /* MarqueeTextMeasurementTests.swift */; };
 		738C4EBB63E3449B923997D0 /* MenuBarClearanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB37667F763422E97DEEB49 /* MenuBarClearanceTests.swift */; };
@@ -81,6 +82,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		CA1E20260000000000000002 /* CalendarPageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarPageTests.swift; sourceTree = "<group>"; };
 		0796C681D7B557C0110EC381 /* DynamicIslandTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DynamicIslandTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2137D0F9431A495AA62ACE96 /* NowPlayingPayloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingPayloadTests.swift; sourceTree = "<group>"; };
 		2EB37667F763422E97DEEB49 /* MenuBarClearanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarClearanceTests.swift; sourceTree = "<group>"; };
@@ -241,6 +243,7 @@
 				F6B7C8D9E0F1A2B3C4D5E6F7 /* NewAPIUsageTests.swift */,
 				957599910322B546D91E6F96 /* Info.plist */,
 				BA59D2A570C34E56A594BB02 /* MediaSettingsPreviewTests.swift */,
+				CA1E20260000000000000002 /* CalendarPageTests.swift */,
 			);
 			path = DynamicIslandTests;
 			sourceTree = "<group>";
@@ -597,6 +600,7 @@
 				6B8DE5BE065E4BFE9E531A74 /* MarqueeTextMeasurementTests.swift in Sources */,
 				B1C2D3E4F5061728394A5B6C /* PartialDownloadTests.swift in Sources */,
 				BA59D2A570C34E56A594BB01 /* MediaSettingsPreviewTests.swift in Sources */,
+				CA1E20260000000000000001 /* CalendarPageTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

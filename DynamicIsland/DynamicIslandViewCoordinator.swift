@@ -62,18 +62,19 @@ class DynamicIslandViewCoordinator: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var hoverOpenSuppressedUntil: Date = .distantPast
     
-    private static let tabOrder: [NotchViews] = [.home, .shelf, .timer, .stats, .stocks, .llmUsage, .notes, .terminal]
+    private static let tabOrder: [NotchViews] = [.home, .calendar, .shelf, .timer, .stats, .stocks, .llmUsage, .notes, .terminal]
     
     /// Direction of the most recent tab switch (true = forward/right, false = backward/left)
     @Published var tabSwitchForward: Bool = true
     
     @Published var currentView: NotchViews = .home {
         didSet {
-            if Defaults[.enableMinimalisticUI] && currentView != .home {
+            if Defaults[.enableMinimalisticUI] && currentView != .home && currentView != .calendar {
                 currentView = .home
                 return
             }
             if currentView != .llmUsage { codexDetailPresented = false }
+            if currentView != .calendar { calendarRevealEventID = nil }
             // Track direction before SwiftUI re-renders
             let oldIdx = Self.tabOrder.firstIndex(of: oldValue) ?? 0
             let newIdx = Self.tabOrder.firstIndex(of: currentView) ?? 0
@@ -82,6 +83,10 @@ class DynamicIslandViewCoordinator: ObservableObject {
         }
     }
     
+    @Published var calendarDate = Date()
+    @Published var calendarShowsWeek = true
+    @Published var calendarRevealEventID: String?
+
     @Published var codexDetailPresented = false
     @Published var statsSecondRowExpansion: CGFloat = 1
     @Published var notesLayoutState: NotesLayoutState = .list
@@ -165,6 +170,9 @@ class DynamicIslandViewCoordinator: ObservableObject {
         Publishers.MergeMany(tabChanges)
         .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)
         .sink { [weak self] _ in
+            if let self, !self.availableTabs.contains(where: { $0.view == self.currentView }) {
+                self.currentView = self.availableTabs.first?.view ?? .home
+            }
             self?.objectWillChange.send()
             enforceMinimumNotchWidth()
         }
@@ -205,7 +213,7 @@ class DynamicIslandViewCoordinator: ObservableObject {
 
     private func handleMinimalisticModeChange(_ isEnabled: Bool) {
         guard isEnabled else { return }
-        if currentView != .home {
+        if currentView != .home && currentView != .calendar {
             withAnimation(.smooth) {
                 currentView = .home
             }

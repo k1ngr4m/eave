@@ -72,6 +72,7 @@ public enum NotchState {
 
 public enum NotchViews: String {
     case home
+    case calendar
     case shelf
     case timer
     case stats

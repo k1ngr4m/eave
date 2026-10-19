@@ -43,6 +43,11 @@ struct ReminderLiveActivity: View {
     var body: some View {
         if let reminder = manager.activeReminder {
             content(for: reminder, now: manager.currentDate)
+                .contentShape(Rectangle())
+                .onTapGesture { vm.openCalendar(event: reminder.event) }
+                .accessibilityAddTraits(.isButton)
+                .accessibilityAction { vm.openCalendar(event: reminder.event) }
+                .help("Show event in calendar")
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
         }
     }

@@ -55,7 +55,6 @@ enum SideLyricsLayout {
 
 func sideLyricsRequiredNotchWidth() -> CGFloat {
     guard Defaults[.enableLyrics],
-          !Defaults[.showCalendar],
           !Defaults[.enableMinimalisticUI],
           Defaults[.showStandardMediaControls],
           (!Defaults[.autoHideInactiveNotchMediaPlayer] || MusicManager.shared.hasActiveSession)
@@ -110,43 +109,7 @@ func maxAllowedNotchWidth() -> CGFloat {
 /// Counts the number of currently enabled standard notch tabs.
 /// Mirrors the tab-building logic in ``TabSelectionView``.
 func enabledStandardTabCount() -> Int {
-    var count = 0
-
-    // Home tab
-    if Defaults[.showStandardMediaControls] || Defaults[.showCalendar] || Defaults[.showMirror] {
-        count += 1
-    }
-
-    // Shelf tab
-    if Defaults[.dynamicShelf] {
-        count += 1
-    }
-
-    // Timer tab (only in .tab display mode)
-    if Defaults[.enableTimerFeature] && Defaults[.timerDisplayMode] == .tab {
-        count += 1
-    }
-
-    // Stats tab
-    if Defaults[.enableStatsFeature] {
-        count += 1
-    }
-
-    if Defaults[.enableStocksFeature] {
-        count += 1
-    }
-
-    // Notes tab
-    if Defaults[.enableNotes] {
-        count += 1
-    }
-
-    // Terminal tab
-    if Defaults[.enableTerminalFeature] {
-        count += 1
-    }
-
-    return count
+    TabModel.availableTabs().count
 }
 
 /// Returns the recommended minimum notch width for the given tab count.
@@ -258,45 +221,10 @@ func notchTerminalBottomCornerRadii(
     return (outerBottom, max(0, outerBottom - p))
 }
 
-/// Height of the inline lyrics line shown under the artist name on the home tab.
-///
-/// The player column is laid out inside a greedy `GeometryReader`, so the lyrics
-/// line takes its space out of the gap above the transport controls instead of
-/// growing the notch. Handing that height back keeps the controls from being
-/// crowded when lyrics are on.
-let inlineLyricsLineHeight: CGFloat = 18
-
-/// Grows the open notch by one lyrics line when the home tab renders inline lyrics.
-///
-/// The extra height is applied whenever inline lyrics are enabled rather than only
-/// while a line is on screen, so the notch keeps a stable height between lyric lines.
-///
-/// Minimalistic UI is excluded: its player draws lyrics whenever they are enabled,
-/// regardless of the calendar, and sizes itself for them through its own resize
-/// publisher. Adding this line there would reserve room for a line the standard
-/// player is not drawing.
-func inlineLyricsAdjustedNotchSize(
-    from baseSize: CGSize,
-    isHomeTabActive: Bool
-) -> CGSize {
-    // The same conditions `sideLyricsRequiredNotchWidth` tests, for the same
-    // reason: the extra line belongs to the standard player, so it is only
-    // owed when that player is on screen to draw it. Without the last two the
-    // notch grew for a line nobody could see whenever the player was switched
-    // off, or hidden by auto-hide with nothing playing.
-    guard isHomeTabActive,
-          !Defaults[.enableMinimalisticUI],
-          Defaults[.enableLyrics],
-          Defaults[.showCalendar],
-          Defaults[.showStandardMediaControls],
-          (!Defaults[.autoHideInactiveNotchMediaPlayer] || MusicManager.shared.hasActiveSession)
-    else {
-        return baseSize
-    }
-
-    var adjustedSize = baseSize
-    adjustedSize.height += inlineLyricsLineHeight
-    return adjustedSize
+/// Calendar dimensions do not depend on playback, lyrics, or mirror visibility.
+func calendarOpenNotchSize() -> CGSize {
+    CGSize(width: min(max(Defaults[.openNotchWidth], currentRecommendedMinimumNotchWidth()), maxAllowedNotchWidth()),
+           height: Defaults[.enableMinimalisticUI] ? 250 : 380)
 }
 
 func statsAdjustedNotchSize(

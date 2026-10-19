@@ -74,8 +74,16 @@ struct DynamicIslandHeader: View {
     var body: some View {
         HStack(spacing: 0) {
             HStack {
-                if !enableMinimalisticUI {
+                if !enableMinimalisticUI || coordinator.currentView == .calendar {
                     TabSelectionView()
+                } else if Defaults[.showCalendar] {
+                    Button { coordinator.currentView = .calendar } label: {
+                        Image(systemName: "calendar")
+                            .frame(width: 28, height: 28)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Calendar")
+                    .help("Calendar")
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

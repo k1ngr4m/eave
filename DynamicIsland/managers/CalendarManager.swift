@@ -32,6 +32,9 @@ class CalendarManager: ObservableObject {
 
     @Published var currentWeekStartDate: Date
     @Published var events: [EventModel] = []
+    @Published var monthEvents: [EventModel] = []
+    @Published var isLoadingEvents = false
+    private var eventsGeneration = 0
     @Published var allCalendars: [CalendarModel] = []
     @Published var eventCalendars: [CalendarModel] = []
     @Published var reminderLists: [CalendarModel] = []
@@ -126,6 +129,8 @@ class CalendarManager: ObservableObject {
 
     @MainActor
     func reloadCalendarAndReminderLists() async {
+        calendarAuthorizationStatus = EKEventStore.authorizationStatus(for: .event)
+        reminderAuthorizationStatus = EKEventStore.authorizationStatus(for: .reminder)
         let allCalendars = await calendarService.calendars()
         eventCalendars = allCalendars.filter { !$0.isReminder }
         reminderLists = allCalendars.filter { $0.isReminder }
@@ -366,8 +371,14 @@ class CalendarManager: ObservableObject {
         Logger.log("CalendarManager: Updating events (force: \(force))", category: .lifecycle)
 
         let calendarIDs = selectedCalendars.map { $0.id }
-        let startDate = currentWeekStartDate
-        guard let endDate = Calendar.current.date(byAdding: .day, value: 1, to: currentWeekStartDate) else { return }
+        eventsGeneration &+= 1
+        let generation = eventsGeneration
+        let selectedDay = currentWeekStartDate
+        let range = CalendarPageDates.monthRange(containing: selectedDay)
+        let upcoming = CalendarPageDates.upcomingRange(from: selectedDay)
+        let startDate = min(range.start, upcoming.start)
+        let endDate = max(range.end, upcoming.end)
+        isLoadingEvents = true
         let service = calendarService
 
         let events = await eventFetchLimiter.run {
@@ -378,7 +389,10 @@ class CalendarManager: ObservableObject {
             )
         }
 
-        self.events = events
+        guard generation == eventsGeneration else { return }
+        monthEvents = events
+        self.events = events.filter { CalendarPageDates.contains(start: $0.start, end: $0.end, on: selectedDay) }
+        isLoadingEvents = false
         lastEventsFetchDate = Date()
     }
 

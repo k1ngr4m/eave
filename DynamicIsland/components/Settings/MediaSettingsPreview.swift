@@ -23,7 +23,6 @@ struct MediaSettingsPreview: View {
     @Default(.showStandardMediaControls) private var showMedia
     @Default(.autoHideInactiveNotchMediaPlayer) private var autoHide
     @Default(.enableLyrics) private var lyrics
-    @Default(.showCalendar) private var calendar
     @Default(.lyricsPanelWidth) private var lyricsWidth
     @Default(.lyricsPanelOffset) private var lyricsOffset
     @Default(.showMinimalisticBatteryIndicator) private var batteryIndicator
@@ -32,7 +31,7 @@ struct MediaSettingsPreview: View {
     @Default(.colorExtractionMode) private var colorExtraction
     @Default(.visualizerBarCount) private var visualizerBars
 
-    private var sideLyrics: Bool { !minimalistic && lyrics && !calendar }
+    private var sideLyrics: Bool { !minimalistic && lyrics }
     private var hidden: Bool {
         !minimalistic && (!showMedia || (autoHide && !music.hasActiveSession))
     }

@@ -526,7 +526,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         // Use minimalistic or normal size based on settings
-        var baseSize = Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize(isDynamicIslandMode: shouldUseDynamicIslandMode(for: vm.screen)) : openNotchSize
+        var baseSize = coordinator.currentView == .calendar ? calendarOpenNotchSize() : (Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize(isDynamicIslandMode: shouldUseDynamicIslandMode(for: vm.screen)) : openNotchSize)
         
         // Use a consistent height for different view types
         if coordinator.currentView == .llmUsage && coordinator.codexDetailPresented {
@@ -544,10 +544,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             baseSize.height = min(screenHeight * maxFraction, max(300, screenHeight * maxFraction))
         }
         
-        baseSize = inlineLyricsAdjustedNotchSize(
-            from: baseSize,
-            isHomeTabActive: coordinator.currentView == .home
-        )
 
         let adjustedContentSize = statsAdjustedNotchSize(
             from: baseSize,

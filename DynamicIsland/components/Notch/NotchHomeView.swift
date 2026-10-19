@@ -573,7 +573,6 @@ struct MusicControlsView: View {
     @Default(.showMediaOutputControl) private var showMediaOutputControl
     @Default(.musicSkipBehavior) private var musicSkipBehavior
     @Default(.enableLyrics) private var enableLyrics
-    @Default(.showCalendar) private var showCalendar
     private let seekInterval: TimeInterval = 10
 
     var body: some View {
@@ -623,47 +622,7 @@ struct MusicControlsView: View {
                 frameWidth: width
             )
             .fontWeight(.medium)
-            if enableLyrics && showCalendar {
-                let transition = AnyTransition.asymmetric(
-                    insertion: .move(edge: .bottom).combined(with: .opacity),
-                    removal: .move(edge: .top).combined(with: .opacity)
-                )
 
-                let line = musicManager.currentLyrics.trimmingCharacters(in: .whitespacesAndNewlines)
-                let isInstrumentalBreak = musicManager.isInInstrumentalBreak
-
-                if isInstrumentalBreak {
-                    // The track is between verses, so mark it the way the side
-                    // panel does instead of leaving a hole in the layout. Driven
-                    // by the break itself rather than by the line being blank:
-                    // during an intro there is no current line to blank out, so
-                    // testing the text would miss it.
-                    InstrumentalBreakNotes(fontSize: 10, weight: .regular)
-                        .foregroundStyle(Color.primary.opacity(0.7))
-                    .padding(.top, 2)
-                    .transition(transition)
-                }
-
-                if !isInstrumentalBreak, !line.isEmpty {
-                    let lyricsBinding = Binding<String>(
-                        get: { musicManager.currentLyrics },
-                        set: { _ in }
-                    )
-
-                    MarqueeText(
-                        lyricsBinding,
-                        font: .system(size: 12, weight: .regular),
-                        nsFont: .headline,
-                        textColor: Color.primary.opacity(0.7),
-                        minDuration: 0.35,
-                        frameWidth: width
-                    )
-                    .padding(.top, 2)
-                    .id(line)
-                    .transition(transition)
-                    .animation(.easeInOut(duration: 0.32), value: line)
-                }
-            }
         }
     }
 
@@ -1016,12 +975,9 @@ struct NotchHomeView: View {
     @ObservedObject private var musicManager = MusicManager.shared
     @Default(.showStandardMediaControls) private var showStandardMediaControls
     @Default(.autoHideInactiveNotchMediaPlayer) private var autoHideInactiveNotchMediaPlayer
-    @Default(.showCalendar) private var showCalendar
     @Default(.enableLyrics) private var enableLyrics
     @Default(.lyricsPanelWidth) private var lyricsPanelWidth
     @Default(.lyricsPanelOffset) private var lyricsPanelOffset
-    @State private var showCalendarDeferred = false
-    @State private var calendarSyncGeneration = 0
     let albumArtNamespace: Namespace.ID
 
     /// Whether the music player should actively display (enabled AND has real content).
@@ -1030,36 +986,16 @@ struct NotchHomeView: View {
     }
 
     private var shouldShowSideLyrics: Bool {
-        shouldShowMusicPlayer && enableLyrics && !showCalendar
+        shouldShowMusicPlayer && enableLyrics
     }
     
     var body: some View {
         Group {
             if !coordinator.firstLaunch {
                 mainContent
-                    .onAppear {
-                        syncCalendarDeferred()
-                    }
-                    .onChange(of: showCalendar) { _, newValue in
-                        syncCalendarDeferred()
-                    }
             }
         }
         .transition(.opacity)
-    }
-
-    private func syncCalendarDeferred() {
-        guard showCalendar else {
-            showCalendarDeferred = false
-            calendarSyncGeneration &+= 1
-            return
-        }
-        let generation = calendarSyncGeneration
-        DispatchQueue.main.async {
-            if generation == calendarSyncGeneration {
-                showCalendarDeferred = true
-            }
-        }
     }
 
     private var mainContent: some View {
@@ -1070,31 +1006,16 @@ struct NotchHomeView: View {
                 sideLyricsContent
             } else {
                 HStack(alignment: .top, spacing: SideLyricsLayout.hStackSpacing) {
-                    if !shouldShowMusicPlayer && !showCalendar && !mirrorIsVisible {
+                    if !shouldShowMusicPlayer && !mirrorIsVisible {
                         TimelineView(.periodic(from: Calendar.current.startOfDay(for: .now), by: 60)) { context in
                             HomeIdleView(date: context.date)
                         }
                     }
 
-                    // Normal mode: Show full music player with optional calendar and webcam
+                    // Normal mode: Show full music player with optional webcam
                     if shouldShowMusicPlayer {
                         MusicPlayerView(albumArtNamespace: albumArtNamespace)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
-                    if showCalendar && showCalendarDeferred {
-                        Group {
-                            if shouldShowMusicPlayer {
-                                CalendarView()
-                            } else {
-                                StandaloneCalendarView()
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .onHover { isHovering in
-                            vm.isHoveringCalendar = isHovering
-                        }
-                        .environmentObject(vm)
                     }
 
                     if mirrorIsVisible {

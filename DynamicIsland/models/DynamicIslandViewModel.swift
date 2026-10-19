@@ -406,6 +406,9 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
 
     func open(target: NotchViews? = nil) {
         if notchState == .closed {
+            coordinator.calendarDate = Date()
+            coordinator.calendarShowsWeek = true
+            coordinator.calendarRevealEventID = nil
             coordinator.selectTabForOpening(target: target)
         }
         let targetSize = calculateDynamicNotchSize()
@@ -432,8 +435,17 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
         MusicManager.shared.forceUpdate()
     }
     
+    func openCalendar(event: EventModel) {
+        guard Defaults[.showCalendar] else { open(); return }
+        open(target: .calendar)
+        coordinator.currentView = .calendar
+        coordinator.calendarDate = event.start
+        coordinator.calendarShowsWeek = false
+        coordinator.calendarRevealEventID = event.id
+    }
+
     private func calculateDynamicNotchSize() -> CGSize {
-        let baseSize = Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize(isDynamicIslandMode: shouldUseDynamicIslandMode(for: screen)) : openNotchSize
+        let baseSize = coordinator.currentView == .calendar ? calendarOpenNotchSize() : (Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize(isDynamicIslandMode: shouldUseDynamicIslandMode(for: screen)) : openNotchSize)
         var adjustedSize = baseSize
 
         if coordinator.currentView == .llmUsage && coordinator.codexDetailPresented {
@@ -451,11 +463,6 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
             adjustedSize.height = max(adjustedSize.height, preferred)
             return adjustedSize
         }
-
-        adjustedSize = inlineLyricsAdjustedNotchSize(
-            from: adjustedSize,
-            isHomeTabActive: coordinator.currentView == .home
-        )
 
         return statsAdjustedNotchSize(
             from: adjustedSize,

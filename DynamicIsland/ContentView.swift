@@ -133,7 +133,7 @@ struct ContentView: View {
     
     // Dynamic sizing based on view type and graph count with smooth transitions
     var dynamicNotchSize: CGSize {
-        let baseSize = Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize(isDynamicIslandMode: isDynamicIslandMode) : openNotchSize
+        let baseSize = coordinator.currentView == .calendar ? calendarOpenNotchSize() : (Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize(isDynamicIslandMode: isDynamicIslandMode) : openNotchSize)
 
         if isConnectivityHUDVisible,
            let connectivitySize = NetworkConnectivityHUDMetrics.size(
@@ -237,10 +237,7 @@ struct ContentView: View {
         }
 
         guard coordinator.currentView == .stats else {
-            return inlineLyricsAdjustedNotchSize(
-                from: baseSize,
-                isHomeTabActive: coordinator.currentView == .home && vm.notchState == .open
-            )
+            return baseSize
         }
         
         let rows = statsRowCount()
@@ -1212,6 +1209,8 @@ struct ContentView: View {
                           TimerLiveActivity()
                       } else if (!isCurrentScreenExpansionVisible || currentScreenExpansionType == .reminder) && vm.notchState == .closed && reminderManager.isActive && enableReminderLiveActivity && !vm.hideOnClosed {
                           ReminderLiveActivity()
+                              .onHover { isHoveringReminderCountdown = $0 }
+                              .onDisappear { isHoveringReminderCountdown = false }
                       } else if (!isCurrentScreenExpansionVisible || currentScreenExpansionType == .recording) && vm.notchState == .closed && recordingManager.isRecording && Defaults[.enableScreenRecordingDetection] && Defaults[.showRecordingIndicator] && !vm.hideOnClosed && !musicPairingEligible {
                           RecordingLiveActivity(hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                       } else if (!isCurrentScreenExpansionVisible || currentScreenExpansionType == .download) && vm.notchState == .closed && downloadManager.isDownloading && Defaults[.enableDownloadListener] && !vm.hideOnClosed {
@@ -1287,6 +1286,13 @@ struct ContentView: View {
                                           )
                                       }
                                   }
+                                  .contentShape(Rectangle())
+                                  .onHover { isHoveringReminderCountdown = $0 }
+                              .onDisappear { isHoveringReminderCountdown = false }
+                                  .onTapGesture { vm.openCalendar(event: reminder.event) }
+                                  .accessibilityAddTraits(.isButton)
+                                  .accessibilityAction { vm.openCalendar(event: reminder.event) }
+                                  .help("Show event in calendar")
                                   .padding(.bottom, 10)
                               }
                           }
@@ -1332,6 +1338,9 @@ struct ContentView: View {
                           switch coordinator.currentView {
                               case .home:
                                   NotchHomeView(albumArtNamespace: albumArtNamespace)
+                              case .calendar:
+                                  StandaloneCalendarView(selectedDate: $coordinator.calendarDate)
+                                      .padding(8)
                               case .shelf:
                                   NotchShelfView()
                               case .timer:
@@ -1732,6 +1741,13 @@ struct ContentView: View {
                 accent: reminderColor(for: entry, now: reminderManager.currentDate),
                 notchHeight: notchHeight
             )
+            .contentShape(Rectangle())
+            .onHover { isHoveringReminderCountdown = $0 }
+                              .onDisappear { isHoveringReminderCountdown = false }
+            .onTapGesture { vm.openCalendar(event: entry.event) }
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { vm.openCalendar(event: entry.event) }
+            .help("Show event in calendar")
         case .capsLock(let showLabel):
             if showLabel {
                 MusicCapsLockLabelView(color: capsLockTintMode.color)
@@ -1865,8 +1881,14 @@ struct ContentView: View {
     }
 
     // MARK: - Private Methods
+    @State private var isHoveringReminderCountdown = false
+
     private func openNotch() {
-        vm.open()
+        if vm.notchState == .closed, isHoveringReminderCountdown, let entry = reminderManager.activeReminder {
+            vm.openCalendar(event: entry.event)
+        } else {
+            vm.open()
+        }
     }
 
     private func shouldShowClosedMusicWaveformPlayPauseOverlay(for secondary: MusicSecondaryLiveActivity?) -> Bool {
