@@ -246,38 +246,17 @@ struct BluetoothSettingsSection: View {
     /// instead of hunting for a prompt. `.notDetermined` offers to raise the
     /// system prompt; `.denied`/`.restricted` send the user to the pane that
     /// gives a refused grant back. Hidden once `.allowed`.
-    @ViewBuilder
     private var bluetoothPermissionBanner: some View {
-        switch bluetoothDevices.authorization {
-        case .allowed:
-            EmptyView()
-        case .notDetermined:
-            permissionNotice(
-                description: .settingsBluetoothPermissionNotDeterminedDescription,
-                buttonKey: .bluetoothActionRequestAuthorization,
-                action: { statusStore.requestBluetoothAuthorization() }
-            )
-        case .denied, .restricted:
-            permissionNotice(
-                description: .settingsBluetoothPermissionDeniedDescription,
-                buttonKey: .bluetoothActionOpenPermissionSettings,
-                action: { statusStore.openBluetoothPermissionSettings() }
-            )
+        let state: SettingsPermissionState = switch bluetoothDevices.authorization {
+        case .allowed: .granted
+        case .notDetermined: .notDetermined
+        case .denied: .denied
+        case .restricted: .restricted
         }
-    }
-
-    private func permissionNotice(
-        description: LocalizationKey,
-        buttonKey: LocalizationKey,
-        action: @escaping () -> Void
-    ) -> some View {
-        Section {
-            LabeledContent {
-                Button(localization.string(buttonKey), action: action)
-            } label: {
-                Label(localization.string(.settingsBluetoothPermissionRequired), systemImage: "exclamationmark.triangle.fill")
-                Text(localization.string(description)).font(.caption).foregroundStyle(.secondary)
-            }
+        return Section {
+            SettingsPermissionRow(title: "Bluetooth", message: "Allows reading Bluetooth devices and their battery levels.", state: state,
+                                  request: { statusStore.requestBluetoothAuthorization() },
+                                  openSettings: { statusStore.openBluetoothPermissionSettings() })
         }
     }
 

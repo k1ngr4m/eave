@@ -59,6 +59,7 @@ public struct MenuBarStatusSettingsView: View {
                 }
             }
             Section(localization.string(.settingsNetworkConnectionIcons)) {
+                LocationSettingsPermissionRow(message: "Optional. Allows displaying the current Wi-Fi network name.")
                 Picker(localization.string(.settingsNetworkCenterSource), selection: $settings.connectionCenterSource) {
                     Text(localization.string(.settingsNetworkCenterSourceAutomatic)).tag(ConnectionCenterSource.automatic)
                     Text(localization.string(.settingsNetworkCenterSourceInputSource)).tag(ConnectionCenterSource.inputSource)

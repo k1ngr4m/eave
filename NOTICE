@@ -45,3 +45,10 @@ Markdown block parsing, task edits and list continuation adapted from
 https://github.com/vorssaint/vorssaint-utils at commit 98a56d27.
 Copyright (C) 2026 Vorssaint. GPL-3.0-or-later (see LICENSE).
 Source: DynamicIsland/helpers/NoteMarkdown.swift.
+
+Screen text recognition
+-----------------------
+OCR request configuration, line joining and clipboard completion adapted from Vorssaint
+https://github.com/vorssaint/vorssaint-utils at commit 98a56d27.
+Copyright (C) 2026 Vorssaint. GPL-3.0-or-later (see LICENSE).
+Source: DynamicIsland/managers/ScreenTextManager.swift.

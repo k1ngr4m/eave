@@ -157,6 +157,21 @@ class CalendarManager: ObservableObject {
         }
     }
 
+    @MainActor
+    func requestAuthorization(for type: EKEntityType) async {
+        let status = EKEventStore.authorizationStatus(for: type)
+        guard status == .notDetermined || status == .writeOnly else {
+            await reloadCalendarAndReminderLists()
+            return
+        }
+        _ = await calendarService.requestAccess(to: type)
+        await reloadCalendarAndReminderLists()
+        if hasCalendarAccess {
+            await updateEvents(force: true)
+            await updateLockScreenEvents(force: true)
+        }
+    }
+
     func checkCalendarAuthorization() async {
         let status = EKEventStore.authorizationStatus(for: .event)
         calendarAuthorizationStatus = status
@@ -164,7 +179,7 @@ class CalendarManager: ObservableObject {
         switch status {
         case .notDetermined:
             let granted = await calendarService.requestAccess(to: .event)
-            calendarAuthorizationStatus = granted ? .fullAccess : .denied
+            calendarAuthorizationStatus = EKEventStore.authorizationStatus(for: .event)
             if granted {
                 await reloadCalendarAndReminderLists()
                 await updateEvents(force: true)
@@ -190,7 +205,7 @@ class CalendarManager: ObservableObject {
         switch status {
         case .notDetermined:
             let granted = await calendarService.requestAccess(to: .reminder)
-            reminderAuthorizationStatus = granted ? .fullAccess : .denied
+            reminderAuthorizationStatus = EKEventStore.authorizationStatus(for: .reminder)
             if granted {
                 await reloadCalendarAndReminderLists()
             }

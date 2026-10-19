@@ -108,7 +108,14 @@ final class FullDiskAccessPermissionStore: ObservableObject {
 
     private var pollingTask: Task<Void, Never>?
 
-    private init() {}
+    private var activationObserver: AnyCancellable?
+
+    private init() {
+        activationObserver = NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.refreshStatus() }
+            }
+    }
 
     deinit {
         pollingTask?.cancel()
@@ -136,6 +143,7 @@ final class FullDiskAccessPermissionStore: ObservableObject {
     }
 
     func openSystemSettings() {
+        beginPollingForStatusChanges()
 #if os(macOS)
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
             NSWorkspace.shared.open(url)
@@ -189,7 +197,14 @@ final class ShelfFolderAccessPermissionStore: ObservableObject {
 
     private var pollingTask: Task<Void, Never>?
 
-    private init() {}
+    private var activationObserver: AnyCancellable?
+
+    private init() {
+        activationObserver = NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.refreshStatus() }
+            }
+    }
 
     deinit {
         pollingTask?.cancel()
@@ -208,6 +223,7 @@ final class ShelfFolderAccessPermissionStore: ObservableObject {
     }
 
     func openSystemSettings() {
+        beginPollingForStatusChanges()
 #if os(macOS)
         let urls = [
             "x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders",

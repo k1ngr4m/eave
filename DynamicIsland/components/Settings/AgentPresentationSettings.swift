@@ -21,7 +21,7 @@ struct AgentPresentationSettings: View {
         Section("Agent cards") {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 8)], spacing: 8) {
                 ForEach(cards) { card in
-                    cardButton(card)
+                    cardSelection(card)
                 }
             }
             .padding(.vertical, 6)
@@ -37,9 +37,9 @@ struct AgentPresentationSettings: View {
         }
         Section {
             Toggle("Show Codex activity in the closed notch", isOn: $liveActivity)
-                .toggleStyle(.switch)
+                .disabled(!codexEnabled)
                 .settingsHighlight(id: highlightID("While agents work"))
-            if liveActivity {
+            Group {
                 Picker("Beside the camera", selection: $readout) {
                     ForEach(AgentReadout.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
@@ -53,6 +53,7 @@ struct AgentPresentationSettings: View {
                     Text("Example preview").font(.caption2).foregroundStyle(.secondary)
                 }
             }
+            .disabled(!liveActivity || !codexEnabled)
             if !codexEnabled {
                 Text("Enable the Codex provider to show its live activity.")
                     .font(.caption).foregroundStyle(.secondary)
@@ -64,26 +65,27 @@ struct AgentPresentationSettings: View {
         }
     }
 
-    private func cardButton(_ card: AgentCard) -> some View {
+    private func cardSelection(_ card: AgentCard) -> some View {
         let included = !hiddenCards.contains(card.rawValue)
-        return Button {
-            if included { hiddenCards.append(card.rawValue) }
-            else { hiddenCards.removeAll { $0 == card.rawValue } }
-        } label: {
-            VStack(spacing: 12) {
-                Image(systemName: card.symbol).font(.system(size: 24)).foregroundStyle(included ? Color.accentColor : .secondary)
-                Text(card.title).font(.callout.weight(.semibold)).lineLimit(1)
-            }
-            .frame(maxWidth: .infinity).frame(height: 96)
-            .background(.primary.opacity(included ? 0.05 : 0.025), in: RoundedRectangle(cornerRadius: 14))
-            .overlay(alignment: .topTrailing) {
-                Image(systemName: included ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(included ? Color.accentColor : .secondary)
-                    .padding(8)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: 14))
+        return VStack(spacing: 8) {
+            Image(systemName: card.symbol)
+                .font(.system(size: 24))
+                .foregroundStyle(included ? Color.accentColor : .secondary)
+                .frame(height: 60)
+                .accessibilityHidden(true)
+            Toggle(isOn: Binding(
+                get: { !hiddenCards.contains(card.rawValue) },
+                set: { shown in
+                    hiddenCards.removeAll { $0 == card.rawValue }
+                    if !shown { hiddenCards.append(card.rawValue) }
+                }
+            )) { Text(card.title) }
+            .toggleStyle(.checkbox)
+            .font(.caption)
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .padding(4)
+        .contentShape(Rectangle())
         .draggable("eave-agent-card:" + card.rawValue)
         .dropDestination(for: String.self) { items, _ in
             guard items.count == 1,

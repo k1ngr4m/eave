@@ -141,6 +141,7 @@ PrivateWorks
 *.py
 !scripts/check_qqmusic_lyrics.py
 !tests/test_privacy_configuration.py
+!tests/test_settings_permissions.py
 !tests/test_timer_lifecycle.py
 !tests/test_settings_localization.py
 !tests/test_reopen_tab.py
@@ -210,3 +211,5 @@ __pycache__/
 
 !scripts/build-desktop-ping.sh
 !tests/test_desktop_ping.py
+
+!scripts/test-screen-text.sh

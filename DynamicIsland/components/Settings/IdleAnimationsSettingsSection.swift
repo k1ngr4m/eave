@@ -52,7 +52,7 @@ struct IdleAnimationsSettingsSection: View {
     
     var body: some View {
         Section {
-            if showNotHumanFace {
+            Group {
                 // Horizontal scrollable grid of animations
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 16) {
@@ -111,12 +111,8 @@ struct IdleAnimationsSettingsSection: View {
                     .padding(.horizontal, 4)
                 }
                 .frame(height: 140)
-            } else {
-                Text("Enable \"Idle Animation\" to customize animations")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 8)
             }
+            .disabled(!showNotHumanFace)
         } header: {
             HStack {
                 Text("Idle Animation Style")

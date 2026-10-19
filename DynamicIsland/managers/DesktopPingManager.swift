@@ -49,6 +49,9 @@ final class DesktopPingManager: ObservableObject {
             DistributedNotificationCenter.default().publisher(for: Notification.Name(name))
                 .receive(on: RunLoop.main).sink { [weak self] _ in self?.locked = isLocked; self?.reconcile() }.store(in: &observers)
         }
+        AccessibilityPermissionStore.shared.$isAuthorized
+            .dropFirst().receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.reconcile() }.store(in: &observers)
         reconcile()
     }
 
@@ -63,12 +66,6 @@ final class DesktopPingManager: ObservableObject {
         failure = nil
         restarts = 0
         resetSurfaces()
-    }
-
-    func requestPermission() {
-        AccessibilityPermissionStore.shared.requestAuthorizationPrompt()
-        AccessibilityPermissionStore.shared.openSystemSettings()
-        retry()
     }
 
     func togglePause() { configuration.paused.toggle() }

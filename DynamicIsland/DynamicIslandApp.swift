@@ -885,6 +885,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 KeyboardShortcuts.isEnabled = change.newValue
+                if !change.newValue { ScreenTextManager.shared.cancel() }
                 self.updateFeatureShortcutAvailability()
             }
         }.store(in: &cancellables)
@@ -1393,6 +1394,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func registerOptionalShortcutHandlers() {
         guard !optionalShortcutHandlersRegistered else { return }
         optionalShortcutHandlersRegistered = true
+
+        KeyboardShortcuts.onKeyDown(for: .copyScreenText) {
+            guard Defaults[.enableShortcuts] else { return }
+            ScreenTextManager.shared.capture()
+        }
 
         KeyboardShortcuts.onKeyDown(for: .openMonitoring) { [weak self] in
             guard let self else { return }

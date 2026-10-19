@@ -153,7 +153,7 @@ struct StocksSettingsSection: View {
                         DynamicIslandViewCoordinator.shared.currentView = .home
                     }
                 }
-            if enabled {
+            Group {
                 Defaults.Toggle(key: .stockShowWhenClosed) { Text("Show stock price when closed") }
                 Picker("Pinned stock", selection: $pinnedCode) {
                     Text("No pinned stock").tag("")
@@ -163,6 +163,7 @@ struct StocksSettingsSection: View {
                     if !codes.contains(pinnedCode) { pinnedCode = "" }
                 }
             }
+            .disabled(!enabled)
         } header: {
             Text("Stocks")
         } footer: {
