@@ -1,5 +1,6 @@
 import SwiftUI
 import EventKit
+import UserNotifications
 
 public enum SettingsPermissionState: Equatable {
     case granted, notDetermined, denied, restricted, limited, unknown
@@ -125,3 +126,17 @@ extension SettingsPermissionState {
     }
 }
 
+
+extension SettingsPermissionState {
+    public init(notification status: UNAuthorizationStatus) {
+        if status == .authorized || status == .provisional {
+            self = .granted
+        } else if status == .notDetermined {
+            self = .notDetermined
+        } else if status == .denied {
+            self = .denied
+        } else {
+            self = .unknown
+        }
+    }
+}

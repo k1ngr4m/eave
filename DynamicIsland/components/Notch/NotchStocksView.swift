@@ -153,6 +153,8 @@ struct StocksSettingsSection: View {
                         DynamicIslandViewCoordinator.shared.currentView = .home
                     }
                 }
+        }
+        Section {
             Group {
                 Defaults.Toggle(key: .stockShowWhenClosed) { Text("Show stock price when closed") }
                 Picker("Pinned stock", selection: $pinnedCode) {

@@ -1139,6 +1139,8 @@ extension Defaults.Keys {
     static let caffeinateDefaultDuration = Key<CaffeinateDuration>("caffeinateDefaultDuration", default: .indefinite)
     static let caffeinateKeepsDisplayAwake = Key<Bool>("caffeinateKeepsDisplayAwake", default: true)
 
+    static let enableScreenText = Key<Bool>("enableScreenText", default: true)
+
     // MARK: Keyboard Shortcuts
     static let enableShortcuts = Key<Bool>("enableShortcuts", default: true)
     

@@ -1,6 +1,118 @@
 {
   "sourceLanguage": "en",
   "strings": {
+  "Display & System": {
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "显示与系统"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "顯示與系統"
+        }
+      }
+    }
+  },
+  "Optional Permissions": {
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "可选权限"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "選用權限"
+        }
+      }
+    }
+  },
+  "Notifications": {
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "通知"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "通知"
+        }
+      }
+    }
+  },
+  "Optional. Allows monitoring alerts. Basic monitoring works without it.": {
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "可选。用于发送监视告警，未授权也可使用基础监视功能。"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "選用。用於傳送監視警示，未授權也可使用基本監視功能。"
+        }
+      }
+    }
+  },
+  "Display": {
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "显示"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "顯示"
+        }
+      }
+    }
+  },
+  "Enable calendar": {
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "启用日历"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "啟用行事曆"
+        }
+      }
+    }
+  },
+  "Enable copy text from screen": {
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "启用拷贝屏幕文字"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "啟用拷貝螢幕文字"
+        }
+      }
+    }
+  },
     "Recognition" : {
       "localizations": {
         "zh-Hans": {
@@ -132,17 +244,17 @@
       }
     },
     "Configure recognition options in Utilities → Copy text from screen." : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可在“实用工具 → 拷贝屏幕文字”中配置识别选项。"
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“实用功能 → 拷贝屏幕文字”中设置识别选项。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可在“實用工具 → 拷貝屏幕文字”中配置識別選項。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「實用功能 → 拷貝螢幕文字」中設定辨識選項。"
           }
         }
       }

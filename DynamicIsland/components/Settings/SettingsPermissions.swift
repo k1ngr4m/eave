@@ -3,6 +3,7 @@ import AVFoundation
 import EaveStatus
 import EventKit
 import SwiftUI
+import UserNotifications
 
 func openPermissionSettings(_ pane: String) {
     if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_\(pane)") {
@@ -91,5 +92,43 @@ struct AudioSettingsPermissionRow: View {
         SettingsPermissionRow(title: "Audio Recording", message: "Requested when you first change an app’s volume. Audio is never saved.",
                               state: manager.isPermissionBlocked ? .denied : .unknown,
                               openSettings: { openPermissionSettings("ScreenCapture") })
+    }
+}
+
+struct NotificationsSettingsPermissionRow: View {
+    @State private var state: SettingsPermissionState = .unknown
+    @State private var requestError: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            SettingsPermissionRow(title: "Notifications", message: "Optional. Allows monitoring alerts. Basic monitoring works without it.",
+                                  state: state, request: {
+                Task {
+                    requestError = nil
+                    do {
+                        _ = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
+                    } catch {
+                        requestError = error.localizedDescription
+                    }
+                    await refresh()
+                }
+            }, openSettings: {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension") {
+                    NSWorkspace.shared.open(url)
+                }
+            })
+            if let requestError {
+                Text(requestError).font(.caption).foregroundStyle(.red)
+            }
+        }
+        .task { await refresh() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            Task { await refresh() }
+        }
+    }
+
+    private func refresh() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        state = SettingsPermissionState(notification: settings.authorizationStatus)
     }
 }

@@ -890,6 +890,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }.store(in: &cancellables)
 
+        Defaults.publisher(.enableScreenText, options: []).sink { [weak self] change in
+            Task { @MainActor [weak self] in
+                if !change.newValue { ScreenTextManager.shared.cancel() }
+                self?.updateFeatureShortcutAvailability()
+            }
+        }.store(in: &cancellables)
+
         Defaults.publisher(.enableTimerFeature, options: []).sink { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.updateFeatureShortcutAvailability()
@@ -1456,6 +1463,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func updateFeatureShortcutAvailability() {
+        updateShortcut(.copyScreenText, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableScreenText])
         updateShortcut(.openMonitoring, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableStatsFeature])
         updateShortcut(.startDemoTimer, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableTimerFeature])
         updateShortcut(.toggleTerminalTab, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableTerminalFeature])

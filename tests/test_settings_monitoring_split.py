@@ -35,8 +35,15 @@ for minimal in [false, true] {
         assert(results.allSatisfy { check.availableTabs.contains($0.tab) })
     }
 }
-assert(SettingsTab.stats.group == .system)
-assert(SettingsTab.llmAgents.group == .developer)
+check.enableMinimalisticUI = false
+private let utilities: [SettingsTab] = [.media, .timer, .calendar, .notes, .shelf, .stocks, .desktopPing, .screenText, .stats, .llmAgents, .terminal]
+assert(check.availableTabs.filter { $0.group == .utilities } == utilities)
+assert(SettingsTabGroup.allCases == [.core, .utilities, .displayAndSystem, .info])
+private let displayAndSystem: [SettingsTab] = [.liveActivities, .lockScreen, .devices, .hudAndOSD, .battery]
+assert(check.availableTabs.filter { $0.group == .displayAndSystem } == displayAndSystem)
+assert(check.availableTabs.firstIndex(of: .terminal)! < check.availableTabs.firstIndex(of: .liveActivities)!)
+assert(SettingsTab.stats.group == .utilities)
+assert(SettingsTab.llmAgents.group == .utilities)
 private let expected: [(SettingsTab, [String])] = [
     (.stats, ["Enable system stats monitoring", "Stop monitoring after closing the notch",
               "CPU Usage", "Temperature unit", "Memory Usage", "GPU Usage", "Network Activity", "Disk I/O", "Show network widget when collapsed"]),

@@ -3,7 +3,20 @@ import CoreImage
 
 @main
 struct ScreenTextChecks {
+    @MainActor
     static func main() throws {
+        let defaults = UserDefaults.standard
+        let arguments = defaults.volatileDomain(forName: UserDefaults.argumentDomain)
+        defer { defaults.setVolatileDomain(arguments, forName: UserDefaults.argumentDomain) }
+        var overrides = arguments
+        overrides["enableScreenText"] = false
+        defaults.setVolatileDomain(overrides, forName: UserDefaults.argumentDomain)
+        assert(!ScreenTextManager.isEnabled)
+        ScreenTextManager.shared.capture() // Disabled capture must return before requesting permission.
+        overrides["enableScreenText"] = true
+        defaults.setVolatileDomain(overrides, forName: UserDefaults.argumentDomain)
+        assert(ScreenTextManager.isEnabled)
+
         let size = CGSize(width: 1440, height: 900)
         let region = CGRect(x: 100, y: 50, width: 300, height: 120)
         assert(ScreenTextRecognition.pixelRect(region, viewSize: size, imageSize: size) == region)

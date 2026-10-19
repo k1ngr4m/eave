@@ -1,1366 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Enable Claude" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用 Claude"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用 Claude"
-          }
-        }
-      }
-    },
-    "Enable Codex" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用 Codex"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用 Codex"
-          }
-        }
-      }
-    },
-    "Enable Cursor" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用 Cursor"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用 Cursor"
-          }
-        }
-      }
-    },
-    "Enable Antigravity" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用 Antigravity"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用 Antigravity"
-          }
-        }
-      }
-    },
-    "Enable New API" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用 New API"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用 New API"
-          }
-        }
-      }
-    },
-    "Access Granted": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已授权"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已授權"
-          }
-        }
-      }
-    },
-    "Not Requested": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未申请"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未申請"
-          }
-        }
-      }
-    },
-    "Access Required": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "需要授权"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "需要授權"
-          }
-        }
-      }
-    },
-    "Limited Access": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "部分授权"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "部分授權"
-          }
-        }
-      }
-    },
-    "Checked When Used": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用时检查"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用時檢查"
-          }
-        }
-      }
-    },
-    "Grant Access": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "授予权限"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "授予權限"
-          }
-        }
-      }
-    },
-    "Notes Automation": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "备忘录自动化"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "備忘錄自動化"
-          }
-        }
-      }
-    },
-    "Audio Recording": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "音频录制"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "音頻錄制"
-          }
-        }
-      }
-    },
-    "Documents and Downloads": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文稿与下载文件夹"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文稿與下載文件夾"
-          }
-        }
-      }
-    },
-    "Full Disk Access": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完全磁盘访问权限"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完全磁盤訪問權限"
-          }
-        }
-      }
-    },
-    "Location": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "定位"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "定位"
-          }
-        }
-      }
-    },
-    "Bluetooth": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "蓝牙"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "藍牙"
-          }
-        }
-      }
-    },
-    "Allows the mirror to show your camera preview.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允许镜像功能显示摄像头画面。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允許鏡像功能顯示攝像頭畫面。"
-          }
-        }
-      }
-    },
-    "Allows Desktop Pings to detect the trigger key and mouse gestures.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允许桌面信号检测触发键和鼠标手势。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允許桌面信號檢測觸發鍵和鼠標手勢。"
-          }
-        }
-      }
-    },
-    "Allows reading macOS Clock timers for timer mirroring.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允许读取 macOS 时钟计时器，用于计时器镜像。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允許讀取 macOS 時鐘計時器，用於計時器鏡像。"
-          }
-        }
-      }
-    },
-    "Allows reading and managing calendar events.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允许读取和管理日历事件。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允許讀取和管理日曆事件。"
-          }
-        }
-      }
-    },
-    "Allows reading and completing reminders.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允许读取和完成提醒事项。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允許讀取和完成提醒事項。"
-          }
-        }
-      }
-    },
-    "Allows Shelf to read these folders. Not required when Full Disk Access is granted.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允许暂存架读取这些文件夹；已授予完全磁盘访问权限时无需单独授权。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允許暫存架讀取這些文件夾；已授予完全磁盤訪問權限時無需單獨授權。"
-          }
-        }
-      }
-    },
-    "Optional. Allows Shelf to read files outside Documents and Downloads.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可选。允许暂存架读取文稿和下载文件夹以外的文件。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可選。允許暫存架讀取文稿和下載文件夾以外的文件。"
-          }
-        }
-      }
-    },
-    "Optional. Enables custom Focus icons, colors, and labels. Standard Focus detection works without it.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可选。启用自定义专注模式图标、颜色和名称；基础专注模式检测无需此权限。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可選。啓用自定義專注模式圖標、顏色和名稱；基礎專注模式檢測無需此權限。"
-          }
-        }
-      }
-    },
-    "Allows capturing the selected area. Text and QR codes are recognized offline.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允许截取选区；文字与二维码均在本机离线识别。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允許截取選區；文字與二維碼均在本機離線識別。"
-          }
-        }
-      }
-    },
-    "Allows reading Bluetooth devices and their battery levels.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允许读取蓝牙设备及其电量。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允許讀取藍牙設備及其電量。"
-          }
-        }
-      }
-    },
-    "Optional. Allows weather to use your current location.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可选。允许天气使用当前位置。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可選。允許天氣使用當前位置。"
-          }
-        }
-      }
-    },
-    "Optional. Allows displaying the current Wi-Fi network name.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可选。允许显示当前 Wi-Fi 网络名称。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可選。允許顯示當前 Wi-Fi 網絡名稱。"
-          }
-        }
-      }
-    },
-    "Allows syncing with Apple Notes. Other note features work without it.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允许与 Apple 备忘录同步；其他笔记功能无需此权限。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允許與 Apple 備忘錄同步；其他筆記功能無需此權限。"
-          }
-        }
-      }
-    },
-    "Requested when you first change an app’s volume. Audio is never saved.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "首次调整应用音量时申请；不会保存音频。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "首次調整應用音量時申請；不會保存音頻。"
-          }
-        }
-      }
-    },
-    "Use album artwork colors for player controls" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "播放器控件使用专辑封面颜色"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "播放器控制項使用專輯封面顏色"
-          }
-        }
-      }
-    },
-    "Use colored spectrograms" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用彩色频谱图"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用彩色頻譜圖"
-          }
-        }
-      }
-    },
-    "Enable timer" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用计时器"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用計時器"
-          }
-        }
-      }
-    },
-    "Enable idle animation" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用空闲动画"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用閒置動畫"
-          }
-        }
-      }
-    },
-    "Show menu bar icon" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示菜单栏图标"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示選單列圖示"
-          }
-        }
-      }
-    },
-    "Show dynamic status icon in Dock" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在程序坞显示动态状态图标"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 Dock 顯示動態狀態圖示"
-          }
-        }
-      }
-    },
-    "Show settings icon in the notch" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在刘海中显示设置图标"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在瀏海中顯示設定圖示"
-          }
-        }
-      }
-    },
-    "Show charging HUD" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示充电提示"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示充電提示"
-          }
-        }
-      }
-    },
-    "Show low battery HUD" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示低电量提示"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示低電量提示"
-          }
-        }
-      }
-    },
-    "Show fully charged HUD" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示充满电提示"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示充滿電提示"
-          }
-        }
-      }
-    },
-    "Show volume HUD" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示音量提示"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示音量提示"
-          }
-        }
-      }
-    },
-    "Show brightness HUD" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示亮度提示"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示亮度提示"
-          }
-        }
-      }
-    },
-    "Show keyboard backlight HUD" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示键盘背光提示"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示鍵盤背光提示"
-          }
-        }
-      }
-    },
-    "Show volume OSD" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示音量屏幕提示"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示音量螢幕提示"
-          }
-        }
-      }
-    },
-    "Show brightness OSD" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示亮度屏幕提示"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示亮度螢幕提示"
-          }
-        }
-      }
-    },
-    "Show keyboard backlight OSD" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示键盘背光屏幕提示"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示鍵盤背光螢幕提示"
-          }
-        }
-      }
-    },
-    "Enable close gesture" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用关闭手势"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用關閉手勢"
-          }
-        }
-      }
-    },
-    "Enable horizontal media gestures" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用横向媒体切换手势"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用橫向媒體切換手勢"
-          }
-        }
-      }
-    },
-    "Expand drag detection area" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "扩大拖拽检测区域"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "擴大拖移偵測區域"
-          }
-        }
-      }
-    },
-    "Scale corner radius with notch size" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圆角随刘海尺寸缩放"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圓角隨瀏海尺寸縮放"
-          }
-        }
-      }
-    },
-    "Use color-coded volume display" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用音量分级配色"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用音量分級配色"
-          }
-        }
-      }
-    },
-    "Use color-coded battery display" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用电量分级配色"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用電量分級配色"
-          }
-        }
-      }
-    },
-    "Use smooth color transitions" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用平滑颜色过渡"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用平滑色彩過渡"
-          }
-        }
-      }
-    },
-    "Enable drag to adjust" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用拖动调节"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用拖移調整"
-          }
-        }
-      }
-    },
-    "Enable direct display volume control (DDC)" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用显示器音量直接控制（DDC）"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用顯示器音量直接控制（DDC）"
-          }
-        }
-      }
-    },
-    "Enable waveform scrubbing" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用波形拖动定位"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用波形拖移定位"
-          }
-        }
-      }
-    },
-    "Show fullscreen artwork on right-click" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "右键点击时显示全屏封面"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按右鍵時顯示全螢幕封面"
-          }
-        }
-      }
-    },
-    "Use bright colors for bold text" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "粗体文字使用明亮颜色"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "粗體文字使用明亮色彩"
-          }
-        }
-      }
-    },
-    "Use Option as Meta key" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将 Option 用作 Meta 键"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將 Option 用作 Meta 鍵"
-          }
-        }
-      }
-    },
-    "Play desktop sounds" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "播放桌面音效"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "播放桌面音效"
-          }
-        }
-      }
-    },
-    "Play wheel tick sound" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "播放轮盘提示音"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "播放輪盤提示音"
-          }
-        }
-      }
-    },
-    "Play emote sounds" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "播放表情音效"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "播放表情音效"
-          }
-        }
-      }
-    },
-    "Enable minimalistic UI" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用简约界面"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用簡約介面"
-          }
-        }
-      }
-    },
-    "Show percentage" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示百分比"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示百分比"
-          }
-        }
-      }
-    },
-    "Enable screen recording detection" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用屏幕录制检测"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用螢幕錄製偵測"
-          }
-        }
-      }
-    },
-    "Show recording indicator" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示录制指示器"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示錄製指示器"
-          }
-        }
-      }
-    },
-    "Enable Focus detection" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用专注模式检测"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用專注模式偵測"
-          }
-        }
-      }
-    },
-    "Show Focus indicator" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示专注指示器"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示專注指示器"
-          }
-        }
-      }
-    },
-    "Show Focus label" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示专注标签"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示專注標籤"
-          }
-        }
-      }
-    },
-    "Show Caps Lock indicator" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示 Caps Lock 指示器"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示 Caps Lock 指示器"
-          }
-        }
-      }
-    },
-    "Enable camera detection" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用相机检测"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用相機偵測"
-          }
-        }
-      }
-    },
-    "Enable microphone detection" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用麦克风检测"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用麥克風偵測"
-          }
-        }
-      }
-    },
-    "Enable dynamic mirror" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用动态镜像"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用動態鏡像"
-          }
-        }
-      }
-    },
-    "Enable notes" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用笔记"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用筆記"
-          }
-        }
-      }
-    },
-    "Enable note pinning" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用笔记固定"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用筆記固定"
-          }
-        }
-      }
-    },
-    "Enable note search" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用笔记搜索"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用筆記搜尋"
-          }
-        }
-      }
-    },
-    "Enable color filtering" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用颜色过滤"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用顏色篩選"
-          }
-        }
-      }
-    },
-    "Enable creation from clipboard" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用从剪贴板创建"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用從剪貼簿建立"
-          }
-        }
-      }
-    },
-    "Show character count" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示字符数"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示字元數"
-          }
-        }
-      }
-    },
-    "Enable desktop pings" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用桌面信号"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用桌面訊號"
-          }
-        }
-      }
-    },
-    "Enable emotes" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用表情"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用表情"
-          }
-        }
-      }
-    },
-    "Enable system control overlays" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用系统控制提示"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用系統控制提示"
-          }
-        }
-      }
-    },
-    "Desktop sounds control ping and emote audio." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "桌面音效控制信号和表情的声音。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "桌面音效控制訊號和表情的聲音。"
-          }
-        }
-      }
-    },
-    "Emote sounds use the desktop sounds switch and volume." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表情音效使用桌面音效开关和音量。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表情音效使用桌面音效開關和音量。"
-          }
-        }
-      }
-    },
     "" : {
       "localizations" : {
         "ar" : {
@@ -5158,6 +3798,7 @@
     },
     "±10 Seconds" : {
       "comment" : "Display name for the \"±10 Seconds\" music skip behavior option.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -5708,6 +4349,7 @@
     },
     "3 lines" : {
       "comment" : "Pinned lyrics setting in Media settings.",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -5942,6 +4584,7 @@
       }
     },
     "4 hours" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5987,6 +4630,7 @@
     },
     "5 lines" : {
       "comment" : "Pinned lyrics setting in Media settings.",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6384,6 +5028,7 @@
       }
     },
     "15 minutes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6589,6 +5234,7 @@
       }
     },
     "30 minutes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6930,6 +5576,7 @@
     },
     "Accent" : {
       "comment" : "Display name for the caps lock indicator tint mode.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -7263,6 +5910,40 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "被拒絕存取"
+          }
+        }
+      }
+    },
+    "Access Granted" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已授权"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已授權"
+          }
+        }
+      }
+    },
+    "Access Required" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要授权"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要授權"
           }
         }
       }
@@ -7980,6 +6661,7 @@
     },
     "Adaptive gradient" : {
       "comment" : "Display name for the timer icon color mode: adaptive gradient.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -8027,6 +6709,7 @@
       }
     },
     "Adapts based on power source and battery level." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -10539,17 +9222,17 @@
       }
     },
     "Allow screen recording to capture the selected area. Text and QR codes are recognized offline." : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允许屏幕录制以截取选区。文字与二维码均在本机离线识别。"
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许屏幕录制以截取选区。文字与二维码均在本机离线识别。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允許屏幕錄制以截取選區。文字與二維碼均在本機離線識別。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允許屏幕錄制以截取選區。文字與二維碼均在本機離線識別。"
           }
         }
       }
@@ -10605,6 +9288,159 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "允許的功能"
+          }
+        }
+      }
+    },
+    "Allows capturing the selected area. Text and QR codes are recognized offline." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许截取选区；文字与二维码均在本机离线识别。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允許截取選區；文字與二維碼均在本機離線識別。"
+          }
+        }
+      }
+    },
+    "Allows Desktop Pings to detect the trigger key and mouse gestures." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许桌面信号检测触发键和鼠标手势。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允許桌面信號檢測觸發鍵和鼠標手勢。"
+          }
+        }
+      }
+    },
+    "Allows reading and completing reminders." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许读取和完成提醒事项。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允許讀取和完成提醒事項。"
+          }
+        }
+      }
+    },
+    "Allows reading and managing calendar events." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许读取和管理日历事件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允許讀取和管理日曆事件。"
+          }
+        }
+      }
+    },
+    "Allows reading Bluetooth devices and their battery levels." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许读取蓝牙设备及其电量。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允許讀取藍牙設備及其電量。"
+          }
+        }
+      }
+    },
+    "Allows reading macOS Clock timers for timer mirroring." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许读取 macOS 时钟计时器，用于计时器镜像。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允許讀取 macOS 時鐘計時器，用於計時器鏡像。"
+          }
+        }
+      }
+    },
+    "Allows Shelf to read these folders. Not required when Full Disk Access is granted." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许暂存架读取这些文件夹；已授予完全磁盘访问权限时无需单独授权。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允許暫存架讀取這些文件夾；已授予完全磁盤訪問權限時無需單獨授權。"
+          }
+        }
+      }
+    },
+    "Allows syncing with Apple Notes. Other note features work without it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许与 Apple 备忘录同步；其他笔记功能无需此权限。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允許與 Apple 備忘錄同步；其他筆記功能無需此權限。"
+          }
+        }
+      }
+    },
+    "Allows the mirror to show your camera preview." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许镜像功能显示摄像头画面。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允許鏡像功能顯示攝像頭畫面。"
           }
         }
       }
@@ -11124,6 +9960,7 @@
       }
     },
     "Antigravity" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12097,6 +10934,23 @@
         }
       }
     },
+    "Audio Recording" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音频录制"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音頻錄制"
+          }
+        }
+      }
+    },
     "Authorize" : {
       "comment" : "A button that authorizes an app extension.",
       "extractionState" : "stale",
@@ -12359,6 +11213,7 @@
       }
     },
     "Automatic" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -12997,6 +11852,7 @@
       }
     },
     "Balanced" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -13020,6 +11876,7 @@
     },
     "Bar" : {
       "comment" : "Name of the timer progress style that shows a horizontal bar.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -14526,6 +13383,23 @@
         }
       }
     },
+    "Bluetooth" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "蓝牙"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "藍牙"
+          }
+        }
+      }
+    },
     "Bluetooth Audio Devices" : {
       "comment" : "A section header that lists Bluetooth audio devices.",
       "isCommentAutoGenerated" : true,
@@ -14673,6 +13547,7 @@
       }
     },
     "Bold text as bright colors" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -15069,6 +13944,7 @@
       }
     },
     "Brightness HUD" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -15128,6 +14004,7 @@
     },
     "Brightness OSD" : {
       "comment" : "A label for a toggle that controls whether the brightness OSD is enabled",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -15838,6 +14715,7 @@
     },
     "Calendar or Reminder access is denied. Please enable it in System Settings." : {
       "comment" : "A message displayed when a user has denied access to the calendar or reminders on their device. It instructs the user to open System Settings to grant access.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "de" : {
@@ -15943,6 +14821,7 @@
       }
     },
     "Calendars" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -17020,6 +15899,7 @@
       }
     },
     "Charging HUD" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -17344,6 +16224,23 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "檢查更新…"
+          }
+        }
+      }
+    },
+    "Checked When Used" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用时检查"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用時檢查"
           }
         }
       }
@@ -19258,6 +18155,7 @@
       }
     },
     "Close gesture" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -19686,6 +18584,7 @@
       }
     },
     "Color-coded battery display" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -19840,6 +18739,7 @@
       }
     },
     "Color-coded Volume" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -19886,6 +18786,7 @@
       }
     },
     "Color-coded volume display" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -20131,6 +19032,7 @@
       }
     },
     "Compact" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -20721,17 +19623,17 @@
       }
     },
     "Configure recognition options in Utilities → Copy text from screen." : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可在“实用工具 → 拷贝屏幕文字”中配置识别选项。"
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“实用功能 → 拷贝屏幕文字”中设置识别选项。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可在“實用工具 → 拷貝屏幕文字”中配置識別選項。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「實用功能 → 拷貝螢幕文字」中設定辨識選項。"
           }
         }
       }
@@ -21814,33 +20716,33 @@
       }
     },
     "Copy text from screen" : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "拷贝屏幕文字"
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拷贝屏幕文字"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "拷貝屏幕文字"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拷貝屏幕文字"
           }
         }
       }
     },
     "Copy text from screen:" : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "拷贝屏幕文字："
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拷贝屏幕文字："
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "拷貝屏幕文字："
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拷貝屏幕文字："
           }
         }
       }
@@ -22056,6 +20958,7 @@
       }
     },
     "Corner radius scaling" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -22572,6 +21475,7 @@
     },
     "Current" : {
       "comment" : "Pinned lyrics setting in Media settings.",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -23328,6 +22232,7 @@
       }
     },
     "Custom Focus metadata" : {
+      "extractionState" : "stale",
       "localizations" : {
         "hu" : {
           "stringUnit" : {
@@ -25588,6 +24493,7 @@
       }
     },
     "Denied" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -25990,6 +24896,22 @@
         }
       }
     },
+    "Desktop sounds control ping and emote audio." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "桌面音效控制信号和表情的声音。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "桌面音效控制訊號和表情的聲音。"
+          }
+        }
+      }
+    },
     "DesktopPing.Direction.Down" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26381,6 +25303,7 @@
     },
     "Digital" : {
       "comment" : "The display name for the \"Digital\" reminder presentation style.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -26480,6 +25403,7 @@
       }
     },
     "Direct display volume control (DDC)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -27470,6 +26394,39 @@
         }
       }
     },
+    "Display" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示"
+          }
+        }
+      }
+    },
+    "Display & System" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示与系统"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示與系統"
+          }
+        }
+      }
+    },
     "Display Options" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -27866,6 +26823,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "文檔"
+          }
+        }
+      }
+    },
+    "Documents and Downloads" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文稿与下载文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文稿與下載文件夾"
           }
         }
       }
@@ -29277,6 +28251,7 @@
       }
     },
     "Dynamic status icon in Dock" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -30408,6 +29383,22 @@
         }
       }
     },
+    "Emote sounds use the desktop sounds switch and volume." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "表情音效使用桌面音效开关和音量。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "表情音效使用桌面音效開關和音量。"
+          }
+        }
+      }
+    },
     "Emote Trigger" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30523,6 +29514,7 @@
       }
     },
     "Enable \"Idle Animation\" to customize animations" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -30792,6 +29784,22 @@
         }
       }
     },
+    "Enable Antigravity" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用 Antigravity"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用 Antigravity"
+          }
+        }
+      }
+    },
     "Enable blur effect behind album art" : {
       "localizations" : {
         "ko" : {
@@ -30944,6 +29952,22 @@
         }
       }
     },
+    "Enable calendar" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用日历"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用行事曆"
+          }
+        }
+      }
+    },
     "Enable Calendar Access" : {
       "localizations" : {
         "ko" : {
@@ -31048,7 +30072,24 @@
         }
       }
     },
+    "Enable camera detection" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用相机检测"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用相機偵測"
+          }
+        }
+      }
+    },
     "Enable Camera Detection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -31094,7 +30135,72 @@
         }
       }
     },
+    "Enable Claude" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用 Claude"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用 Claude"
+          }
+        }
+      }
+    },
+    "Enable close gesture" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用关闭手势"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用關閉手勢"
+          }
+        }
+      }
+    },
+    "Enable Codex" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用 Codex"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用 Codex"
+          }
+        }
+      }
+    },
+    "Enable color filtering" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用颜色过滤"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用顏色篩選"
+          }
+        }
+      }
+    },
     "Enable Color Filtering" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -31141,6 +30247,7 @@
       }
     },
     "Enable colored spectograms" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -31188,6 +30295,7 @@
     },
     "Enable colored spectrograms" : {
       "comment" : "merge:ko:alt='색상 스펙트로그램 활성화'",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -31305,7 +30413,24 @@
         }
       }
     },
+    "Enable copy text from screen" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用拷贝屏幕文字"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用拷貝螢幕文字"
+          }
+        }
+      }
+    },
     "Enable Create from Clipboard" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -31347,6 +30472,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "啟用從剪貼簿建立"
+          }
+        }
+      }
+    },
+    "Enable creation from clipboard" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用从剪贴板创建"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用從剪貼簿建立"
+          }
+        }
+      }
+    },
+    "Enable Cursor" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用 Cursor"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用 Cursor"
           }
         }
       }
@@ -31422,6 +30579,22 @@
         }
       }
     },
+    "Enable desktop pings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用桌面信号"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用桌面訊號"
+          }
+        }
+      }
+    },
     "Enable Desktop Pings" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31435,6 +30608,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "啟用桌面訊號"
+          }
+        }
+      }
+    },
+    "Enable direct display volume control (DDC)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用显示器音量直接控制（DDC）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用顯示器音量直接控制（DDC）"
           }
         }
       }
@@ -31481,6 +30670,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "啟用下載偵測"
+          }
+        }
+      }
+    },
+    "Enable drag to adjust" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用拖动调节"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用拖移調整"
           }
         }
       }
@@ -31597,7 +30802,24 @@
         }
       }
     },
+    "Enable dynamic mirror" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用动态镜像"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用動態鏡像"
+          }
+        }
+      }
+    },
     "Enable Dynamic mirror" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -31639,6 +30861,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "啟用動態鏡像"
+          }
+        }
+      }
+    },
+    "Enable emotes" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用表情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用表情"
           }
         }
       }
@@ -31812,7 +31050,24 @@
         }
       }
     },
+    "Enable Focus detection" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用专注模式检测"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用專注模式偵測"
+          }
+        }
+      }
+    },
     "Enable Focus Detection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -31951,6 +31206,7 @@
       }
     },
     "Enable global keyboard shortcuts above to customize your shortcuts." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -32003,17 +31259,17 @@
       }
     },
     "Enable global keyboard shortcuts in Shortcuts settings to use this binding." : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请在“快捷键”设置中启用全局快捷键，以使用此组合键。"
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在“快捷键”设置中启用全局快捷键，以使用此组合键。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請在“快捷鍵”設置中啓用全局快捷鍵，以使用此組合鍵。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在“快捷鍵”設置中啓用全局快捷鍵，以使用此組合鍵。"
           }
         }
       }
@@ -32236,6 +31492,22 @@
         }
       }
     },
+    "Enable horizontal media gestures" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用横向媒体切换手势"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用橫向媒體切換手勢"
+          }
+        }
+      }
+    },
     "Enable HUD replacement" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -32351,6 +31623,22 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "啟用 HUD 替換"
+          }
+        }
+      }
+    },
+    "Enable idle animation" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用空闲动画"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用閒置動畫"
           }
         }
       }
@@ -32598,7 +31886,24 @@
         }
       }
     },
+    "Enable microphone detection" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用麦克风检测"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用麥克風偵測"
+          }
+        }
+      }
+    },
     "Enable Microphone Detection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -32644,7 +31949,24 @@
         }
       }
     },
+    "Enable minimalistic UI" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用简约界面"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用簡約介面"
+          }
+        }
+      }
+    },
     "Enable Minimalistic UI" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -32808,7 +32130,40 @@
         }
       }
     },
+    "Enable New API" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用 New API"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用 New API"
+          }
+        }
+      }
+    },
+    "Enable note pinning" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用笔记固定"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用筆記固定"
+          }
+        }
+      }
+    },
     "Enable Note Pinning" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -32854,7 +32209,24 @@
         }
       }
     },
+    "Enable note search" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用笔记搜索"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用筆記搜尋"
+          }
+        }
+      }
+    },
     "Enable Note Search" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -32900,7 +32272,24 @@
         }
       }
     },
+    "Enable notes" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用笔记"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用筆記"
+          }
+        }
+      }
+    },
     "Enable Notes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -33054,7 +32443,24 @@
         }
       }
     },
+    "Enable screen recording detection" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用屏幕录制检测"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用螢幕錄製偵測"
+          }
+        }
+      }
+    },
     "Enable Screen Recording Detection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -33253,6 +32659,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在設定中啟用統計監控以檢視系統效能資料。"
+          }
+        }
+      }
+    },
+    "Enable system control overlays" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用系统控制提示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用系統控制提示"
           }
         }
       }
@@ -33691,7 +33113,24 @@
         }
       }
     },
+    "Enable timer" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用计时器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用計時器"
+          }
+        }
+      }
+    },
     "Enable timer feature" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -33833,6 +33272,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "啟用後透過 Eave 的活躍 HUD 樣式傳遞 BetterDisplay 或 Lunar 的顯示調整。"
+          }
+        }
+      }
+    },
+    "Enable waveform scrubbing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用波形拖动定位"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用波形拖移定位"
           }
         }
       }
@@ -34804,6 +34259,22 @@
         }
       }
     },
+    "Expand drag detection area" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "扩大拖拽检测区域"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "擴大拖移偵測區域"
+          }
+        }
+      }
+    },
     "Expand notch to follow animation width" : {
       "comment" : "merge:ko:alt='애니메이션 너비에 맞춰 노치 확장하기'",
       "localizations" : {
@@ -34859,6 +34330,7 @@
     },
     "Expanded drag detection area" : {
       "comment" : "A toggle that lets users enable or disable expanded drag detection.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -37002,6 +36474,7 @@
       }
     },
     "Full Access" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -37186,6 +36659,7 @@
       }
     },
     "Full Calendar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -37301,6 +36775,23 @@
         }
       }
     },
+    "Full Disk Access" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完全磁盘访问权限"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完全磁盤訪問權限"
+          }
+        }
+      }
+    },
     "Full Disk Access for global mode" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -37382,6 +36873,7 @@
       }
     },
     "Full Disk Access unlocks custom Focus icons, colors, and labels. Standard Focus detection still works without it—grant access only if you need personalized indicators." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -37428,6 +36920,7 @@
       }
     },
     "Fullscreen artwork on right-click" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -37527,6 +37020,7 @@
       }
     },
     "Fully charged HUD" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -39013,7 +38507,25 @@
         }
       }
     },
+    "Grant Access" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "授予权限"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "授予權限"
+          }
+        }
+      }
+    },
     "Grant Screen Recording Access" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -39101,6 +38613,7 @@
     },
     "Green" : {
       "comment" : "Display name for the green caps lock indicator tint mode.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -40246,6 +39759,7 @@
       }
     },
     "High Performance" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -41374,6 +40888,7 @@
       }
     },
     "Idle Animation" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -42006,6 +41521,7 @@
       }
     },
     "Indicator only" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -42667,6 +42183,7 @@
       }
     },
     "Interactive (Drag to Change)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -42996,17 +42513,17 @@
       }
     },
     "Join recognized lines into one paragraph. Chinese text is joined without extra spaces." : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移除识别文本中的换行，使内容粘贴为一个段落；中文之间不额外添加空格。"
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除识别文本中的换行，使内容粘贴为一个段落；中文之间不额外添加空格。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移除識別文本中的換行，使內容粘貼為一個段落；中文之間不額外添加空格。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除識別文本中的換行，使內容粘貼為一個段落；中文之間不額外添加空格。"
           }
         }
       }
@@ -43341,6 +42858,7 @@
       }
     },
     "Keyboard Backlight HUD" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -43400,6 +42918,7 @@
     },
     "Keyboard Backlight OSD" : {
       "comment" : "A label displayed above the toggle for the keyboard backlight OSD.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -43453,6 +42972,7 @@
       }
     },
     "Keyboard shortcuts are disabled" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -44525,6 +44045,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "노래 좋아요"
+          }
+        }
+      }
+    },
+    "Limited Access" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分授权"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分授權"
           }
         }
       }
@@ -45739,6 +45276,23 @@
         }
       }
     },
+    "Location" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "定位"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "定位"
+          }
+        }
+      }
+    },
     "Lock" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -46903,6 +46457,7 @@
       }
     },
     "Low battery HUD" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -48715,6 +48270,7 @@
     },
     "Media & Display" : {
       "comment" : "Display title for the section header for settings related to media and display.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -48763,6 +48319,7 @@
     },
     "Media change with horizontal gestures" : {
       "comment" : "A toggle that lets the user enable or disable the feature of changing the currently playing media using horizontal gestures.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ar" : {
@@ -49228,6 +48785,7 @@
       }
     },
     "Media Output" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -50103,6 +49661,7 @@
       }
     },
     "Menubar icon" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -50998,6 +50557,7 @@
       }
     },
     "Mini View" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -53476,6 +53036,7 @@
       }
     },
     "New API" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -55809,6 +55370,7 @@
       }
     },
     "Not Determined" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -56021,6 +55583,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未錄製"
+          }
+        }
+      }
+    },
+    "Not Requested" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未申请"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未申請"
           }
         }
       }
@@ -56603,6 +56182,23 @@
         }
       }
     },
+    "Notes Automation" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "备忘录自动化"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "備忘錄自動化"
+          }
+        }
+      }
+    },
     "Notes returned an empty response." : {
       "comment" : "Error message when the Notes script returns an empty response.",
       "isCommentAutoGenerated" : true,
@@ -56731,6 +56327,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "暫無內容播放"
+          }
+        }
+      }
+    },
+    "Notifications" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知"
           }
         }
       }
@@ -58082,6 +57695,7 @@
       }
     },
     "Open Privacy & Security" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -58475,6 +58089,7 @@
       }
     },
     "Option as Meta key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -58566,7 +58181,109 @@
         }
       }
     },
+    "Optional Permissions" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可选权限"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選用權限"
+          }
+        }
+      }
+    },
+    "Optional. Allows displaying the current Wi-Fi network name." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可选。允许显示当前 Wi-Fi 网络名称。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可選。允許顯示當前 Wi-Fi 網絡名稱。"
+          }
+        }
+      }
+    },
+    "Optional. Allows monitoring alerts. Basic monitoring works without it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可选。用于发送监视告警，未授权也可使用基础监视功能。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選用。用於傳送監視警示，未授權也可使用基本監視功能。"
+          }
+        }
+      }
+    },
+    "Optional. Allows Shelf to read files outside Documents and Downloads." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可选。允许暂存架读取文稿和下载文件夹以外的文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可選。允許暫存架讀取文稿和下載文件夾以外的文件。"
+          }
+        }
+      }
+    },
+    "Optional. Allows weather to use your current location." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可选。允许天气使用当前位置。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可選。允許天氣使用當前位置。"
+          }
+        }
+      }
+    },
+    "Optional. Enables custom Focus icons, colors, and labels. Standard Focus detection works without it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可选。启用自定义专注模式图标、颜色和名称；基础专注模式检测无需此权限。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可選。啓用自定義專注模式圖標、顏色和名稱；基礎專注模式檢測無需此權限。"
+          }
+        }
+      }
+    },
     "Original lyrics" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -60043,6 +59760,38 @@
         }
       }
     },
+    "Play desktop sounds" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放桌面音效"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放桌面音效"
+          }
+        }
+      }
+    },
+    "Play emote sounds" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放表情音效"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放表情音效"
+          }
+        }
+      }
+    },
     "Play feedback when volume is changed" : {
       "localizations" : {
         "ko" : {
@@ -60194,6 +59943,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "播放一次"
+          }
+        }
+      }
+    },
+    "Play wheel tick sound" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放轮盘提示音"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放輪盤提示音"
           }
         }
       }
@@ -60635,6 +60400,7 @@
       }
     },
     "Power Saver" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -61550,6 +61316,7 @@
     },
     "Productivity" : {
       "comment" : "Title of a settings tab group related to productivity features.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -62764,17 +62531,17 @@
       }
     },
     "Read QR codes" : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "读取二维码"
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "读取二维码"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "讀取二維碼"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讀取二維碼"
           }
         }
       }
@@ -62937,17 +62704,17 @@
       }
     },
     "Recognition" : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "识别选项"
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "识别选项"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "識別選項"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "識別選項"
           }
         }
       }
@@ -63966,6 +63733,7 @@
       }
     },
     "Reminders" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -64305,17 +64073,17 @@
       }
     },
     "Remove line breaks" : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移除换行"
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除换行"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移除換行"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除換行"
           }
         }
       }
@@ -64552,6 +64320,7 @@
       }
     },
     "Request Access" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -64610,6 +64379,7 @@
       }
     },
     "Request Full Disk Access" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -64651,6 +64421,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "請求完整磁碟取用權"
+          }
+        }
+      }
+    },
+    "Requested when you first change an app’s volume. Audio is never saved." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "首次调整应用音量时申请；不会保存音频。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "首次調整應用音量時申請；不會保存音頻。"
           }
         }
       }
@@ -66145,6 +65932,7 @@
       }
     },
     "Restricted" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -66619,6 +66407,7 @@
     },
     "Ring" : {
       "comment" : "The name of the timer progress style that shows a ring shape.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -67138,6 +66927,22 @@
         }
       }
     },
+    "Scale corner radius with notch size" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圆角随刘海尺寸缩放"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圓角隨瀏海尺寸縮放"
+          }
+        }
+      }
+    },
     "Scale Down" : {
       "localizations" : {
         "fr" : {
@@ -67525,6 +67330,7 @@
       }
     },
     "Screen Recording access granted" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -67545,17 +67351,17 @@
       }
     },
     "Screen Text" : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "屏幕文字"
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "屏幕文字"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "屏幕文字"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "屏幕文字"
           }
         }
       }
@@ -67763,6 +67569,7 @@
       }
     },
     "Scrubbable real-time waveform" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -68214,17 +68021,17 @@
       }
     },
     "Select an area on any display. Recognized text is copied so you can paste it anywhere." : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "选择任意显示器上的一块区域，识别出的文字会被拷贝，随时可以粘贴。"
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择任意显示器上的一块区域，识别出的文字会被拷贝，随时可以粘贴。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選擇任意顯示器上的一塊區域，識別出的文字會被拷貝，隨時可以粘貼。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇任意顯示器上的一塊區域，識別出的文字會被拷貝，隨時可以粘貼。"
           }
         }
       }
@@ -69384,6 +69191,7 @@
       }
     },
     "Settings icon in notch" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -70372,7 +70180,40 @@
         }
       }
     },
+    "Show brightness HUD" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示亮度提示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示亮度提示"
+          }
+        }
+      }
+    },
+    "Show brightness OSD" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示亮度屏幕提示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示亮度螢幕提示"
+          }
+        }
+      }
+    },
     "Show calendar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -70418,7 +70259,24 @@
         }
       }
     },
+    "Show Caps Lock indicator" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示 Caps Lock 指示器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示 Caps Lock 指示器"
+          }
+        }
+      }
+    },
     "Show Caps Lock Indicator" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -70527,7 +70385,24 @@
         }
       }
     },
+    "Show character count" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示字符数"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示字元數"
+          }
+        }
+      }
+    },
     "Show Character Count" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -70569,6 +70444,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顯示字元數"
+          }
+        }
+      }
+    },
+    "Show charging HUD" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示充电提示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示充電提示"
           }
         }
       }
@@ -71024,6 +70915,22 @@
         }
       }
     },
+    "Show dynamic status icon in Dock" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在程序坞显示动态状态图标"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Dock 顯示動態狀態圖示"
+          }
+        }
+      }
+    },
     "Show event after it starts" : {
       "localizations" : {
         "ko" : {
@@ -71424,7 +71331,24 @@
         }
       }
     },
+    "Show Focus indicator" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示专注指示器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示專注指示器"
+          }
+        }
+      }
+    },
     "Show Focus Indicator" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -71470,7 +71394,24 @@
         }
       }
     },
+    "Show Focus label" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示专注标签"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示專注標籤"
+          }
+        }
+      }
+    },
     "Show Focus Label" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -71616,6 +71557,38 @@
         }
       }
     },
+    "Show fullscreen artwork on right-click" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右键点击时显示全屏封面"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按右鍵時顯示全螢幕封面"
+          }
+        }
+      }
+    },
+    "Show fully charged HUD" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示充满电提示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示充滿電提示"
+          }
+        }
+      }
+    },
     "Show GPU widget when collapsed" : {
       "localizations" : {
         "zh-Hans" : {
@@ -71660,6 +71633,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在劉海中顯示保持喚醒圖標"
+          }
+        }
+      }
+    },
+    "Show keyboard backlight HUD" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示键盘背光提示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示鍵盤背光提示"
+          }
+        }
+      }
+    },
+    "Show keyboard backlight OSD" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示键盘背光屏幕提示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示鍵盤背光螢幕提示"
           }
         }
       }
@@ -71917,6 +71922,7 @@
       }
     },
     "Show lock screen timer widget" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -72004,6 +72010,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顯示鎖定畫面天氣"
+          }
+        }
+      }
+    },
+    "Show low battery HUD" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示低电量提示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示低電量提示"
           }
         }
       }
@@ -72145,6 +72167,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "收起時顯示記憶體小工具"
+          }
+        }
+      }
+    },
+    "Show menu bar icon" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示菜单栏图标"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示選單列圖示"
           }
         }
       }
@@ -72607,7 +72645,24 @@
         }
       }
     },
+    "Show percentage" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示百分比"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示百分比"
+          }
+        }
+      }
+    },
     "Show Percentage" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -72903,7 +72958,24 @@
         }
       }
     },
+    "Show recording indicator" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示录制指示器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示錄製指示器"
+          }
+        }
+      }
+    },
     "Show Recording Indicator" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -72997,6 +73069,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "收起時顯示感測器小工具"
+          }
+        }
+      }
+    },
+    "Show settings icon in the notch" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在刘海中显示设置图标"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在瀏海中顯示設定圖示"
           }
         }
       }
@@ -73477,6 +73565,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顯示計時器名稱"
+          }
+        }
+      }
+    },
+    "Show volume HUD" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示音量提示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示音量提示"
+          }
+        }
+      }
+    },
+    "Show volume OSD" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示音量屏幕提示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示音量螢幕提示"
           }
         }
       }
@@ -74218,6 +74338,7 @@
       }
     },
     "Simplified Chinese" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -74499,6 +74620,7 @@
     },
     "Skip forward or backward by ten seconds" : {
       "comment" : "Description of a music skip behavior option.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -74734,6 +74856,7 @@
       }
     },
     "Slower detection (4Hz) to maximize battery life." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -74756,6 +74879,7 @@
       }
     },
     "Smooth color transitions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -75389,6 +75513,7 @@
       }
     },
     "Solid" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -76376,6 +76501,7 @@
       }
     },
     "Standard detection (16Hz) for smooth responsiveness." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -76539,6 +76665,7 @@
     },
     "Standard previous/next track controls" : {
       "comment" : "Description of the music skip behavior option to use standard previous/next track controls.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -78544,6 +78671,7 @@
       }
     },
     "Sweep" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -79702,6 +79830,7 @@
       }
     },
     "The current line is lit by one fixed gradient that does not move, the way lyrics were marked before the sweep." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -79724,6 +79853,7 @@
       }
     },
     "The current line is lit in one flat colour, with nothing crossing it." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -79780,6 +79910,7 @@
       }
     },
     "The highlight travels across the line word by word, in reading order." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -82226,6 +82357,7 @@
     },
     "Track Skip" : {
       "comment" : "Display name for the \"Track Skip\" music skip behavior.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -82273,6 +82405,7 @@
       }
     },
     "Traditional Chinese" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -82599,6 +82732,7 @@
     },
     "Turn on customizable controls to rearrange media buttons." : {
       "comment" : "A description of the feature that allows users to rearrange the order of media buttons.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -82936,6 +83070,7 @@
       }
     },
     "Ultra-fast detection (30Hz) for near-instant hiding." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -83629,6 +83764,7 @@
       }
     },
     "Until turned off" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -84668,6 +84804,7 @@
       }
     },
     "Use Accent Color" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -84765,6 +84902,38 @@
         }
       }
     },
+    "Use album artwork colors for player controls" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放器控件使用专辑封面颜色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放器控制項使用專輯封面顏色"
+          }
+        }
+      }
+    },
+    "Use bright colors for bold text" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粗体文字使用明亮颜色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粗體文字使用明亮色彩"
+          }
+        }
+      }
+    },
     "Use circular battery indicator" : {
       "localizations" : {
         "ko" : {
@@ -84811,6 +84980,38 @@
         }
       }
     },
+    "Use color-coded battery display" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用电量分级配色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用電量分級配色"
+          }
+        }
+      }
+    },
+    "Use color-coded volume display" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用音量分级配色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用音量分級配色"
+          }
+        }
+      }
+    },
     "Use colored gauges" : {
       "localizations" : {
         "ko" : {
@@ -84853,6 +85054,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用彩色儀表"
+          }
+        }
+      }
+    },
+    "Use colored spectrograms" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用彩色频谱图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用彩色頻譜圖"
           }
         }
       }
@@ -85199,6 +85416,22 @@
         }
       }
     },
+    "Use Option as Meta key" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将 Option 用作 Meta 键"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將 Option 用作 Meta 鍵"
+          }
+        }
+      }
+    },
     "Use simpler close animation" : {
       "localizations" : {
         "ko" : {
@@ -85241,6 +85474,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用更簡單的關閉動畫"
+          }
+        }
+      }
+    },
+    "Use smooth color transitions" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用平滑颜色过渡"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用平滑色彩過渡"
           }
         }
       }
@@ -85894,13 +86143,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "实用工具"
+            "value" : "实用功能"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "實用工具"
+            "value" : "實用功能"
           }
         }
       }
@@ -86999,6 +87248,7 @@
       }
     },
     "Volume HUD" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -87058,6 +87308,7 @@
     },
     "Volume OSD" : {
       "comment" : "A toggle that enables or disables the volume OSD",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {
@@ -87935,17 +88186,17 @@
       }
     },
     "When a QR code is found, show its contents for copying or opening. Otherwise, recognize text." : {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "如果选区包含二维码，显示其内容以便拷贝或打开；否则识别文字。"
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果选区包含二维码，显示其内容以便拷贝或打开；否则识别文字。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "如果選區包含二維碼，顯示其內容以便拷貝或打開；否則識別文字。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果選區包含二維碼，顯示其內容以便拷貝或打開；否則識別文字。"
           }
         }
       }
@@ -88997,6 +89248,7 @@
       }
     },
     "With stop button" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -89144,6 +89396,7 @@
       }
     },
     "Write Only" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -89782,6 +90035,7 @@
     },
     "Youtube Music" : {
       "comment" : "Spotify music service.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "ko" : {

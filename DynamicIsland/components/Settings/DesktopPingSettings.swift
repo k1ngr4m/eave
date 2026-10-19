@@ -7,11 +7,15 @@ struct DesktopPingSettings: View {
         Form {
             Section {
                 Toggle("Enable desktop pings", isOn: $manager.configuration.enabled)
+            }
+            Section {
                 AccessibilitySettingsPermissionRow(message: "Allows Desktop Pings to detect the trigger key and mouse gestures.")
                 if let failure = manager.failure {
                     Text(failure).font(.caption).foregroundStyle(.red).textSelection(.enabled)
                     Button("Try Again") { manager.retry() }
                 }
+            } header: {
+                Text("Permissions")
             } footer: {
                 Text("Hold the trigger and drag to open the wheel. Release on a signal to send it. Release in the center, right-click, or press Esc to cancel. ⌃⌥P pauses or resumes.")
             }

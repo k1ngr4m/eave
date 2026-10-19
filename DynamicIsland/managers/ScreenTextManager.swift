@@ -107,7 +107,12 @@ final class ScreenTextManager {
     private var feedbackPanel: NSPanel?
     private var feedbackTask: Task<Void, Never>?
 
+    static var isEnabled: Bool {
+        UserDefaults.standard.object(forKey: "enableScreenText") as? Bool ?? true
+    }
+
     func capture() {
+        guard Self.isEnabled else { return }
         cancel()
         guard requestScreenRecordingPermission() else { return }
         for screen in NSScreen.screens {

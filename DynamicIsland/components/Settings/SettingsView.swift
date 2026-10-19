@@ -20,11 +20,8 @@ import UniformTypeIdentifiers
 /// Groups for organizing settings tabs in the sidebar.
 private enum SettingsTabGroup: String, CaseIterable, Identifiable {
     case core
-    case mediaAndDisplay
-    case system
-    case productivity
     case utilities
-    case developer
+    case displayAndSystem
     case info
 
     var id: String { rawValue }
@@ -33,11 +30,8 @@ private enum SettingsTabGroup: String, CaseIterable, Identifiable {
     var title: String? {
         switch self {
         case .core:             return nil
-        case .mediaAndDisplay:  return String(localized: "Media & Display")
-        case .system:           return String(localized: "System")
-        case .productivity:     return String(localized: "Productivity")
+        case .displayAndSystem: return String(localized: "Display & System")
         case .utilities:        return String(localized: "Utilities")
-        case .developer:        return String(localized: "Developer")
         case .info:             return nil
         }
     }
@@ -72,11 +66,10 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     var group: SettingsTabGroup {
         switch self {
         case .general, .appearance, .menuBar:                                return .core
-        case .media, .liveActivities, .lockScreen, .devices:                 return .mediaAndDisplay
-        case .hudAndOSD, .battery, .stats:                                   return .system
-        case .timer, .calendar, .notes:                                      return .productivity
-        case .shelf, .stocks, .desktopPing, .screenText:                         return .utilities
-        case .llmAgents, .terminal:                                          return .developer
+        case .liveActivities, .lockScreen, .devices, .hudAndOSD, .battery:
+            return .displayAndSystem
+        case .media, .timer, .calendar, .notes, .shelf, .stocks, .desktopPing, .screenText, .stats, .llmAgents, .terminal:
+            return .utilities
         case .shortcuts, .about:                                             return .info
         }
     }
@@ -341,7 +334,7 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .media, title: "Enable album art parallax effect", keywords: ["parallax", "parallax effect", "album art"], highlightID: SettingsTab.media.highlightID(for: "Enable album art parallax effect")),
 
         // Calendar
-        SettingsSearchEntry(tab: .calendar, title: "Show calendar", keywords: ["calendar", "events"], highlightID: SettingsTab.calendar.highlightID(for: "Show calendar")),
+        SettingsSearchEntry(tab: .calendar, title: "Enable calendar", keywords: ["calendar", "events"], highlightID: SettingsTab.calendar.highlightID(for: "Enable calendar")),
         SettingsSearchEntry(tab: .calendar, title: "Enable reminder live activity", keywords: ["reminder", "live activity"], highlightID: SettingsTab.calendar.highlightID(for: "Enable reminder live activity")),
         SettingsSearchEntry(tab: .calendar, title: "Countdown style", keywords: ["reminder countdown"], highlightID: SettingsTab.calendar.highlightID(for: "Countdown style")),
         SettingsSearchEntry(tab: .calendar, title: "Show lock screen reminder", keywords: ["lock screen", "reminder widget"], highlightID: SettingsTab.calendar.highlightID(for: "Show lock screen reminder")),
@@ -419,6 +412,7 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .lockScreen, title: "Reminder vertical offset", keywords: ["reminder", "offset", "position"], highlightID: SettingsTab.lockScreen.highlightID(for: "Reminder vertical offset"), lockScreenSection: .widgets),
 
         // Shortcuts
+        SettingsSearchEntry(tab: .screenText, title: "Enable copy text from screen", keywords: ["OCR", "enable", "启用", "开启", "拷贝屏幕文字"], highlightID: SettingsTab.screenText.highlightID(for: "Enable copy text from screen")),
         SettingsSearchEntry(tab: .screenText, title: "Copy text from screen", keywords: ["OCR", "copy", "screen", "text", "QR", "文字", "识别", "复制", "拷贝", "二维码", "换行"], highlightID: SettingsTab.screenText.highlightID(for: "Copy text from screen")),
         SettingsSearchEntry(tab: .shortcuts, title: "Enable global keyboard shortcuts", keywords: ["keyboard", "shortcut"], highlightID: SettingsTab.shortcuts.highlightID(for: "Enable global keyboard shortcuts")),
 
@@ -745,34 +739,30 @@ struct SettingsView: View {
     }
 
     private var availableTabs: [SettingsTab] {
-        // Ordered to match group layout: core → media & display → system →
-        // productivity → utilities → developer → info.
+        // Ordered to match group layout: core → utilities → display & system → info.
         let ordered: [SettingsTab] = [
             // Core
             .general,
             .appearance,
             .menuBar,
-            // Media & Display
+            // Utilities
             .media,
-            .liveActivities,
-            .lockScreen,
-            .devices,
-            // System
-            .hudAndOSD,
-            .battery,
-            .stats,
-            // Productivity
             .timer,
             .calendar,
             .notes,
-            // Utilities
             .shelf,
             .stocks,
             .desktopPing,
             .screenText,
-            // Developer
+            .stats,
             .llmAgents,
             .terminal,
+            // Display & System
+            .liveActivities,
+            .lockScreen,
+            .devices,
+            .hudAndOSD,
+            .battery,
             // Info
             .shortcuts,
             .about
@@ -3748,15 +3738,18 @@ struct CalendarSettings: View {
 
     var body: some View {
         Form {
+            Section {
+                Defaults.Toggle(key: .showCalendar) {
+                    Text("Enable calendar")
+                }
+                .settingsHighlight(id: highlightID("Enable calendar"))
+            }
+
             Section("Permissions") {
                 calendarPermissionRow(.event, title: "Calendars", message: "Allows reading and managing calendar events.")
                 calendarPermissionRow(.reminder, title: "Reminders", message: "Allows reading and completing reminders.")
             }
             Group {
-                Defaults.Toggle(key: .showCalendar) {
-                    Text("Show calendar")
-                }
-                .settingsHighlight(id: highlightID("Show calendar"))
 
                 Section(header: Text("Event List")) {
                     Toggle("Hide completed reminders", isOn: $hideCompletedReminders)
@@ -4343,6 +4336,14 @@ struct Shelf: View {
 
     var body: some View {
         Form {
+            Section {
+                Defaults.Toggle(key: .dynamicShelf) {
+                    Text("Enable shelf")
+                }
+                .disabled(!canEnableShelf)
+                .settingsHighlight(id: highlightID("Enable shelf"))
+            }
+
             Section("Permissions") {
                 SettingsPermissionRow(title: "Documents and Downloads", message: "Allows Shelf to read these folders. Not required when Full Disk Access is granted.",
                                       state: canEnableShelf ? .granted : (folderPermissionRequested ? .denied : .notDetermined),
@@ -4357,11 +4358,6 @@ struct Shelf: View {
             }
 
             Section {
-                Defaults.Toggle(key: .dynamicShelf) {
-                    Text("Enable shelf")
-                }
-                .disabled(!canEnableShelf)
-                .settingsHighlight(id: highlightID("Enable shelf"))
 
                 Defaults.Toggle(key: .expandedDragDetection) {
                     Text("Expand drag detection area")
@@ -6977,6 +6973,7 @@ private func copyLatestCrashReport() {
 }
 
 private struct ScreenTextSettings: View {
+    @Default(.enableScreenText) private var enableScreenText
     @AppStorage("screenOCRRemoveLineBreaks") private var removeLineBreaks = false
     @AppStorage("screenOCRDetectQRCodes") private var detectQRCodes = true
     @Default(.enableShortcuts) private var enableShortcuts
@@ -6986,10 +6983,29 @@ private struct ScreenTextSettings: View {
     var body: some View {
         Form {
             Section {
+                Defaults.Toggle(key: .enableScreenText) {
+                    Text("Enable copy text from screen")
+                }
+                    .settingsHighlight(id: SettingsTab.screenText.highlightID(for: "Enable copy text from screen"))
+            }
+
+            Section {
+                SettingsPermissionRow(title: "Screen Recording", message: "Allows capturing the selected area. Text and QR codes are recognized offline.",
+                                      state: screenRecordingAllowed ? .granted : (permissionRequested ? .denied : .notDetermined),
+                                      request: {
+                    permissionRequested = true
+                    screenRecordingAllowed = CGRequestScreenCaptureAccess()
+                }, openSettings: { openPermissionSettings("ScreenCapture") })
+            } header: { Text("Screen Recording") } footer: {
+                Text("Allow screen recording to capture the selected area. Text and QR codes are recognized offline.")
+            }
+
+            Section {
                 HStack {
                     Label("Copy text from screen", systemImage: "text.viewfinder")
                     Spacer()
                     Button("Copy text from screen") { ScreenTextManager.shared.capture() }
+                        .disabled(!enableScreenText)
                 }
             } footer: {
                 Text("Select an area on any display. Recognized text is copied so you can paste it anywhere.")
@@ -7012,25 +7028,15 @@ private struct ScreenTextSettings: View {
                     }
                 }
             } header: { Text("Recognition") }
+            .disabled(!enableScreenText)
 
             Section {
                 KeyboardShortcuts.Recorder("Copy text from screen:", name: .copyScreenText)
-                    .disabled(!enableShortcuts)
+                    .disabled(!enableShortcuts || !enableScreenText)
             } header: { Text("Shortcuts") } footer: {
                 if !enableShortcuts {
                     Text("Enable global keyboard shortcuts in Shortcuts settings to use this binding.")
                 }
-            }
-
-            Section {
-                SettingsPermissionRow(title: "Screen Recording", message: "Allows capturing the selected area. Text and QR codes are recognized offline.",
-                                      state: screenRecordingAllowed ? .granted : (permissionRequested ? .denied : .notDetermined),
-                                      request: {
-                    permissionRequested = true
-                    screenRecordingAllowed = CGRequestScreenCaptureAccess()
-                }, openSettings: { openPermissionSettings("ScreenCapture") })
-            } header: { Text("Screen Recording") } footer: {
-                Text("Allow screen recording to capture the selected area. Text and QR codes are recognized offline.")
             }
         }
         .formStyle(.grouped)
@@ -7042,6 +7048,7 @@ private struct ScreenTextSettings: View {
 }
 
 struct Shortcuts: View {
+    @Default(.enableScreenText) private var enableScreenText
     @Default(.enableTimerFeature) var enableTimerFeature
     @Default(.enableShortcuts) var enableShortcuts
     @Default(.enableStatsFeature) var enableStatsFeature
@@ -7069,7 +7076,7 @@ struct Shortcuts: View {
 
             Section {
                 KeyboardShortcuts.Recorder("Copy text from screen:", name: .copyScreenText)
-                    .disabled(!enableShortcuts)
+                    .disabled(!enableShortcuts || !enableScreenText)
             } header: {
                 Text("Screen Text")
             } footer: {
@@ -7287,9 +7294,19 @@ struct TimerSettings: View {
 
     var body: some View {
         Form {
-            timerFeatureSection
+            Section {
+                Defaults.Toggle(key: .enableTimerFeature) {
+                    Text("Enable timer")
+                }
+                .settingsHighlight(id: highlightID("Enable timer"))
+            }
+
+            Section("Permissions") {
+                AccessibilitySettingsPermissionRow(message: "Allows reading macOS Clock timers for timer mirroring.")
+            }
 
             Group {
+                timerFeatureSection
                 timerConfigurationSections
             }
             .disabled(!enableTimerFeature)
@@ -7302,15 +7319,10 @@ struct TimerSettings: View {
     @ViewBuilder
     private var timerFeatureSection: some View {
         Section {
-            Defaults.Toggle(key: .enableTimerFeature) {
-                Text("Enable timer")
-            }
-            .settingsHighlight(id: highlightID("Enable timer"))
 
             Group {
                 Toggle("Enable timer live activity", isOn: $coordinator.timerLiveActivityEnabled)
                     .animation(.easeInOut, value: coordinator.timerLiveActivityEnabled)
-                AccessibilitySettingsPermissionRow(message: "Allows reading macOS Clock timers for timer mirroring.")
                 Defaults.Toggle(key: .mirrorSystemTimer) {
                     HStack(spacing: 8) {
                         Text("Mirror macOS Clock timers")
@@ -7851,6 +7863,10 @@ struct StatsSettings: View {
             Section {
                 Defaults.Toggle(key: .enableStatsFeature) { Text("Enable system stats monitoring") }
                     .settingsHighlight(id: SettingsTab.stats.highlightID(for: "Enable system stats monitoring"))
+            }
+            Section("Optional Permissions") {
+                LocationSettingsPermissionRow(message: "Optional. Allows displaying the current Wi-Fi network name.")
+                NotificationsSettingsPermissionRow()
             }
             Group {
                 Section("Monitoring Behavior") {
@@ -8419,6 +8435,13 @@ struct NotesSettingsView: View {
                 Defaults.Toggle(key: .enableNotes) {
                     Text("Enable notes")
                 }
+            }
+
+            Section("Permissions") {
+                NotesSettingsPermissionRow()
+            }
+
+            Section {
                 Group {
                     Defaults.Toggle(key: .enableNotePinning) {
                         Text("Enable note pinning")
@@ -8447,7 +8470,6 @@ struct NotesSettingsView: View {
 
             Group {
                 Section {
-                    NotesSettingsPermissionRow()
                     Defaults.Toggle(key: .enableAppleNotesSync) {
                         Text("Sync with Apple Notes")
                     }
