@@ -137,7 +137,7 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
         cancellables.removeAll()
     }
 
-    init(screen: String? = nil) {
+    init(screen: String? = nil, settingsPreview: Bool = false) {
         animation = animationLibrary.animation
 
         super.init()
@@ -145,6 +145,12 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
         self.screen = screen
         notchSize = getClosedNotchSize(screen: screen)
         closedNotchSize = notchSize
+
+        // Preview state must never subscribe to or resize the real notch window.
+        if settingsPreview {
+            notchState = .open
+            return
+        }
 
         Publishers.CombineLatest($dropZoneTargeting, $dragDetectorTargeting)
             .map { value1, value2 in

@@ -194,6 +194,7 @@ private struct DynamicIslandArtworkVideoView: NSViewRepresentable {
 }
 
 struct DynamicIslandArtworkSourceView: View {
+    @Environment(\.isMediaSettingsPreview) private var settingsPreview
     @ObservedObject private var musicManager = MusicManager.shared
     @Default(.showLiveCanvasInDynamicIsland) private var showLiveCanvasInDynamicIsland
 
@@ -202,7 +203,7 @@ struct DynamicIslandArtworkSourceView: View {
     var prefersVideo: Bool = true
 
     private var liveCanvasURL: URL? {
-        guard showLiveCanvasInDynamicIsland, prefersVideo else { return nil }
+        guard !settingsPreview, showLiveCanvasInDynamicIsland, prefersVideo else { return nil }
         return musicManager.videoArtworkURL
     }
 
@@ -557,6 +558,7 @@ struct AlbumArtView: View {
 }
 
 struct MusicControlsView: View {
+    @Environment(\.isMediaSettingsPreview) private var settingsPreview
     @EnvironmentObject var vm: DynamicIslandViewModel
     @ObservedObject var musicManager = MusicManager.shared
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
@@ -703,6 +705,7 @@ struct MusicControlsView: View {
     }
 
     private var shouldShowControlHUDRow: Bool {
+        guard !settingsPreview else { return false }
         guard vm.notchState == .open else { return false }
         guard coordinator.sneakPeek.show else { return false }
         guard Defaults[.enableSystemHUD] else { return false }
@@ -1574,6 +1577,7 @@ struct CustomSlider: View {
 }
 
 private struct MediaOutputPickerButton: View {
+    @Environment(\.isMediaSettingsPreview) private var settingsPreview
     @ObservedObject private var routeManager = AudioRouteManager.shared
     @StateObject private var volumeModel = MediaOutputVolumeViewModel()
     @State private var isPopoverPresented = false
@@ -1599,6 +1603,7 @@ private struct MediaOutputPickerButton: View {
             }
         }
         .onAppear {
+            guard !settingsPreview else { return }
             routeManager.refreshDevices()
         }
         .onChange(of: isPopoverPresented) { _, _ in
@@ -1632,6 +1637,7 @@ private struct MediaOutputPickerButton: View {
 }
 
 private struct AirPlayPickerButton: View {
+    @Environment(\.isMediaSettingsPreview) private var settingsPreview
     @ObservedObject private var musicManager = MusicManager.shared
     @ObservedObject private var airPlayManager = AppleMusicAirPlayManager.shared
     @State private var isPopoverPresented = false
@@ -1660,7 +1666,7 @@ private struct AirPlayPickerButton: View {
             }
         }
         .onAppear {
-            if isAppleMusicActive {
+            if !settingsPreview && isAppleMusicActive {
                 Task { await airPlayManager.refreshDevices() }
             }
         }
@@ -1668,7 +1674,7 @@ private struct AirPlayPickerButton: View {
             updatePopoverActivity()
         }
         .onChange(of: musicManager.bundleIdentifier) { _, newBundle in
-            if newBundle == "com.apple.Music" {
+            if !settingsPreview && newBundle == "com.apple.Music" {
                 Task { await airPlayManager.refreshDevices() }
             }
         }

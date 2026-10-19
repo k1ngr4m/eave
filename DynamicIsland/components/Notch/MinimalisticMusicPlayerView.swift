@@ -26,6 +26,7 @@ import AppKit
 // Lyrics are shown/hidden only via Defaults[.enableLyrics] in settings. Inline display is used in the player views.
 
 struct MinimalisticMusicPlayerView: View {
+    @Environment(\.isMediaSettingsPreview) private var settingsPreview
     @EnvironmentObject var vm: DynamicIslandViewModel
     let albumArtNamespace: Namespace.ID
     @Default(.showShuffleAndRepeat) private var showCustomControls
@@ -223,7 +224,7 @@ struct MinimalisticMusicPlayerView: View {
     }
 
     private var shouldShowReminderList: Bool {
-        enableReminderLiveActivity && !reminderEntries.isEmpty
+        !settingsPreview && enableReminderLiveActivity && !reminderEntries.isEmpty
     }
 
     private var reminderListHeight: CGFloat {
@@ -231,7 +232,7 @@ struct MinimalisticMusicPlayerView: View {
     }
 
     private var shouldShowTimerCountdown: Bool {
-        coordinator.timerLiveActivityEnabled && timerManager.isExternalTimerActive
+        !settingsPreview && coordinator.timerLiveActivityEnabled && timerManager.isExternalTimerActive
     }
 
     private var brandAccentColor: Color {
@@ -827,6 +828,7 @@ private struct MinimalisticReminderDetailsView: View {
     }
 
     private var shouldShowControlHUDRow: Bool {
+        guard !settingsPreview else { return false }
         guard vm.notchState == .open else { return false }
         guard coordinator.sneakPeek.show else { return false }
         guard Defaults[.enableSystemHUD] else { return false }
@@ -1098,6 +1100,7 @@ private struct MinimalisticReminderDetailsView: View {
         }
     }
     private struct MinimalisticMediaOutputButton: View {
+        @Environment(\.isMediaSettingsPreview) private var settingsPreview
         @ObservedObject private var routeManager = AudioRouteManager.shared
         @StateObject private var volumeModel = MediaOutputVolumeViewModel()
         @EnvironmentObject private var vm: DynamicIslandViewModel
@@ -1134,6 +1137,7 @@ private struct MinimalisticReminderDetailsView: View {
                 updateActivity()
             }
             .onAppear {
+                guard !settingsPreview else { return }
                 routeManager.refreshDevices()
             }
             .onDisappear {
@@ -1153,6 +1157,7 @@ private struct MinimalisticReminderDetailsView: View {
     }
 
     private struct MinimalisticAirPlayButton: View {
+        @Environment(\.isMediaSettingsPreview) private var settingsPreview
         @ObservedObject private var musicManager = MusicManager.shared
         @ObservedObject private var airPlayManager = AppleMusicAirPlayManager.shared
         @EnvironmentObject private var vm: DynamicIslandViewModel
@@ -1192,12 +1197,12 @@ private struct MinimalisticReminderDetailsView: View {
                 updateActivity()
             }
             .onAppear {
-                if isAppleMusicActive {
+                if !settingsPreview && isAppleMusicActive {
                     Task { await airPlayManager.refreshDevices() }
                 }
             }
             .onChange(of: musicManager.bundleIdentifier) { _, newBundle in
-                if newBundle == "com.apple.Music" {
+                if !settingsPreview && newBundle == "com.apple.Music" {
                     Task { await airPlayManager.refreshDevices() }
                 }
             }

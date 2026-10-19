@@ -3658,6 +3658,20 @@ struct Media: View {
                 Defaults[.enableFullscreenMediaDetection] = hideNotchOption != .never
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Preview")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+                MediaSettingsPreview()
+            }
+            .frame(maxWidth: 900)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity)
+            .background(.bar)
+            .overlay(alignment: .bottom) { Divider() }
+        }
         .navigationTitle("Media")
     }
 
