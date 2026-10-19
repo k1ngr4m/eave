@@ -121,8 +121,8 @@ private final class ReadbackDDCTransport: DDCVolumeTransport, @unchecked Sendabl
     private var recordedWrites: [UInt16] = []
     var writes: [UInt16] { lock.withLock { recordedWrites } }
     func resolve(uid: String) -> DDCDisplayTarget? { DDCDisplayTarget(uid: uid, service: nil) }
-    func read(_ target: DDCDisplayTarget) -> DDCVolumeReply? {
-        lock.withLock { DDCVolumeReply(current: value, maximum: 100) }
+    func read(_ target: DDCDisplayTarget) -> DDCVolumeReadResult {
+        lock.withLock { .reply(DDCVolumeReply(current: value, maximum: 100)) }
     }
     func write(_ target: DDCDisplayTarget, value: UInt16) -> Bool {
         lock.withLock { self.value = value; recordedWrites.append(value) }

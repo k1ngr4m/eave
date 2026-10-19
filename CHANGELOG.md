@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- Add input-source display and switching, shared by the menu bar and Dock.
+- Add a configurable full-ring battery threshold while preserving the actual percentage.
+- Show local IP addresses in network summaries and link to Internet Sharing settings.
+- Improve DDC volume readback and display matching compatibility.
+- Add optional low-power mode control through a signed, on-demand privileged helper.
+
 ## [0.1.2] - 2026-10-15
 
 - Provide separate Intel and Apple Silicon installation DMGs, retaining the universal ZIP for automatic updates.

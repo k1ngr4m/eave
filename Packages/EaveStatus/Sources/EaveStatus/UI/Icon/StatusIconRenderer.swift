@@ -29,8 +29,27 @@ private final class SymbolInkOffsetCache: @unchecked Sendable {
     }
 }
 
+/// The same ink measurement for an input source's own icon file, which is a
+/// bitmap or PDF whose visible ink is not centred in the box `NSImage.size`
+/// reports. Keying by URL matches `IconImageDecodeCache`'s identity-based
+/// invalidation: a replaced icon is a new URL, not a mutated one.
+private final class ImageInkOffsetCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [URL: CGFloat] = [:]
+
+    func offsetX(for url: URL, measure: () -> CGFloat) -> CGFloat {
+        lock.lock()
+        defer { lock.unlock() }
+        if let cached = storage[url] { return cached }
+        let measured = measure()
+        storage[url] = measured
+        return measured
+    }
+}
+
 enum StatusIconRenderer {
     private static let symbolInkOffsetCache = SymbolInkOffsetCache()
+    private static let imageInkOffsetCache = ImageInkOffsetCache()
 
     static let centerSymbolBasePointSize: CGFloat = 38
     private static let defaultBatteryValueTextScale = 1.8
@@ -206,16 +225,21 @@ enum StatusIconRenderer {
 
 
 
-    /// Centre of the middle connection slot, which the Wi-Fi, Ethernet and
-    /// Bluetooth glyphs all share.
+    /// Where a label's visible ink is centred in the middle connection slot.
     ///
-    /// `y` is not `wifiSymbolCenter.y`: the Wi-Fi glyph's dense strokes sit
-    /// below the geometric middle of the slot, so text drawn from a centred
-    /// baseline reads low against them.
-    private static let connectionSlotCenter = CGPoint(
-        x: StatusIconGeometry.artworkCenterX,
-        y: 87
-    )
+    /// Text shares the slot with the Wi-Fi, Ethernet, Bluetooth and input-source
+    /// glyphs, so it is centred on the same point they are: the ink centre of
+    /// `wifiSymbolCenter`, not a second anchor of its own.
+    ///
+    /// The historic `y = 87` anchor compensated the renderer's flipped text
+    /// matrix with the wrong sign, so the drawn ink centre was
+    /// `87 - 2 * bounds.midY` instead of `87`. That cancels only at the default
+    /// percentage size: every larger label — a 160 % input-source marker above
+    /// all — climbed up into the ring's charging indicator by twice its own
+    /// half-height. Anchoring the ink centre itself makes the position
+    /// independent of the text's size, which is what a label that follows the
+    /// Wi-Fi size control needs.
+    private static let centerTextInkCenter = wifiSymbolCenter
 
     /// Uses the middle connection position for a large, label-free percentage.
 
@@ -325,6 +349,7 @@ enum StatusIconRenderer {
         maxDimension: CGFloat,
         center: CGPoint,
         tint: CGColor,
+        inkCenterOffsetX: CGFloat = 0,
         in context: CGContext
     ) {
         let sourceSize = image.size
@@ -344,7 +369,7 @@ enum StatusIconRenderer {
             height: sourceSize.height * scale
         )
         let targetRect = CGRect(
-            x: center.x - size.width / 2,
+            x: center.x - size.width / 2 - inkCenterOffsetX * scale,
             y: -(center.y + size.height / 2),
             width: size.width,
             height: size.height
@@ -571,27 +596,140 @@ enum StatusIconRenderer {
 }
 
 extension StatusIconRenderer {
+    /// The two surfaces one menu bar icon is drawn on.
+    struct MenuBarLayers {
+        /// Template image for every monochrome primitive. The system tints it for
+        /// the menu bar's current Space and keeps the tint live while a Space
+        /// switch is dragged, and it also reserves the item's footprint.
+        let base: NSImage
+        /// Custom-colour raster for the primitives that carry a status colour, or
+        /// `nil` when the icon is monochrome.
+        let overlay: CGImage?
+
+        init(base: NSImage, overlay: CGImage? = nil) {
+            self.base = base
+            self.overlay = overlay
+        }
+    }
+
+    /// Splits a scene into the template base and the custom-colour overlay.
+    ///
+    /// The base carries every monochrome primitive, and the overlay carries the
+    /// status colours on top of it, which is the order the renderer already
+    /// paints in; compositing them reproduces the scene while letting the system
+    /// re-tint the monochrome primitives for the Space that is on top (#112).
+    @MainActor
+    static func menuBarLayers(
+        scene: IconSceneState,
+        size: CGFloat,
+        scale: CGFloat,
+        appearance: NSAppearance?,
+        phase: ChargingEffectPhase? = nil
+    ) -> MenuBarLayers? {
+        guard size.isFinite, scale.isFinite, size > 0, scale > 0 else { return nil }
+
+        let templateRegions = scene.templateRegions
+        let chromaticRegions = scene.chromaticRegions
+
+        let base: NSImage
+        if let image = image(
+            scene: scene,
+            size: size,
+            scale: scale,
+            appearance: appearance,
+            phase: nil,
+            regions: templateRegions
+        ) {
+            image.isTemplate = true
+            base = image
+        } else if chromaticRegions.isEmpty {
+            return nil
+        } else if let placeholder = transparentMenuBarImage(size: size, scale: scale) {
+            placeholder.isTemplate = true
+            base = placeholder
+        } else {
+            return nil
+        }
+
+        guard !chromaticRegions.isEmpty else {
+            return MenuBarLayers(base: base, overlay: nil)
+        }
+        return MenuBarLayers(
+            base: base,
+            overlay: render(
+                scene: scene,
+                environment: renderEnvironment(size: size, scale: scale, appearance: appearance),
+                phase: phase,
+                regions: chromaticRegions
+            )
+        )
+    }
+
+    /// Menu bar entry point.
+    ///
+    /// Renders the requested primitives and marks the result as a template image
+    /// when none of them carries a status colour. Prefer `menuBarLayers`, which
+    /// splits the monochrome primitives from the status colours so the system can
+    /// keep re-tinting the monochrome ones during a Space drag (#112).
+    static func menuBarImage(
+        scene: IconSceneState,
+        size: CGFloat,
+        scale: CGFloat,
+        appearance: NSAppearance? = nil,
+        phase: ChargingEffectPhase? = nil,
+        regions: IconSceneRegion = .all
+    ) -> NSImage? {
+        guard let image = image(
+            scene: scene,
+            size: size,
+            scale: scale,
+            appearance: appearance,
+            phase: phase,
+            regions: regions
+        ) else {
+            return nil
+        }
+        return menuBarTemplateAdjusted(image, scene: scene, regions: regions)
+    }
+
+    /// Applies the menu bar's template rule to an already-rendered image. The
+    /// decision is derived only from the scene's colour roles, so it is stable
+    /// across appearances and matches the render cache, whose key already includes
+    /// the scene.
+    static func menuBarTemplateAdjusted(
+        _ image: NSImage,
+        scene: IconSceneState,
+        regions: IconSceneRegion = .all
+    ) -> NSImage {
+        image.isTemplate = regions.isSubset(of: scene.templateRegions)
+        return image
+    }
+
     static func preRenderedMenuBarImage(
         scene: IconSceneState,
         size: CGFloat,
         scale: CGFloat,
         appearance: NSAppearance,
-        phase: ChargingEffectPhase
+        phase: ChargingEffectPhase,
+        regions: IconSceneRegion = .all
     ) -> NSImage? {
         guard let cgImage = render(
             scene: scene,
             environment: renderEnvironment(size: size, scale: scale, appearance: appearance),
-            phase: phase
+            phase: phase,
+            regions: regions
         ) else {
             return nil
         }
-        return NSImage(cgImage: cgImage, size: NSSize(width: size, height: size))
+        let image = NSImage(cgImage: cgImage, size: NSSize(width: size, height: size))
+        return menuBarTemplateAdjusted(image, scene: scene, regions: regions)
     }
 
     static func render(
         scene: IconSceneState,
         environment: StatusIconRenderEnvironment,
-        phase: ChargingEffectPhase? = nil
+        phase: ChargingEffectPhase? = nil,
+        regions: IconSceneRegion = .all
     ) -> CGImage? {
         let size = environment.size
         let scale = environment.scale
@@ -622,7 +760,8 @@ extension StatusIconRenderer {
             size: size,
             foreground: environment.foreground,
             criticalColor: environment.criticalColor,
-            phase: phase
+            phase: phase,
+            regions: regions
         ) else {
             return nil
         }
@@ -634,7 +773,8 @@ extension StatusIconRenderer {
         size: CGFloat,
         scale: CGFloat,
         appearance: NSAppearance? = nil,
-        phase: ChargingEffectPhase? = nil
+        phase: ChargingEffectPhase? = nil,
+        regions: IconSceneRegion = .all
     ) -> NSImage? {
         guard size.isFinite, scale.isFinite, size > 0, scale > 0 else { return nil }
 
@@ -643,7 +783,8 @@ extension StatusIconRenderer {
         guard render(
             scene: scene,
             environment: renderEnvironment(size: size, scale: scale, appearance: appearance),
-            phase: phase
+            phase: phase,
+            regions: regions
         ) != nil else {
             return nil
         }
@@ -655,7 +796,8 @@ extension StatusIconRenderer {
                       let cgImage = render(
                           scene: scene,
                           environment: renderEnvironment(size: size, scale: scale, appearance: nil),
-                          phase: phase
+                          phase: phase,
+                          regions: regions
                       ) else {
                     return
                 }
@@ -710,7 +852,8 @@ extension StatusIconRenderer {
         size: CGFloat,
         foreground: CGColor,
         criticalColor: CGColor,
-        phase: ChargingEffectPhase? = nil
+        phase: ChargingEffectPhase? = nil,
+        regions: IconSceneRegion = .all
     ) -> Bool {
         guard size.isFinite, size > 0, supports(scene) else { return false }
 
@@ -724,13 +867,26 @@ extension StatusIconRenderer {
         context.setLineJoin(.round)
 
         if let ring = scene.outerRing {
-            drawSceneRing(ring, in: context, foreground: foreground, criticalColor: criticalColor, phase: phase)
+            drawSceneRing(
+                ring,
+                in: context,
+                foreground: foreground,
+                criticalColor: criticalColor,
+                phase: phase,
+                regions: regions
+            )
         }
-        if let center = scene.center {
+        if let center = scene.center, regions.contains(.center) {
             drawSceneCenter(center, in: context, foreground: foreground, criticalColor: criticalColor)
         }
         if let footer = scene.footer {
-            drawSceneFooter(footer, in: context, foreground: foreground, criticalColor: criticalColor)
+            drawSceneFooter(
+                footer,
+                in: context,
+                foreground: foreground,
+                criticalColor: criticalColor,
+                regions: regions
+            )
         }
         return true
     }
@@ -749,8 +905,13 @@ extension StatusIconRenderer {
         in context: CGContext,
         foreground: CGColor,
         criticalColor: CGColor,
-        phase: ChargingEffectPhase?
+        phase: ChargingEffectPhase?,
+        regions: IconSceneRegion
     ) {
+        let drawsRing = !regions.isDisjoint(with: [.ringTrack, .ringFill, .ringEffect])
+        let drawsAccessory = regions.contains(.ringAccessory) && ring.accessory != nil
+        guard drawsRing || drawsAccessory else { return }
+
         guard let segment = ring.segments.first else { return }
         let hasTopGap = ring.gap != .closed
         let topGapWidth = ring.gap == .indicator
@@ -758,20 +919,7 @@ extension StatusIconRenderer {
             : StatusIconGeometry.batteryValueTopGapWidth
         let lineWidth = 8 * CGFloat(ring.strokeScale)
 
-        context.setLineWidth(lineWidth)
-        context.setStrokeColor(foreground.copy(alpha: inactiveTrackAlpha) ?? foreground)
-        context.addPath(StatusIconGeometry.batteryTrack(hasTopGap: hasTopGap, topGapWidth: topGapWidth))
-        context.strokePath()
-
         let arcColor = sceneColor(for: segment.color, foreground: foreground, criticalColor: criticalColor)
-        context.setStrokeColor(arcColor)
-        context.addPath(StatusIconGeometry.batteryFill(
-            progress: segment.progress,
-            hasTopGap: hasTopGap,
-            topGapWidth: topGapWidth
-        ))
-        context.strokePath()
-
         let effectFrame = ring.effect.flatMap { _ in
             phase.flatMap {
                 ChargingEffectPolicy.frame(
@@ -783,7 +931,26 @@ extension StatusIconRenderer {
             }
         }
         let effectHighlight = effectFrame.map { _ in ChargingEffectPalette.automaticHighlight(for: arcColor) }
-        if let effectFrame, let effectHighlight {
+
+        if regions.contains(.ringTrack) {
+            context.setLineWidth(lineWidth)
+            context.setStrokeColor(foreground.copy(alpha: inactiveTrackAlpha) ?? foreground)
+            context.addPath(StatusIconGeometry.batteryTrack(hasTopGap: hasTopGap, topGapWidth: topGapWidth))
+            context.strokePath()
+        }
+
+        if regions.contains(.ringFill) {
+            context.setLineWidth(lineWidth)
+            context.setStrokeColor(arcColor)
+            context.addPath(StatusIconGeometry.batteryFill(
+                progress: segment.progress,
+                hasTopGap: hasTopGap,
+                topGapWidth: topGapWidth
+            ))
+            context.strokePath()
+        }
+
+        if regions.contains(.ringEffect), let effectFrame, let effectHighlight {
             drawChargingEffect(
                 effectFrame,
                 highlightColor: effectHighlight,
@@ -794,7 +961,7 @@ extension StatusIconRenderer {
             )
         }
 
-        guard let accessory = ring.accessory else { return }
+        guard regions.contains(.ringAccessory), let accessory = ring.accessory else { return }
         context.saveGState()
         context.setShadow(
             offset: CGSize(width: 0, height: 0.75),
@@ -871,10 +1038,13 @@ extension StatusIconRenderer {
             let line = sceneTextLine(text.text, color: color, fontSize: fontSize)
             let bounds = CTLineGetBoundsWithOptions(line, [.useGlyphPathBounds])
             context.setFillColor(color)
+            // CoreText measures ink y-up while the text matrix flips glyphs, so
+            // the baseline sits *below* the target by the bounds' own midY.
+            // Subtracting it here is what pushed larger labels upwards.
             context.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
             context.textPosition = CGPoint(
-                x: connectionSlotCenter.x - bounds.midX,
-                y: connectionSlotCenter.y - bounds.midY
+                x: centerTextInkCenter.x - bounds.midX,
+                y: centerTextInkCenter.y + bounds.midY
             )
             CTLineDraw(line, context)
         case let .symbol(symbol):
@@ -926,9 +1096,13 @@ extension StatusIconRenderer {
                 in: context
             )
         case let .image(url, fallbackSymbol):
-            if let image = NSImage(contentsOf: url) {
+            if let image = IconImageDecodeCache.shared.decodedImage(for: url) {
+                let inkOffsetX = imageInkOffsetCache.offsetX(for: url) {
+                    measureInkCenterOffsetX(of: image)
+                }
                 drawTintedImage(image, maxDimension: 42 * (pointSize / centerSymbolBasePointSize),
-                                center: center, tint: tint, in: context)
+                                center: center, tint: tint, inkCenterOffsetX: inkOffsetX,
+                                in: context)
             } else {
                 let fallback = availableSymbol(fallbackSymbol)
                     ? fallbackSymbol
@@ -947,8 +1121,11 @@ extension StatusIconRenderer {
         _ footer: FooterState,
         in context: CGContext,
         foreground: CGColor,
-        criticalColor: CGColor
+        criticalColor: CGColor,
+        regions: IconSceneRegion
     ) {
+        guard !regions.isDisjoint(with: [.footerTrack, .footerFill]) else { return }
+
         switch footer {
         case let .dots(dots):
             let points = StatusIconGeometry.volumeDots()
@@ -957,7 +1134,11 @@ extension StatusIconRenderer {
             let active = sceneColor(for: dots.color, foreground: foreground, criticalColor: criticalColor)
             let inactive = foreground.copy(alpha: inactiveTrackAlpha) ?? foreground
             for (index, point) in points.prefix(dots.count).enumerated() {
-                context.setFillColor(index < dots.activeCount ? active : inactive)
+                let isActive = index < dots.activeCount
+                guard isActive ? regions.contains(.footerFill) : regions.contains(.footerTrack) else {
+                    continue
+                }
+                context.setFillColor(isActive ? active : inactive)
                 context.fillEllipse(in: CGRect(
                     x: point.x - radius,
                     y: point.y - radius,
@@ -968,12 +1149,16 @@ extension StatusIconRenderer {
         case let .arc(arc):
             let hidden = foreground.copy(alpha: inactiveTrackAlpha) ?? foreground
             let active = sceneColor(for: arc.color, foreground: foreground, criticalColor: criticalColor)
+            if regions.contains(.footerTrack) {
+                context.setLineWidth(7 * CGFloat(arc.strokeScale))
+                context.setLineCap(.round)
+                context.setStrokeColor(hidden)
+                context.addPath(StatusIconGeometry.volumeArcTrack())
+                context.strokePath()
+            }
+            guard regions.contains(.footerFill), arc.progress > 0 else { return }
             context.setLineWidth(7 * CGFloat(arc.strokeScale))
             context.setLineCap(.round)
-            context.setStrokeColor(hidden)
-            context.addPath(StatusIconGeometry.volumeArcTrack())
-            context.strokePath()
-            guard arc.progress > 0 else { return }
             context.setStrokeColor(active)
             context.addPath(StatusIconGeometry.volumeArcFill(progress: arc.progress))
             context.strokePath()

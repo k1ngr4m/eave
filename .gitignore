@@ -147,6 +147,7 @@ PrivateWorks
 !tests/test_osd_appearance.py
 !tests/test_notch_appearance.py
 *.sh
+!scripts/embed-power-helper.sh
 comparison_report.json
 *.txt
 ANIMATION_DEBUG_GUIDE.md

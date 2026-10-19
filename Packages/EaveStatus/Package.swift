@@ -5,10 +5,14 @@ let package = Package(
     name: "EaveStatus",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
-    products: [.library(name: "EaveStatus", targets: ["EaveStatus"])],
+    products: [.library(name: "EaveStatus", targets: ["EaveStatus"]),
+               .executable(name: "EavePowerHelper", targets: ["EavePowerHelper"])],
     targets: [
         .target(name: "DDCPrivateAPI", publicHeadersPath: "include"),
-        .target(name: "EaveStatus", dependencies: ["DDCPrivateAPI"], resources: [.process("Resources")]),
-        .testTarget(name: "EaveStatusTests", dependencies: ["EaveStatus"])
+        .target(name: "PowerHelperProtocol"),
+        .executableTarget(name: "EavePowerHelper", dependencies: ["PowerHelperProtocol"]),
+        .target(name: "EaveStatus", dependencies: ["DDCPrivateAPI", "PowerHelperProtocol"], resources: [.process("Resources")]),
+        .testTarget(name: "EavePowerHelperTests", dependencies: ["EavePowerHelper", "PowerHelperProtocol"]),
+        .testTarget(name: "EaveStatusTests", dependencies: ["EaveStatus", "PowerHelperProtocol"])
     ]
 )

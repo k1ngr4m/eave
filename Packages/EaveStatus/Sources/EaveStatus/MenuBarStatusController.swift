@@ -73,6 +73,8 @@ public final class MenuBarStatusController {
     let settings: SettingsStore
     let store: SystemStatusStore
     let localization: Localization
+    let inputSourceController = InputSourceController()
+    private let lowPowerModeSynchronizer = LowPowerModeControlSynchronizer()
     private let battery = HostBatteryMonitor()
     let iconPresentation: IconPresentationViewModel
     private let clock = ChargingEffectClock()
@@ -119,6 +121,8 @@ public final class MenuBarStatusController {
         )
         self.store = store
         store.bindInputSettings(settings)
+        store.bindLocalIPSettings(settings)
+        store.bindLowPowerModeSettings(settings)
         store.bindMobileBatterySettings(settings)
         let appearance = StatusIconAppearance(settings: settings)
         iconPresentation = IconPresentationViewModel(
@@ -133,6 +137,7 @@ public final class MenuBarStatusController {
             ),
             snapshots: store.$snapshot.eraseToAnyPublisher(),
             preferences: settings.iconPresentationPublisher,
+            inputSources: inputSourceController.$state.map(\.selectedDescriptor).removeDuplicates().eraseToAnyPublisher(),
             resolveInputs: { IconPresentationResourceResolver.inputs(snapshot: $0) }
         )
     }
@@ -140,11 +145,22 @@ public final class MenuBarStatusController {
     public func start() {
         guard statusBar == nil, !stopped else { return }
         iconPresentation.start()
+        lowPowerModeSynchronizer.start(settings: settings, helper: .shared)
+        settings.$connectionCenterSource.combineLatest(settings.$enabledPopupSections)
+            .sink { [weak self] center, sections in
+                guard let self else { return }
+                if center == .inputSource || sections.contains(.inputSource) {
+                    inputSourceController.start()
+                } else {
+                    inputSourceController.stop()
+                }
+            }
+            .store(in: &subscriptions)
         statusBar = StatusBarController(
             store: store, settings: settings, iconPresentation: iconPresentation, localization: localization,
             isVisible: isVisible, openSettings: openSettings,
             quitAction: { NSApplication.shared.terminate(nil) }, restartAction: restart,
-            chargingEffectClock: clock
+            chargingEffectClock: clock, inputSourceController: inputSourceController
         )
         statusBar?.setUsesTrioIcon(usesTrioIcon)
         motion.onChange = { [weak self] _ in self?.updateChargingEffect() }
@@ -167,6 +183,9 @@ public final class MenuBarStatusController {
         statusBar?.stop()
         statusBar = nil
         subscriptions.removeAll()
+        lowPowerModeSynchronizer.stop()
+        inputSourceController.stop()
+        PrivilegedHelperManager.shared.stop()
         motion.onChange = nil
         motion.stop()
         clock.stop()

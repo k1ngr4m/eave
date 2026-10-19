@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.eave.app.PowerHelper</string>
+    <key>BundleProgram</key>
+    <string>Contents/Helpers/EavePowerHelper</string>
+    <key>MachServices</key>
+    <dict>
+        <key>com.eave.app.PowerHelper</key>
+        <true/>
+    </dict>
+    <key>AssociatedBundleIdentifiers</key>
+    <array>
+        <string>com.eave.app</string>
+        <string>com.eave.app.dev</string>
+    </array>
+    <key>ThrottleInterval</key>
+    <integer>1</integer>
+</dict>
+</plist>

@@ -158,6 +158,12 @@ xcodebuild -downloadComponent MetalToolchain
 - Helper 的依赖构建缓存在 `.build/mobile-battery/`；后续构建会在条件匹配时复用。生成的应用携带运行依赖，不依赖用户机器上的 Homebrew。
 - 应用版本来自 `VERSION`，每次构建自动写入分发渠道和本机构建号。
 
+### 菜单栏新增选项
+
+在 Eave 的菜单栏状态设置中，可以选择用输入法作为图标中心，并启用输入法切换面板；菜单栏和 Dock 使用同一份状态。电池满格阈值只决定圆环何时画满，百分比仍显示真实电量，也不会修改系统充电限制。网络摘要可显示内网 IP，网络面板提供互联网共享设置入口。DDC 音量控制同步了上游的显示器匹配和读取兼容性修复。
+
+低电量模式控制默认关闭。启用后，按提示在 macOS 系统设置中批准 Eave 辅助程序，再从电池面板切换。构建阶段会嵌入 `EavePowerHelper`；此功能需要有效的 Apple 签名，ad-hoc 构建会显示不可用。辅助程序仅接受匹配 Eave Bundle ID 和 Team ID 的客户端；使用自己的开发团队构建时，还需同步修改 `Packages/EaveStatus/Sources/PowerHelperProtocol/` 中的客户端签名要求。辅助程序按需启动，空闲时退出。
+
 ## 项目结构
 
 ```text

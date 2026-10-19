@@ -9,3 +9,8 @@ Eave owns application lifecycle, settings window, battery readings and audio wri
 This module embeds the status icon and panel without Status Trio's application,
 updater or telemetry. Optional Dock, direct DDC audio and a bundled mobile-device
 helper are integrated with Eave's lifecycle and volume control owner.
+
+Selected upstream updates ported from af765c6 (2026-10-19): input sources,
+battery full-ring threshold, local IP, Internet Sharing link, DDC compatibility,
+and optional low-power control. PowerHelperProtocol and EavePowerHelper derive
+from the same Status Trio revision, adapted for Eave signing and packaging.

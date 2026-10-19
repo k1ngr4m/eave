@@ -70,6 +70,7 @@ enum LocalizationKey: String, CaseIterable, Hashable, Sendable {
     case settingsPopupOrderNetwork = "settings.popup.order.network"
     case settingsPopupOrderVolume = "settings.popup.order.volume"
     case settingsPopupOrderAudioInput = "settings.popup.order.audioInput"
+    case settingsPopupOrderInputSource = "settings.popup.order.inputSource"
     case settingsPopupVolumeScrollGroup = "settings.popup.volumeScroll.group"
     case settingsPopupVolumeScroll = "settings.popup.volumeScroll"
     case settingsPopupVolumeScrollDescription = "settings.popup.volumeScroll.description"
@@ -116,6 +117,13 @@ enum LocalizationKey: String, CaseIterable, Hashable, Sendable {
     case settingsNetworkWiFiIconForHotspot = "settings.network.wifiIconForHotspot"
     case settingsNetworkWiFiIconForTemporaryConnection = "settings.network.wifiIconForTemporaryConnection"
     case settingsNetworkWiFiIconForInternetSharing = "settings.network.wifiIconForInternetSharing"
+    case settingsNetworkCenterSource = "settings.network.centerSource"
+    case settingsNetworkCenterSourceDescription = "settings.network.centerSource.description"
+    case settingsNetworkCenterSourceAutomatic = "settings.network.centerSource.automatic"
+    case settingsNetworkCenterSourceInputSource = "settings.network.centerSource.inputSource"
+    case settingsNetworkCenterSourceBluetoothFallback = "settings.network.centerSource.bluetoothFallback"
+    case settingsNetworkCenterSourceNetworkWarnings = "settings.network.centerSource.networkWarnings"
+    case settingsNetworkCenterSourceNetworkWarningsDescription = "settings.network.centerSource.networkWarnings.description"
     case settingsBluetoothTitle = "settings.bluetooth.title"
     case settingsBluetoothReplaceNetworkIcon = "settings.bluetooth.replaceNetworkIcon"
     case settingsBluetoothReplaceNetworkIconDescription = "settings.bluetooth.replaceNetworkIconDescription"
@@ -216,6 +224,10 @@ enum LocalizationKey: String, CaseIterable, Hashable, Sendable {
     case settingsBatteryStatusColorsDescription = "settings.battery.statusColorsDescription"
     case settingsBatteryCriticalThreshold = "settings.battery.criticalThreshold"
     case settingsBatteryCriticalThresholdDescription = "settings.battery.criticalThresholdDescription"
+    case settingsBatteryFullThreshold = "settings.battery.fullThreshold"
+    case settingsBatteryFullThresholdDescription = "settings.battery.fullThresholdDescription"
+    case settingsBatteryFullThresholdUseChargeLimit = "settings.battery.fullThresholdUseChargeLimit"
+    case settingsBatteryFullThresholdSystemUnavailable = "settings.battery.fullThresholdSystemUnavailable"
     case settingsAboutVersion = "settings.about.version"
     case settingsAboutDescription = "settings.about.description"
     case settingsAboutProject = "settings.about.project"
@@ -261,6 +273,18 @@ enum LocalizationKey: String, CaseIterable, Hashable, Sendable {
     case batteryActionOpenSettings = "battery.action.openSettings"
     case batteryAccessibilityValue = "battery.accessibility.value"
 
+    case lowPowerModeSignedBuildRequired = "battery.lowPowerMode.signedBuildRequired"
+    case lowPowerModeControl = "battery.lowPowerMode.control"
+    case lowPowerModeControlDescription = "battery.lowPowerMode.controlDescription"
+    case lowPowerModeRequiresApproval = "battery.lowPowerMode.requiresApproval"
+    case lowPowerModeApprovalHint = "battery.lowPowerMode.approvalHint"
+    case lowPowerModeOpenLoginItems = "battery.lowPowerMode.openLoginItems"
+    case lowPowerModeHelperReady = "battery.lowPowerMode.helperReady"
+    case lowPowerModeHelperUnavailable = "battery.lowPowerMode.helperUnavailable"
+    case lowPowerModeFailure = "battery.lowPowerMode.failure"
+    case lowPowerModeToggle = "battery.lowPowerMode.toggle"
+    case lowPowerModeToggleDescription = "battery.lowPowerMode.toggleDescription"
+
     case commonParenthetical = "common.parenthetical"
     case commonLabelValue = "common.labelValue"
     case commonExpand = "common.expand"
@@ -272,6 +296,16 @@ enum LocalizationKey: String, CaseIterable, Hashable, Sendable {
     case ethernetSubtitleConnected = "ethernet.subtitle.connected"
     case ethernetSubtitleConstrained = "ethernet.subtitle.constrained"
     case ethernetActionOpenSettings = "ethernet.action.openSettings"
+    /// Offered for every active network, not only a wired one, so the key is
+    /// network-neutral rather than ethernet-scoped.
+    case networkActionShareInternet = "network.action.shareInternet"
+    case networkActionShareInternetHelp = "network.action.shareInternetHelp"
+
+    /// Draws the private LAN address on the network row's second line, ahead of
+    /// the Wi-Fi measurements. Off by default, so an upgrade looks unchanged.
+    case settingsNetworkPanelGroup = "settings.network.panelGroup"
+    case settingsNetworkShowLocalIP = "settings.network.showLocalIP"
+    case settingsNetworkShowLocalIPDescription = "settings.network.showLocalIP.description"
 
     case wifiSummaryBand = "wifi.summary.band"
     case wifiSummarySignal = "wifi.summary.signal"
@@ -443,6 +477,12 @@ enum LocalizationKey: String, CaseIterable, Hashable, Sendable {
     case audioInputRefreshFailed = "audioInput.refreshFailed"
     case audioInputTimedOut = "audioInput.timedOut"
     case audioInputRefreshing = "audioInput.refreshing"
+
+    case inputSourceTitle = "inputSource.title"
+    case inputSourceEmpty = "inputSource.empty"
+    case inputSourceOpenSettings = "inputSource.openSettings"
+    case inputSourceSwitchFailed = "inputSource.switchFailed"
+    case inputSourceSwitchUnconfirmed = "inputSource.switchUnconfirmed"
 
     case accessibilityStatus = "accessibility.status"
     case accessibilityBattery = "accessibility.battery"

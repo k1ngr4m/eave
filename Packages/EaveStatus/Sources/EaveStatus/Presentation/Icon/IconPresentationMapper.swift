@@ -60,7 +60,15 @@ enum IconPresentationMapper {
             : nil
 
         return OuterRingState(
-            segments: [RingSegmentState(progress: StatusMappings.batteryProgress(battery), color: color)],
+            segments: [
+                RingSegmentState(
+                    progress: StatusMappings.batteryProgress(
+                        battery,
+                        fullThreshold: options.fullThreshold
+                    ),
+                    color: color
+                )
+            ],
             gap: gap,
             accessory: accessory,
             effect: effect,
@@ -79,6 +87,19 @@ enum IconPresentationMapper {
 
         if connectionOptions.showsBatteryPercentageInConnectionSlot, battery.isPresent {
             return .text(IconTextState(text: "\(battery.percentage)", color: .primary, scale: 1))
+        }
+
+        // The user asked the centre slot to carry the current input source.
+        // Everything below this branch is the shipped `.automatic` decision,
+        // which also serves as the fallback whenever no source can be drawn.
+        if connectionOptions.centerSource == .inputSource,
+           let inputSource = inputs.inputSource,
+           !(connectionOptions.prioritizesNetworkErrorsOverInputSource
+               && StatusMappings.isNetworkOffline(
+                   wifi: snapshot.wifi,
+                   connection: snapshot.connection
+               )) {
+            return inputSourceCenterState(inputSource, scale: connectionOptions.wifiScale)
         }
 
         if StatusMappings.shouldReplaceNetworkIcon(
@@ -111,6 +132,35 @@ enum IconPresentationMapper {
         }
 
         return wifiState(snapshot.wifi, options: connectionOptions)
+    }
+
+    /// The input-source glyph: the source's own icon, then its short label,
+    /// then a neutral keyboard symbol. Never returns `nil`, so a selected
+    /// source can never blank the centre slot.
+    ///
+    /// `scale` is the Wi-Fi size the user chose: the input source takes over
+    /// the slot the Wi-Fi glyph sits in, so it follows the same control from
+    /// the same base — the Wi-Fi symbol's point size and the image's 42-unit
+    /// box are calibrated to each other, so both grow together.
+    private static func inputSourceCenterState(
+        _ source: InputSourceDescriptor,
+        scale: Double
+    ) -> CenterState {
+        if let iconURL = source.iconURL {
+            return .symbol(IconSymbolState(
+                source: .image(url: iconURL, fallbackSymbol: "keyboard"),
+                color: .primary,
+                scale: scale
+            ))
+        }
+        if let label = source.shortLabel, !label.isEmpty {
+            return .text(IconTextState(text: label, color: .primary, scale: scale))
+        }
+        return .symbol(IconSymbolState(
+            source: .symbol(name: "keyboard", variableValue: nil, fallback: nil),
+            color: .primary,
+            scale: scale
+        ))
     }
 
     private static func wifiState(_ wifi: WiFiStatus, options: ConnectionIconOptions) -> CenterState {
@@ -146,7 +196,13 @@ enum IconPresentationMapper {
         case 1: 0.33
         default: 0
         }
-        return wifiSymbol(variableValue: variableValue, color: bars == 0 ? .inactive : .primary, scale: scale)
+        // An associated interface must never render as a faded, disabled glyph.
+        // A missing reading means "unknown", not "no signal", so it keeps the
+        // full foreground tint; only a genuinely weak-but-known reading uses the
+        // muted track. Otherwise a transient invalid `rssiValue()` blanks the
+        // connected icon (issue #110).
+        let color: IconColorRole = (rssi == nil) ? .primary : (bars == 0 ? .inactive : .primary)
+        return wifiSymbol(variableValue: variableValue, color: color, scale: scale)
     }
 
     private static func wifiSymbol(

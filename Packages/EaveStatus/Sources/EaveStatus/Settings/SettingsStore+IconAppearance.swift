@@ -65,8 +65,14 @@ extension SettingsStore {
                 showsPercentageWhenConnected: additionalInputs.0,
                 symbolScale: additionalInputs.1,
                 showsChargingEffect: additionalInputs.2,
-                showsChargingBoltHeartbeat: additionalInputs.3
+                showsChargingBoltHeartbeat: additionalInputs.3,
+                fullThreshold: Self.defaultBatteryFullThreshold
             )
+        }
+        .combineLatest($batteryFullThreshold) { inputs, fullThreshold in
+            var updated = inputs
+            updated.fullThreshold = Self.clampedBatteryFullThreshold(fullThreshold)
+            return updated
         }
         .eraseToAnyPublisher()
     }
@@ -97,6 +103,20 @@ extension SettingsStore {
                 wifiScale: options.wifiScale
             )
         }
+        .combineLatest($connectionCenterSource, $prioritizesNetworkErrorsOverInputSource) {
+            options, centerSource, prioritizesNetworkErrors in
+            ConnectionIconOptions(
+                showsWiFiIconForEthernet: options.showsWiFiIconForEthernet,
+                showsWiFiIconForHotspot: options.showsWiFiIconForHotspot,
+                showsWiFiIconForTemporaryConnection: options.showsWiFiIconForTemporaryConnection,
+                showsWiFiIconForInternetSharing: options.showsWiFiIconForInternetSharing,
+                showsBatteryPercentageInConnectionSlot: options.showsBatteryPercentageInConnectionSlot,
+                centerSource: centerSource,
+                prioritizesNetworkErrorsOverInputSource: prioritizesNetworkErrors,
+                wifiScale: options.wifiScale
+            )
+        }
+        .removeDuplicates()
         .eraseToAnyPublisher()
     }
 
@@ -138,6 +158,7 @@ private struct BatteryAppearanceInputs {
     var symbolScale: Double
     var showsChargingEffect: Bool
     var showsChargingBoltHeartbeat: Bool
+    var fullThreshold: Double
 
     func options(ringStrokeScale: Double) -> BatteryIconOptions {
         BatteryIconOptions(
@@ -148,6 +169,7 @@ private struct BatteryAppearanceInputs {
             usesStatusColors: usesStatusColors,
             criticalThreshold: Int(criticalThreshold.rounded()),
             showsPercentageWhenConnected: showsPercentageWhenConnected,
+            fullThreshold: Int(fullThreshold.rounded()),
             textScale: symbolScale * BatteryIconOptions.defaultTextScale,
             ringStrokeScale: ringStrokeScale
         )

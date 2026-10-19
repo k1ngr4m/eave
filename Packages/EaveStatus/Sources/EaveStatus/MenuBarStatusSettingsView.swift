@@ -9,12 +9,15 @@ public struct MenuBarStatusSettingsView: View {
     private let controller: MenuBarStatusController
     @ObservedObject private var settings: SettingsStore
     @ObservedObject private var localization: Localization
+    @ObservedObject private var inputSourceController: InputSourceController
+    @ObservedObject private var helper = PrivilegedHelperManager.shared
 
     public init(controller: MenuBarStatusController) {
         self.controller = controller
         _statusStore = ObservedObject(wrappedValue: controller.store)
         _settings = ObservedObject(wrappedValue: controller.settings)
         _localization = ObservedObject(wrappedValue: controller.localization)
+        _inputSourceController = ObservedObject(wrappedValue: controller.inputSourceController)
     }
 
     public var body: some View {
@@ -33,6 +36,7 @@ public struct MenuBarStatusSettingsView: View {
                 }
             }
             Section(localization.string(.settingsBatteryTitle)) {
+                lowPowerModeSettings
                 Toggle(localization.string(.settingsBatteryShowPercentage), isOn: $settings.showsBatteryPercentage)
                 Toggle(localization.string(.settingsBatteryShowChargingIndicator), isOn: $settings.showsChargingIndicator)
                 Toggle(localization.string(.settingsBatteryChargingEffect), isOn: $settings.showsChargingEffect)
@@ -41,8 +45,32 @@ public struct MenuBarStatusSettingsView: View {
                 Slider(value: $settings.batteryCriticalThreshold, in: SettingsStore.batteryCriticalThresholdRange, step: 1) {
                     Text(localization.string(.settingsBatteryCriticalThreshold))
                 }
+                HStack {
+                    Slider(value: $settings.batteryFullThreshold, in: SettingsStore.batteryFullThresholdRange, step: 1) {
+                        Text(localization.string(.settingsBatteryFullThreshold))
+                    }
+                    Text("\(Int(settings.batteryFullThreshold))%").monospacedDigit().frame(width: 44)
+                }
+                Text(localization.string(.settingsBatteryFullThresholdDescription)).font(.caption).foregroundStyle(.secondary)
+                if settings.canReadSystemChargeLimit {
+                    Button(localization.string(.settingsBatteryFullThresholdUseChargeLimit)) {
+                        settings.applySystemChargeLimit()
+                    }
+                }
             }
             Section(localization.string(.settingsNetworkConnectionIcons)) {
+                Picker(localization.string(.settingsNetworkCenterSource), selection: $settings.connectionCenterSource) {
+                    Text(localization.string(.settingsNetworkCenterSourceAutomatic)).tag(ConnectionCenterSource.automatic)
+                    Text(localization.string(.settingsNetworkCenterSourceInputSource)).tag(ConnectionCenterSource.inputSource)
+                }
+                if settings.connectionCenterSource == .inputSource {
+                    Toggle(localization.string(.settingsNetworkCenterSourceNetworkWarnings), isOn: $settings.prioritizesNetworkErrorsOverInputSource)
+                }
+                Toggle(localization.string(.settingsPopupOrderInputSource), isOn: Binding(
+                    get: { settings.enabledPopupSections.contains(.inputSource) },
+                    set: { settings.setPopupSection(.inputSource, enabled: $0) }
+                ))
+                Toggle(localization.string(.settingsNetworkShowLocalIP), isOn: $settings.showsLocalIPAddress)
                 Toggle(localization.string(.settingsNetworkWiFiIconForEthernet), isOn: $settings.showsWiFiIconForEthernet)
                 Toggle(localization.string(.settingsNetworkWiFiIconForHotspot), isOn: $settings.showsWiFiIconForHotspot)
             }
@@ -120,7 +148,7 @@ public struct MenuBarStatusSettingsView: View {
 
     private var iconPreview: some View {
         let scene = IconPresentationMapper.scene(
-            inputs: IconPresentationResourceResolver.inputs(snapshot: statusStore.snapshot),
+            inputs: IconPresentationResourceResolver.inputs(snapshot: statusStore.snapshot, inputSource: inputSourceController.selectedDescriptor),
             configuration: IconPresentationConfiguration(
                 battery: settings.batteryIconOptions, connection: settings.connectionIconOptions,
                 volume: settings.volumeIconOptions, bluetooth: settings.bluetoothAudioIconOptions
@@ -147,6 +175,32 @@ public struct MenuBarStatusSettingsView: View {
         .padding(12)
         .foregroundStyle(previewIsDark ? Color.white : Color.black)
         .background(previewIsDark ? Color.black.opacity(0.8) : Color.white, in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var lowPowerModeSettings: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Toggle(localization.string(.lowPowerModeControl), isOn: helper.isEnabledBinding)
+                .disabled(!helper.isAvailable)
+            Text(localization.string(.lowPowerModeControlDescription))
+                .font(.caption).foregroundStyle(.secondary)
+            if helper.isAvailable {
+                Button(localization.string(helper.requiresApproval && !helper.isReady
+                    ? .lowPowerModeRequiresApproval : .lowPowerModeOpenLoginItems)) {
+                    helper.openLoginItemsSettings()
+                }
+                .font(.caption)
+                if helper.isEnabled {
+                    Text(localization.string(helper.isReady ? .lowPowerModeHelperReady : .lowPowerModeHelperUnavailable))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            } else {
+                Text(localization.string(.lowPowerModeSignedBuildRequired))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if let error = helper.lastErrorMessage {
+                Text(error).font(.caption).foregroundStyle(.red)
+            }
+        }
     }
 
 }

@@ -154,22 +154,6 @@ final class Issue30WiFiAlignmentTests: XCTestCase {
 }
 
 private extension PixelBuffer {
-    /// Edge-to-edge midpoint of the opaque ink, independent of how much faint
-    /// anti-aliasing each platform includes.
-    func horizontalAlphaMidpoint(size: CGFloat, scale: CGFloat) -> CGFloat? {
-        let pixelsPerSVGUnit = size * scale / StatusIconGeometry.canvas.width
-        var minX = width
-        var maxX = -1
-        for y in 0..<height {
-            for x in 0..<width where rgba(x: x, y: y).alpha > 0 {
-                minX = min(minX, x)
-                maxX = max(maxX, x)
-            }
-        }
-        guard minX <= maxX else { return nil }
-        return (CGFloat(minX) + CGFloat(maxX) + 1) / 2 / pixelsPerSVGUnit
-    }
-
     func horizontalAlphaCenter(
         inSVGRect rect: CGRect,
         size: CGFloat,
