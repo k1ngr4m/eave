@@ -176,6 +176,7 @@ TemporaryAssets/
 !.github/assets/
 !DynamicIsland.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 !scripts/test_claude_keychain.sh
+!scripts/test-note-markdown.sh
 !tests/test_settings_monitoring_split.py
 !tests/test_eave_identity.py
 

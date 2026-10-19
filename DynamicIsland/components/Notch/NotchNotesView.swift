@@ -879,6 +879,8 @@ struct NoteEditorView: View {
     }
 
     @FocusState private var isContentFocused: Bool
+    @State private var isPreviewing = false
+    @State private var listKeyMonitor: Any?
 
     @EnvironmentObject var vm: DynamicIslandViewModel
     private var suppressionToken = UUID()
@@ -900,6 +902,26 @@ struct NoteEditorView: View {
                 
                 Spacer()
                 
+                Button {
+                    addTask()
+                } label: {
+                    Image(systemName: "checklist")
+                }
+                .buttonStyle(.plain)
+                .disabled(isPreviewing)
+                .help("Add task")
+                .accessibilityLabel("Add task")
+
+                Button {
+                    isPreviewing.toggle()
+                    isContentFocused = !isPreviewing
+                } label: {
+                    Image(systemName: isPreviewing ? "pencil" : "eye")
+                }
+                .buttonStyle(.plain)
+                .help(isPreviewing ? String(localized: "Edit note") : String(localized: "Markdown preview"))
+                .accessibilityLabel(isPreviewing ? String(localized: "Edit note") : String(localized: "Markdown preview"))
+
                 Button(action: onSave) {
                     Text("Done")
                         .font(.system(size: 15, weight: .bold, design: .rounded))
@@ -953,7 +975,7 @@ struct NoteEditorView: View {
             
             // Content Input
             ZStack(alignment: .topLeading) {
-                if content.isEmpty { // Placeholder
+                if content.isEmpty && !isPreviewing { // Placeholder
                     Text("Start typing...")
                         .font(.system(size: 13, design: .rounded)) // Reduced from 14
                         .foregroundStyle(Color.primary.opacity(0.5))
@@ -962,7 +984,13 @@ struct NoteEditorView: View {
                         .allowsHitTesting(false)
                 }
                 
-                TextEditor(text: $content)
+                if isPreviewing {
+                    NoteMarkdownPreview(content: $content)
+                        .padding(12)
+                        .padding(.bottom, 28)
+                        .padding(.trailing, imageData != nil ? 75 : 0)
+                } else {
+                    TextEditor(text: $content)
                     .font(.system(size: 13, design: .rounded))
                     .foregroundStyle(Color.primary)
                     .lineSpacing(4)
@@ -971,8 +999,10 @@ struct NoteEditorView: View {
                     .padding(.bottom, 20)
                     .padding(.trailing, imageData != nil ? 75 : 0) // Reduced from 100
                     .focused($isContentFocused)
+                    .help("Shift-Return continues a list; an empty item ends it.")
                     .frame(maxHeight: .infinity)
                     .background(Color.primary.opacity(0.05))
+                }
                 
                 // Image Overlay in Bottom Right
                 if let data = imageData, let nsImage = NSImage(data: data) {
@@ -1032,12 +1062,44 @@ struct NoteEditorView: View {
         }
         .onDisappear {
             updateSuppression(for: false)
+            if let listKeyMonitor { NSEvent.removeMonitor(listKeyMonitor) }
+            listKeyMonitor = nil
         }
         .onAppear {
             if isNew {
                 isContentFocused = true
             }
+            // NSTextView consumes Return before SwiftUI's onKeyPress can handle it.
+            // Scope interception to this focused editor; leave IME composition alone.
+            if listKeyMonitor == nil {
+                listKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                    guard !isPreviewing, event.keyCode == 36,
+                          event.modifierFlags.intersection([.shift, .command, .option, .control]) == .shift,
+                          let editor = textEditor(in: event.window), !editor.hasMarkedText() else { return event }
+                    let edit = NoteMarkdown.lineBreakEdit(in: content, selection: editor.selectedRange())
+                    editor.insertText(edit.replacement, replacementRange: edit.range)
+                    return nil
+                }
+            }
         }
+    }
+
+    private func textEditor(in window: NSWindow?) -> NSTextView? {
+        guard isContentFocused,
+              let editor = window?.firstResponder as? NSTextView,
+              editor.string == content else { return nil }
+        return editor
+    }
+
+    private func addTask() {
+        if let editor = textEditor(in: NSApp.keyWindow) {
+            let selection = editor.selectedRange()
+            let start = (content as NSString).lineRange(for: selection).location
+            editor.insertText("- [ ] ", replacementRange: NSRange(location: start, length: 0))
+        } else {
+            content += (content.isEmpty || content.hasSuffix("\n") ? "" : "\n") + "- [ ] "
+        }
+        isContentFocused = true
     }
 
     private func updateSuppression(for hovering: Bool) {

@@ -38,3 +38,10 @@ MIT License. See Support/DesktopPing/LICENSE, also bundled with the app.
 Signal textures and sounds are copyright Riot Games and are excluded from MIT.
 
 The lolPing adaptation also includes local animated emotes and their sounds (Riot Games assets), and an image library stored only on this Mac.
+
+Note Markdown support
+---------------------
+Markdown block parsing, task edits and list continuation adapted from
+https://github.com/vorssaint/vorssaint-utils at commit 98a56d27.
+Copyright (C) 2026 Vorssaint. GPL-3.0-or-later (see LICENSE).
+Source: DynamicIsland/helpers/NoteMarkdown.swift.
