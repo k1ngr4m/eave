@@ -258,6 +258,16 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
             }
             .store(in: &cancellables)
 
+        coordinator.$developerToolOpen.combineLatest(coordinator.$developerToolExpanded)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self, self.notchState == .open, coordinator.currentView == .developerTools else { return }
+                let size = self.calculateDynamicNotchSize()
+                withAnimation(.easeInOut(duration: 0.25)) { self.notchSize = size }
+                AppDelegate.shared?.ensureWindowSize(addShadowPadding(to: size, isMinimalistic: Defaults[.enableMinimalisticUI]), animated: true, force: false)
+            }
+            .store(in: &cancellables)
+
         coordinator.$notesLayoutState
             .removeDuplicates()
             .receive(on: RunLoop.main)
@@ -456,6 +466,10 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
         if coordinator.currentView == .stocks {
             adjustedSize.height = stocksOpenNotchHeight(headerHeight: effectiveClosedNotchHeight)
             return adjustedSize
+        }
+
+        if coordinator.currentView == .developerTools {
+            return developerToolsSize(screenName: screen)
         }
 
         if coordinator.currentView == .notes {

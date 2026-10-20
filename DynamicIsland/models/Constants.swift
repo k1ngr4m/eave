@@ -1090,6 +1090,13 @@ extension Defaults.Keys {
     static let cpuTemperatureUnit = Key<LockScreenWeatherTemperatureUnit>("cpuTemperatureUnit", default: .matchingSystemPreference)
     
     // MARK: Terminal Feature
+    static let enableDeveloperTools = Key<Bool>("enableDeveloperTools", default: false)
+    static let enableJSONTool = Key<Bool>("enableJSONTool", default: true)
+    static let jsonWorkspacePinned = Key<Bool>("jsonWorkspacePinned", default: true)
+    static let jsonIndent = Key<Int>("jsonIndent", default: 2)
+    static let jsonSort = Key<String>("jsonSort", default: "original")
+    static let jsonAutoValidate = Key<Bool>("jsonAutoValidate", default: true)
+
     static let enableTerminalFeature = Key<Bool>("enableTerminalFeature", default: false)
     static let terminalShellPath = Key<String>("terminalShellPath", default: "/bin/zsh")
     static let terminalFontFamily = Key<String>("terminalFontFamily", default: "")

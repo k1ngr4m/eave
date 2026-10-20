@@ -228,6 +228,10 @@ struct ContentView: View {
             return CGSize(width: baseSize.width, height: resolvedHeight)
         }
 
+        if coordinator.currentView == .developerTools {
+            return developerToolsSize(screenName: vm.screen)
+        }
+
         if coordinator.currentView == .terminal {
             // Dynamic height: up to terminalMaxHeightFraction of screen, min 300pt
             let screenHeight = NSScreen.main?.visibleFrame.height ?? 800
@@ -1353,6 +1357,8 @@ struct ContentView: View {
                                   NotchLLMUsageView()
                             case .notes:
                                 NotchNotesView()
+                            case .developerTools:
+                                DeveloperToolsView()
                             case .terminal:
                                 NotchTerminalView()
                           }

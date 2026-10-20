@@ -62,7 +62,7 @@ class DynamicIslandViewCoordinator: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var hoverOpenSuppressedUntil: Date = .distantPast
     
-    private static let tabOrder: [NotchViews] = [.home, .calendar, .shelf, .timer, .stats, .stocks, .llmUsage, .notes, .terminal]
+    private static let tabOrder: [NotchViews] = [.home, .calendar, .shelf, .timer, .stats, .stocks, .llmUsage, .notes, .terminal, .developerTools]
     
     /// Direction of the most recent tab switch (true = forward/right, false = backward/left)
     @Published var tabSwitchForward: Bool = true
@@ -89,6 +89,8 @@ class DynamicIslandViewCoordinator: ObservableObject {
 
     @Published var codexDetailPresented = false
     @Published var statsSecondRowExpansion: CGFloat = 1
+    @Published var developerToolOpen = false
+    @Published var developerToolExpanded = false
     @Published var notesLayoutState: NotesLayoutState = .list
     
     
@@ -131,6 +133,12 @@ class DynamicIslandViewCoordinator: ObservableObject {
     
     private init() {
         selectedScreen = preferredScreen
+        Defaults.publisher(.enableJSONTool)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] change in
+                if !change.newValue { self?.developerToolOpen = false }
+            }
+            .store(in: &cancellables)
         Defaults.publisher(.timerDisplayMode)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] change in
@@ -164,6 +172,7 @@ class DynamicIslandViewCoordinator: ObservableObject {
             Defaults.publisher(.enableLLMUsageFeature).map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.enableStatsFeature).map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.enableNotes).map { _ in () }.eraseToAnyPublisher(),
+            Defaults.publisher(.enableDeveloperTools).map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.enableTerminalFeature).map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.enableMinimalisticUI).map { _ in () }.eraseToAnyPublisher(),
         ]

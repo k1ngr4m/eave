@@ -59,6 +59,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     case shortcuts
     case notes
     case terminal
+    case developerTools
     case about
 
     var id: String { rawValue }
@@ -69,7 +70,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .general, .appearance, .menuBar:                                return .core
         case .liveActivities, .lockScreen, .devices, .hudAndOSD, .battery:
             return .displayAndSystem
-        case .media, .timer, .calendar, .notes, .shelf, .stocks, .desktopPing, .screenText, .clipboard, .stats, .llmAgents, .terminal:
+        case .media, .timer, .calendar, .notes, .shelf, .stocks, .desktopPing, .screenText, .clipboard, .stats, .llmAgents, .terminal, .developerTools:
             return .utilities
         case .shortcuts, .about:                                             return .info
         }
@@ -97,6 +98,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .shelf: return String(localized: "Shelf")
         case .shortcuts: return String(localized: "Shortcuts")
         case .notes: return String(localized: "Notes")
+        case .developerTools: return "开发工具"
         case .terminal: return String(localized: "Terminal")
         case .about: return String(localized: "About")
         }
@@ -124,6 +126,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .shelf: return "books.vertical"
         case .shortcuts: return "keyboard"
         case .notes: return "note.text"
+        case .developerTools: return "curlybraces"
         case .terminal: return "apple.terminal"
         case .about: return "info.circle"
         }
@@ -151,6 +154,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .shelf: return .brown
         case .shortcuts: return .orange
         case .notes: return Color(red: 0.979, green: 0.716, blue: 0.153, opacity: 1.000)
+        case .developerTools: return .blue
         case .terminal: return Color(red: 0.2, green: 0.8, blue: 0.4)
         case .about: return .secondary
         }
@@ -214,6 +218,7 @@ enum LockScreenSettingsSection: String, CaseIterable, Identifiable {
 
 private enum SettingsSearchIndex {
     static let entries: [SettingsSearchEntry] = [
+        SettingsSearchEntry(tab: .developerTools, title: "开发工具 / JSON 美化", keywords: ["json", "developer", "格式化", "开发工具", "校验"], highlightID: nil),
         SettingsSearchEntry(tab: .desktopPing, title: "Desktop Pings", keywords: ["lolping", "ping", "wheel", "signal", "pause", "轮盘", "信号", "暫停", "訊號"], highlightID: nil),
         SettingsSearchEntry(tab: .media, title: "Show music perimeter progress", keywords: ["music", "progress", "perimeter", "歌曲", "外围", "进度条", "外圍", "進度條"], highlightID: SettingsTab.media.highlightID(for: "Show music perimeter progress")),
         // General
@@ -764,6 +769,7 @@ struct SettingsView: View {
             .stats,
             .llmAgents,
             .terminal,
+            .developerTools,
             // Display & System
             .liveActivities,
             .lockScreen,
@@ -962,7 +968,7 @@ struct SettingsView: View {
 
     private func isTabVisible(_ tab: SettingsTab) -> Bool {
         switch tab {
-        case .timer, .stats, .llmAgents, .stocks, .shelf, .notes, .terminal:
+        case .timer, .stats, .llmAgents, .stocks, .shelf, .notes, .terminal, .developerTools:
             return !enableMinimalisticUI
         default:
             return true
@@ -1045,6 +1051,8 @@ struct SettingsView: View {
             SettingsForm(tab: .notes) {
                 NotesSettingsView()
             }
+        case .developerTools:
+            SettingsForm(tab: .developerTools) { DeveloperToolsSettings() }
         case .terminal:
             SettingsForm(tab: .terminal) {
                 TerminalSettings()
