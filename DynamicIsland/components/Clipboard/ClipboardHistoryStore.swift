@@ -15,6 +15,17 @@ final class ClipboardHistoryStore: ObservableObject {
             else { stop(); ClipboardPanelController.shared.dismiss() }
         }
     }
+    @Published var ocrEnabled: Bool {
+        didSet {
+            defaults.set(ocrEnabled, forKey: "clipboardOCREnabled")
+            if !ocrEnabled { cancelOCR() }
+        }
+    }
+    private var ocrTask: Task<Void, Never>?
+    private var ocrGeneration = UUID()
+    private var ocrEntryID: UUID?
+    private var ocrResult: (UUID, String)?
+    private var ocrFailures: Set<UUID> = []
     @Published var soundEffects: Bool { didSet { defaults.set(soundEffects, forKey: "clipboardSoundEffects") } }
     @Published var pasteTarget: ClipboardPasteTarget { didSet { defaults.set(pasteTarget.rawValue, forKey: "clipboardPasteTarget") } }
     @Published var alwaysPlainText: Bool { didSet { defaults.set(alwaysPlainText, forKey: "clipboardAlwaysPlainText") } }
@@ -51,6 +62,7 @@ final class ClipboardHistoryStore: ObservableObject {
 
     init(defaults: UserDefaults = .standard, directory: URL? = nil) {
         self.defaults = defaults
+        ocrEnabled = defaults.object(forKey: "clipboardOCREnabled") as? Bool ?? true
         enabled = defaults.object(forKey: "clipboardEnabled") as? Bool ?? true
         soundEffects = defaults.object(forKey: "clipboardSoundEffects") as? Bool ?? true
         pasteTarget = ClipboardPasteTarget(rawValue: defaults.string(forKey: "clipboardPasteTarget") ?? "") ?? .activeApplication
@@ -115,6 +127,7 @@ final class ClipboardHistoryStore: ObservableObject {
     }
 
     func stop() {
+        cancelOCR()
         timer?.invalidate()
         timer = nil
         for observer in observers { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
@@ -140,6 +153,8 @@ final class ClipboardHistoryStore: ObservableObject {
             if busy { return }
         }
         guard !paused, !unavailable else { lastChange = pasteboard.changeCount; return }
+        processOCR()
+        if busy { return }
         let change = pasteboard.changeCount
         guard change != lastChange else { return }
         if #available(macOS 15.4, *) {
@@ -163,7 +178,9 @@ final class ClipboardHistoryStore: ObservableObject {
             entry.name = previous.name
             entry.isFavorite = previous.isFavorite
             entry.collectionIDs = previous.collectionIDs
-            newPayload = nil
+            entry.recognizedText = previous.recognizedText
+            entry.byteCount += previous.recognizedText?.utf8.count ?? 0
+            newPayload = payload.files == nil ? nil : (entry.id, payload)
         }
         candidate.entries.insert(entry, at: 0)
         candidate.expire(retention: retention)
@@ -185,7 +202,7 @@ final class ClipboardHistoryStore: ObservableObject {
 
     func editText(_ id: UUID, text: String) async -> UUID? {
         guard ready, !busy, let index = history.entries.firstIndex(where: { $0.id == id }),
-              history.entries[index].kind != .image else { return nil }
+              history.entries[index].isEditable else { return nil }
         let data = Data(text.utf8)
         guard data.count <= ClipboardPayload.maxBytes else {
             message = String(localized: "Text exceeds the 20 MB limit.")
@@ -221,12 +238,19 @@ final class ClipboardHistoryStore: ObservableObject {
     }
 
     func delete(_ id: UUID) {
+        guard !busy else { return }
+        if ocrEntryID == id || ocrResult?.0 == id { cancelOCR() }
         var candidate = history
         candidate.entries.removeAll { $0.id == id }
         commit(candidate)
     }
 
-    func clear() { commit(ClipboardHistory(entries: [], collections: history.collections)) }
+    func clear() {
+        guard !busy else { return }
+        cancelOCR()
+        ocrFailures.removeAll()
+        commit(ClipboardHistory(entries: [], collections: history.collections))
+    }
 
     func addCollection(_ name: String, pinning entryID: UUID? = nil) {
         let name = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(40))
@@ -294,10 +318,80 @@ final class ClipboardHistoryStore: ObservableObject {
         }
     }
 
+    private func cancelOCR() {
+        ocrGeneration = UUID()
+        ocrTask?.cancel()
+        ocrResult = nil
+    }
+
+    func processOCR() {
+        guard ready, !busy, ocrEnabled else { return }
+        if let (id, text) = ocrResult {
+            ocrResult = nil
+            guard let index = history.entries.firstIndex(where: { $0.id == id }) else { return }
+            var candidate = history
+            candidate.entries[index].recognizedText = text
+            candidate.entries[index].byteCount += text.utf8.count
+            guard candidate.trim(limit: max(1, itemLimit), bytes: max(1, capacityMB) * 1024 * 1024) else {
+                ocrFailures.insert(id); return
+            }
+            commit(candidate)
+            return
+        }
+        guard ocrTask == nil, let entry = history.entries.first(where: {
+            $0.kind == .image && $0.recognizedText == nil && !ocrFailures.contains($0.id)
+        }) else { return }
+        let generation = ocrGeneration
+        ocrEntryID = entry.id
+        ocrTask = Task {
+            defer { ocrTask = nil; ocrEntryID = nil }
+            do {
+                guard let data = try await disk.payload(entry.id).imageData, !Task.isCancelled else {
+                    if generation == ocrGeneration { ocrFailures.insert(entry.id); ocrTask = nil }
+                    return
+                }
+                let work = Task.detached(priority: .utility) { try ClipboardOCR.recognize(data) }
+                let text = try await withTaskCancellationHandler(operation: { try await work.value }, onCancel: { work.cancel() })
+                guard !Task.isCancelled, generation == ocrGeneration else { return }
+                ocrResult = (entry.id, text)
+                ocrTask = nil
+            } catch {
+                guard generation == ocrGeneration else { return }
+                ocrFailures.insert(entry.id)
+                ocrTask = nil
+            }
+        }
+    }
+
+    func copyRecognizedText(_ id: UUID) {
+        guard enabled, let text = history.entries.first(where: { $0.id == id })?.recognizedText, !text.isEmpty else { return }
+        let payload = ClipboardPayload(items: [[NSPasteboard.PasteboardType.string.rawValue: Data(text.utf8)]])
+        if payload.write(to: .general, plain: true) { lastChange = NSPasteboard.general.changeCount }
+    }
+
+    func revealFiles(_ id: UUID) async {
+        do {
+            let payload = try await disk.payload(id)
+            let urls = try payload.resolvedFileURLs()
+            if !urls.isEmpty { NSWorkspace.shared.activateFileViewerSelecting(urls) }
+        } catch { message = error.localizedDescription }
+    }
+
+    func copyFilePaths(_ id: UUID) async {
+        do {
+            let payload = try await disk.payload(id)
+            let paths = try payload.resolvedFileURLs().map(\.path).joined(separator: "\n")
+            guard enabled, !paths.isEmpty else { return }
+            let text = ClipboardPayload(items: [[NSPasteboard.PasteboardType.string.rawValue: Data(paths.utf8)]])
+            if text.write(to: .general, plain: true) { lastChange = NSPasteboard.general.changeCount }
+        } catch { message = error.localizedDescription }
+    }
+
     func copy(_ id: UUID, plain: Bool, ifCurrent: () -> Bool = { true }) async -> Bool {
         guard enabled else { return false }
         do {
             let payload = try await disk.payload(id)
+            if payload.files != nil { _ = try payload.resolvedFileURLs() }
             guard enabled, ifCurrent() else { return false }
             guard payload.write(to: .general, plain: plain) else {
                 message = plain ? String(localized: "This item has no text to paste.") : String(localized: "Could not write to the clipboard.")

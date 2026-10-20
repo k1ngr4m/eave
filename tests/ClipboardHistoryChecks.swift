@@ -1,5 +1,6 @@
 // Run with scripts/test-clipboard.sh. Uses a private pasteboard and temporary history only.
 import AppKit
+import ImageIO
 
 // Standalone store checks do not create windows or register global shortcuts.
 @MainActor
@@ -37,6 +38,34 @@ struct ClipboardHistoryChecks {
             pasteboard.writeObjects([sensitive])
             assert(ClipboardPayload.read(from: pasteboard) == nil, "Must reject \(type) before reading content")
         }
+        let fileDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: fileDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: fileDirectory) }
+        let fileURL = fileDirectory.appendingPathComponent("你好.txt")
+        try Data("original".utf8).write(to: fileURL)
+        pasteboard.clearContents()
+        pasteboard.writeObjects([fileURL as NSURL, fileDirectory as NSURL])
+        let filePayload = ClipboardPayload.read(from: pasteboard)!
+        let fileEntry = filePayload.entry(sourceID: "Finder", sourceName: "Finder")
+        assert(fileEntry.kind == .files && fileEntry.fileCount == 2 && !fileEntry.isEditable)
+        assert(fileEntry.text.contains("你好.txt"))
+        assert(filePayload.write(to: pasteboard, plain: true), "Always-plain must preserve file semantics")
+        assert(pasteboard.pasteboardItems?.count == 2)
+        let restoredFile = URL(string: pasteboard.pasteboardItems!.first!.string(forType: .fileURL)!)!
+        assert(restoredFile.resolvingSymlinksInPath() == fileURL.resolvingSymlinksInPath())
+        let encodedFiles = try PropertyListEncoder().encode(filePayload)
+        let decodedFiles = try PropertyListDecoder().decode(ClipboardPayload.self, from: encodedFiles)
+        let resolvedFiles = try decodedFiles.resolvedFileURLs()
+        assert(resolvedFiles.count == 2)
+        let movedFile = fileDirectory.appendingPathComponent("renamed.txt")
+        try FileManager.default.moveItem(at: fileURL, to: movedFile)
+        let movedReferences = try decodedFiles.resolvedFileURLs()
+        assert(movedReferences.first?.resolvingSymlinksInPath() == movedFile.resolvingSymlinksInPath(), "Bookmarks must follow a renamed file")
+        try FileManager.default.removeItem(at: movedFile)
+        let beforeMissingCopy = pasteboard.changeCount
+        assert(!decodedFiles.write(to: pasteboard, plain: false))
+        assert(pasteboard.changeCount == beforeMissingCopy, "Missing files must not destroy the current clipboard")
+        print("File reference checks passed: multiple files, folder, serialization, plain-mode bypass, and missing-file atomicity.")
         let reordered = ClipboardPayload(items: [[NSPasteboard.PasteboardType.rtf.rawValue: rtf,
                                                   NSPasteboard.PasteboardType.string.rawValue: Data("你好 Eave".utf8)]])
         assert(payload.checksum == reordered.checksum)
@@ -56,6 +85,86 @@ struct ClipboardHistoryChecks {
         assert(imageEntry.kind == .image && imageEntry.detail == "8 × 4")
         assert(!imagePayload.write(to: pasteboard, plain: true), "Images without text must not clear the clipboard")
         assert(pasteboard.pasteboardItems?.count == 2)
+        let html = "<html><head><style>hidden</style></head><body><p>Hello &amp; &#x4E2D;&#25991;</p><script>bad()</script><img src='https://invalid.example/image'></body></html>"
+        let htmlPayload = ClipboardPayload(items: [[NSPasteboard.PasteboardType.html.rawValue: Data(html.utf8)]])
+        assert(htmlPayload.plainText == "Hello & 中文")
+        assert(htmlPayload.write(to: pasteboard, plain: false))
+        assert(pasteboard.data(forType: .html) == Data(html.utf8))
+        let jpeg = bitmap.representation(using: .jpeg, properties: [:])!
+        let jpegPayload = ClipboardPayload(items: [["public.jpeg": jpeg]])
+        assert(jpegPayload.entry(sourceID: "app", sourceName: "App").kind == .image)
+        assert(jpegPayload.write(to: pasteboard, plain: false))
+        assert(pasteboard.data(forType: .init("public.jpeg")) == jpeg)
+        let codecBitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 128, pixelsHigh: 128,
+            bitsPerSample: 8, samplesPerPixel: 3, hasAlpha: false, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        for type in ["com.compuserve.gif", "public.heic"] {
+            let encoded = NSMutableData()
+            let destination = CGImageDestinationCreateWithData(encoded, type as CFString, 1, nil)!
+            CGImageDestinationAddImage(destination, codecBitmap.cgImage!, nil)
+            assert(CGImageDestinationFinalize(destination))
+            let input = NSPasteboardItem(); input.setData(encoded as Data, forType: .init(type))
+            pasteboard.clearContents(); pasteboard.writeObjects([input])
+            let captured = ClipboardPayload.read(from: pasteboard)!
+            assert(captured.entry(sourceID: "test", sourceName: "Test").kind == .image)
+            assert(NSImage(data: captured.previewData!) != nil)
+            assert(captured.write(to: pasteboard, plain: false))
+            assert(pasteboard.data(forType: .init(type)) == encoded as Data)
+        }
+        let rich = NSAttributedString(string: "Rich 中文", attributes: [.font: NSFont.boldSystemFont(ofSize: 18), .foregroundColor: NSColor.red])
+        let rtfd = try rich.data(from: NSRange(location: 0, length: rich.length), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtfd])
+        let rtfdPayload = ClipboardPayload(items: [[NSPasteboard.PasteboardType.rtfd.rawValue: rtfd]])
+        assert(rtfdPayload.plainText == "Rich 中文")
+        assert(rtfdPayload.write(to: pasteboard, plain: false))
+        assert(pasteboard.data(forType: .rtfd) == rtfd)
+        let nativeEditor = NSTextView(frame: NSRect(x: 0, y: 0, width: 500, height: 200))
+        nativeEditor.isRichText = true
+        assert(nativeEditor.readSelection(from: pasteboard, type: .rtfd))
+        assert(nativeEditor.string == "Rich 中文")
+        assert(nativeEditor.textStorage?.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor == NSColor.red)
+
+        let pdfData = NSMutableData()
+        var pdfBounds = CGRect(x: 0, y: 0, width: 240, height: 120)
+        let pdfContext = CGContext(consumer: CGDataConsumer(data: pdfData)!, mediaBox: &pdfBounds, nil)!
+        pdfContext.beginPDFPage(nil)
+        pdfContext.setFillColor(NSColor.red.cgColor)
+        pdfContext.fill(CGRect(x: 10, y: 10, width: 80, height: 50))
+        pdfContext.endPDFPage(); pdfContext.closePDF()
+        let pdfItem = NSPasteboardItem()
+        pdfItem.setData(pdfData as Data, forType: .pdf)
+        pasteboard.clearContents(); pasteboard.writeObjects([pdfItem])
+        let pdfPayload = ClipboardPayload.read(from: pasteboard)!
+        assert(pdfPayload.entry(sourceID: "test", sourceName: "Test").kind == .pdf)
+        assert(NSImage(data: pdfPayload.previewData!) != nil)
+        assert(pdfPayload.write(to: pasteboard, plain: false))
+        assert(pasteboard.data(forType: .pdf) == pdfData as Data)
+        assert(!pdfPayload.write(to: pasteboard, plain: true))
+        for (type, data) in [(NSPasteboard.PasteboardType.init("public.jpeg"), jpeg), (.rtfd, rtfd), (.html, Data(html.utf8))] {
+            let input = NSPasteboardItem(); input.setData(data, forType: type)
+            pasteboard.clearContents(); pasteboard.writeObjects([input])
+            let captured = ClipboardPayload.read(from: pasteboard)!
+            let decoded = try PropertyListDecoder().decode(ClipboardPayload.self, from: PropertyListEncoder().encode(captured))
+            assert(decoded.write(to: pasteboard, plain: false))
+            assert(pasteboard.data(forType: type) == data)
+        }
+        // Render an actual text image and run Vision, rather than mocking OCR results.
+        let ocrImage = NSImage(size: NSSize(width: 1000, height: 220))
+        ocrImage.lockFocus()
+        NSColor.white.setFill(); NSRect(x: 0, y: 0, width: 1000, height: 220).fill()
+        ("EAVE CLIPBOARD 2026" as NSString).draw(at: NSPoint(x: 30, y: 110), withAttributes: [.font: NSFont.systemFont(ofSize: 54), .foregroundColor: NSColor.black])
+        ("剪贴板文字搜索" as NSString).draw(at: NSPoint(x: 30, y: 30), withAttributes: [.font: NSFont.systemFont(ofSize: 48), .foregroundColor: NSColor.black])
+        ocrImage.unlockFocus()
+        let ocrData = ocrImage.tiffRepresentation!
+        let recognized = try await Task.detached { try ClipboardOCR.recognize(ocrData) }.value
+        assert(recognized.contains("EAVE") && recognized.contains("2026") && recognized.contains("文字"), recognized)
+        var ocrEntry = imageEntry
+        ocrEntry.recognizedText = recognized
+        assert(ocrEntry.matches("EAVE") && !ocrEntry.matches("EAVE", includeOCR: false))
+        var legacyEntry = try JSONSerialization.jsonObject(with: JSONEncoder().encode(imageEntry)) as! [String: Any]
+        legacyEntry.removeValue(forKey: "fileCount"); legacyEntry.removeValue(forKey: "recognizedText")
+        let oldEntry = try JSONDecoder().decode(ClipboardEntry.self, from: JSONSerialization.data(withJSONObject: legacyEntry))
+        assert(oldEntry.recognizedText == nil && oldEntry.fileCount == nil && oldEntry.id == imageEntry.id)
+        print("Format and OCR checks passed: HTML extraction, JPEG/RTFD round trips, real bilingual Vision recognition, search switch, and legacy entry decoding.")
         var first = payload.entry(sourceID: "app", sourceName: "App")
         first.isFavorite = true
         let second = multi.entry(sourceID: "app", sourceName: "App")
@@ -144,6 +253,33 @@ struct ClipboardHistoryChecks {
         assert(reopened.excludedApplicationIDs == store.excludedApplicationIDs)
         assert(!reopened.enabled && !reopened.soundEffects && reopened.alwaysPlainText)
         assert(reopened.pasteTarget == .clipboard && reopened.retention == .forever)
+        let ocrDirectory = directory.appendingPathComponent("ocr")
+        let ocrDisk = ClipboardDiskStore(directory: ocrDirectory)
+        let ocrPayload = ClipboardPayload(items: [[NSPasteboard.PasteboardType.tiff.rawValue: ocrData]])
+        let pendingOCR = ocrPayload.entry(sourceID: "test", sourceName: "Test")
+        try await ocrDisk.save(ClipboardHistory(entries: [pendingOCR]), newPayload: (pendingOCR.id, ocrPayload))
+        let ocrStore = ClipboardHistoryStore(defaults: preferences, directory: ocrDirectory)
+        ocrStore.start() // disabled recorder: no general pasteboard access
+        for _ in 0..<100 where ocrStore.history.entries.isEmpty { try await Task.sleep(nanoseconds: 10_000_000) }
+        ocrStore.ocrEnabled = false
+        ocrStore.processOCR()
+        assert(ocrStore.history.entries.first?.recognizedText == nil)
+        ocrStore.ocrEnabled = true
+        for _ in 0..<600 where ocrStore.history.entries.first?.recognizedText == nil || ocrStore.busy {
+            ocrStore.processOCR()
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        assert(ocrStore.history.entries.first?.recognizedText?.contains("EAVE") == true)
+        let indexedHistory = try await ocrDisk.load()
+        assert(indexedHistory.entries.first?.recognizedText?.contains("文字") == true)
+        let retainedPayload = try await ocrDisk.payload(pendingOCR.id)
+        assert(retainedPayload.imageData == ocrData, "OCR must not replace the image payload")
+        ocrStore.clear()
+        for _ in 0..<100 where ocrStore.busy { try await Task.sleep(nanoseconds: 10_000_000) }
+        ocrStore.processOCR()
+        assert(ocrStore.history.entries.isEmpty)
+        ocrStore.stop()
+        print("OCR integration passed: old-image backfill, opt-out, persisted index, original image retained, and deletion.")
         // Legacy collection metadata remains readable, and edits preserve membership/payloads.
         let legacy = Data("{\"id\":\"\(collection.id.uuidString)\",\"name\":\"参考\"}".utf8)
         let decoded = try JSONDecoder().decode(ClipboardCollection.self, from: legacy)

@@ -40,7 +40,7 @@ final class ClipboardPanelController: ObservableObject {
             (!favoritesOnly || $0.isFavorite) &&
             (collectionID == nil || $0.collectionIDs.contains(collectionID!)) &&
             (sourceID.isEmpty || $0.sourceBundleID == sourceID) &&
-            (query.isEmpty || $0.text.localizedStandardContains(query) || ($0.name ?? "").localizedStandardContains(query) || $0.sourceName.localizedStandardContains(query))
+            $0.matches(query, includeOCR: ClipboardHistoryStore.shared.ocrEnabled)
         }
     }
 
@@ -132,7 +132,7 @@ final class ClipboardPanelController: ObservableObject {
 
     func presentItem(_ id: UUID, action: ItemPresentation.Action) {
         guard let entry = ClipboardHistoryStore.shared.history.entries.first(where: { $0.id == id }),
-              action != .edit || entry.kind != .image else { return }
+              action != .edit || entry.isEditable else { return }
         selectedID = id
         itemPresentation = ItemPresentation(id: id, action: action)
     }
@@ -146,7 +146,8 @@ final class ClipboardPanelController: ObservableObject {
         let targetWindow = targetWindow
         let targetInput = targetInput
         let copyOnly = store.pasteTarget == .clipboard
-        let usePlainText = plain || store.alwaysPlainText
+        let isText = store.history.entries.first(where: { $0.id == id })?.isEditable == true
+        let usePlainText = plain || (store.alwaysPlainText && isText)
         Task {
             defer { pasting = false }
             guard await ClipboardHistoryStore.shared.copy(id, plain: usePlainText, ifCurrent: { token == self.presentation }) else { return }

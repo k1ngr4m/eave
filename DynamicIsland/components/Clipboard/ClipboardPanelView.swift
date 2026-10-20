@@ -25,7 +25,7 @@ struct ClipboardPanelView: View {
                         .font(.system(size: 32, weight: .light)).foregroundStyle(.secondary)
                     Text(controller.query.isEmpty ? String(localized: "Copy something to see it here") : String(localized: "No matching items"))
                         .font(.headline)
-                    Text(String(localized: "Text, links, and images · Stored only on this Mac")).font(.caption).foregroundStyle(.secondary)
+                    Text(String(localized: "Text, links, images, and files · Stored only on this Mac")).font(.caption).foregroundStyle(.secondary)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollViewReader { proxy in
@@ -182,12 +182,19 @@ struct ClipboardPanelView: View {
         Button(controller.pasteActionTitle, systemImage: "return") { controller.paste(entry.id) }
             .keyboardShortcut(.return, modifiers: []).disabled(controller.pasting)
         Button(String(localized: "Paste as Plain Text"), systemImage: "textformat") { controller.paste(entry.id, plain: true) }
-            .keyboardShortcut(.return, modifiers: .shift).disabled(entry.text.isEmpty || controller.pasting)
+            .keyboardShortcut(.return, modifiers: .shift).disabled(entry.kind == .files || entry.text.isEmpty || controller.pasting)
         Button(String(localized: "Copy"), systemImage: "doc.on.doc") { Task { _ = await store.copy(entry.id, plain: false) } }
             .keyboardShortcut("c")
+        if store.ocrEnabled, let text = entry.recognizedText, !text.isEmpty {
+            Button(String(localized: "Copy Recognized Text"), systemImage: "text.viewfinder") { store.copyRecognizedText(entry.id) }
+        }
+        if entry.kind == .files {
+            Button(String(localized: "Show in Finder"), systemImage: "folder") { Task { await store.revealFiles(entry.id) } }
+            Button(String(localized: "Copy File Paths"), systemImage: "link") { Task { await store.copyFilePaths(entry.id) } }
+        }
         Divider()
         Button(String(localized: "Edit…"), systemImage: "pencil") { controller.presentItem(entry.id, action: .edit) }
-            .keyboardShortcut("e").disabled(store.busy || entry.kind == .image)
+            .keyboardShortcut("e").disabled(store.busy || !entry.isEditable)
         Button(String(localized: "Rename…"), systemImage: "rectangle.and.pencil.and.ellipsis") { controller.presentItem(entry.id, action: .rename) }
             .keyboardShortcut("r").disabled(store.busy)
         Button(String(localized: "Delete"), systemImage: "trash", role: .destructive) { store.delete(entry.id) }
@@ -200,13 +207,20 @@ struct ClipboardPanelView: View {
                 Label(String(localized: "Favorites"), systemImage: entry.isFavorite ? "checkmark" : "star")
             }
             ForEach(store.history.collections) { collection in
-                Button {
-                    store.update(entry.id) {
-                        if $0.collectionIDs.contains(collection.id) { $0.collectionIDs.remove(collection.id) }
-                        else { $0.collectionIDs.insert(collection.id) }
+                Toggle(isOn: Binding(
+                    get: { entry.collectionIDs.contains(collection.id) },
+                    set: { pinned in
+                        store.update(entry.id) {
+                            if pinned { $0.collectionIDs.insert(collection.id) }
+                            else { $0.collectionIDs.remove(collection.id) }
+                        }
                     }
-                } label: {
-                    Label(collection.name, systemImage: entry.collectionIDs.contains(collection.id) ? "checkmark" : "circle")
+                )) {
+                    Label {
+                        Text(collection.name)
+                    } icon: {
+                        Image(nsImage: (collection.color ?? .red).swatch).renderingMode(.original)
+                    }
                 }
             }
             Divider()
@@ -267,7 +281,7 @@ private struct ClipboardCard: View {
     let disk: ClipboardDiskStore
     @State private var thumbnail: NSImage?
     @State private var appIcon: NSImage?
-    private var title: String { entry.name ?? (entry.kind == .image ? String(localized: "Image") : entry.kind == .link ? String(localized: "Link") : String(localized: "Text")) }
+    private var title: String { entry.name ?? (entry.kind == .files ? String(localized: "Files") : entry.kind == .pdf ? "PDF" : entry.kind == .image ? String(localized: "Image") : entry.kind == .link ? String(localized: "Link") : String(localized: "Text")) }
     private var sourceName: String {
         entry.sourceName.isEmpty || ["未知应用", "未知應用", "Unknown App"].contains(entry.sourceName)
             ? String(localized: "Unknown App") : entry.sourceName
@@ -293,6 +307,14 @@ private struct ClipboardCard: View {
                 if entry.kind == .image {
                     if let thumbnail { Image(nsImage: thumbnail).resizable().scaledToFit().padding(8).frame(maxWidth: .infinity, maxHeight: .infinity) }
                     else { Image(systemName: "photo").font(.largeTitle).foregroundStyle(.secondary).frame(maxWidth: .infinity, maxHeight: .infinity) }
+                } else if entry.kind == .pdf {
+                    Image(systemName: "doc.richtext").font(.system(size: 64)).foregroundStyle(.secondary).frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if entry.kind == .files {
+                    VStack(alignment: .leading, spacing: 12) {
+                        if let thumbnail { Image(nsImage: thumbnail).resizable().scaledToFit().frame(width: 48, height: 48) }
+                        else { Image(systemName: "doc.on.doc").font(.largeTitle) }
+                        Text(entry.text).font(.system(size: 13)).lineLimit(5)
+                    }.padding(12)
                 } else {
                     Text(String(entry.text.prefix(1800))).font(.system(size: 13)).lineSpacing(3)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(12).clipped()
@@ -315,6 +337,9 @@ private struct ClipboardCard: View {
         .task(id: entry.id) {
             if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: entry.sourceBundleID) {
                 appIcon = NSWorkspace.shared.icon(forFile: url.path)
+            }
+            if entry.kind == .files, let payload = try? await disk.payload(entry.id), let file = payload.files?.first {
+                thumbnail = NSWorkspace.shared.icon(forFile: file.url.path)
             }
             if entry.kind == .image, let data = await disk.thumbnail(entry.id), !Task.isCancelled {
                 thumbnail = NSImage(data: data)

@@ -13,6 +13,12 @@ struct ClipboardItemSheet: View {
     @State private var saving = false
     @State private var error: String?
 
+    private var recognizedText: String? {
+        guard store.ocrEnabled else { return nil }
+        return store.history.entries.first(where: { $0.id == entry.id })?.recognizedText
+    }
+    private var previewHeight: CGFloat { (recognizedText?.isEmpty == false) ? 200 : 280 }
+
     private var title: String {
         switch action {
         case .edit: String(localized: "Edit Item")
@@ -36,16 +42,22 @@ struct ClipboardItemSheet: View {
                 Text(String(localized: "Saving replaces this item's content with plain text."))
                     .font(.caption).foregroundStyle(.secondary)
             case .preview:
-                if entry.kind == .image {
+                if entry.kind == .image || entry.kind == .pdf {
                     if let image {
                         ScrollView([.horizontal, .vertical]) { Image(nsImage: image) }
-                            .frame(minHeight: 280, maxHeight: 420)
-                    } else if error == nil { ProgressView().frame(maxWidth: .infinity, minHeight: 280) }
+                            .frame(height: previewHeight)
+                    } else if error == nil { ProgressView().frame(maxWidth: .infinity, minHeight: previewHeight) }
                 } else {
                     ScrollView {
                         Text(entry.text).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading).padding(8)
-                    }.frame(minHeight: 280, maxHeight: 420)
+                    }.frame(height: previewHeight)
                 }
+            }
+            if action == .preview, store.ocrEnabled,
+               let text = recognizedText, !text.isEmpty {
+                Text(String(localized: "Recognized Text")).font(.headline)
+                ScrollView { Text(text).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }.frame(height: 80)
+                Button(String(localized: "Copy Recognized Text")) { store.copyRecognizedText(entry.id) }
             }
             if let error { Text(error).font(.caption).foregroundStyle(.orange) }
             HStack {
@@ -62,10 +74,10 @@ struct ClipboardItemSheet: View {
         .interactiveDismissDisabled(saving)
         .task {
             draft = action == .rename ? (entry.name ?? "") : entry.text
-            if action == .preview && entry.kind == .image {
+            if action == .preview && (entry.kind == .image || entry.kind == .pdf) {
                 do {
                     let payload = try await store.disk.payload(entry.id)
-                    guard let data = payload.imageData, let loaded = NSImage(data: data) else {
+                    guard let data = payload.previewData, let loaded = NSImage(data: data) else {
                         error = String(localized: "Could not preview this image.")
                         return
                     }

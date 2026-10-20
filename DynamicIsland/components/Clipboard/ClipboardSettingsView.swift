@@ -84,6 +84,10 @@ struct ClipboardSettingsView: View {
                             .disabled(store.busy || store.history.entries.isEmpty)
                     }
                 }
+                Section(String(localized: "Image Text Recognition")) {
+                    Toggle(String(localized: "Recognize image text for search"), isOn: $store.ocrEnabled)
+                    Text(String(localized: "Recognizes text locally in the background, including existing images. Pasting still uses the original image.")).font(.caption).foregroundStyle(.secondary)
+                }
                 Section(String(localized: "Storage")) {
                     Picker(String(localized: "Unpinned item limit"), selection: $store.itemLimit) {
                         ForEach([100, 300, 500, 1000], id: \.self) { Text(String(localized: "\($0) items")).tag($0) }
@@ -91,7 +95,7 @@ struct ClipboardSettingsView: View {
                     Picker(String(localized: "Storage limit"), selection: $store.capacityMB) {
                         ForEach([50, 100, 250, 500], id: \.self) { Text("\($0) MB").tag($0) }
                     }
-                    Text(String(localized: "Up to 20 MB per copy. Copied files are not recorded yet."))
+                    Text(String(localized: "Up to 20 MB per copy. Files are stored as references, not backups; originals must remain available."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Section {
