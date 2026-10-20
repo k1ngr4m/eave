@@ -80,6 +80,9 @@ struct TabModel: Identifiable {
         if Defaults[.enableTerminalFeature] {
             tabsArray.append(TabModel(label: "Terminal", icon: "apple.terminal", view: .terminal))
         }
+        if Defaults[.enableDeveloperTools] {
+            tabsArray.append(TabModel(label: "开发工具", icon: "curlybraces", view: .developerTools))
+        }
         return tabsArray
     }
 }

@@ -80,6 +80,7 @@ public enum NotchViews: String {
     case stocks
     case notes
     case terminal
+    case developerTools
 }
 
 enum NotesLayoutState: Equatable {
