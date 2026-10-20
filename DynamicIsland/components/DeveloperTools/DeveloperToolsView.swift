@@ -365,6 +365,11 @@ struct DeveloperToolsView: View {
     }
     private func tree(_ root: JSONValue) -> some View {
         let visibleRows = rows(root)
+        let font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+        let contentWidth = visibleRows.reduce(CGFloat(0)) { width, row in
+            let text = row.name + ": " + row.value.summary
+            return max(width, (text as NSString).size(withAttributes: [.font: font]).width + CGFloat(row.depth) * 15 + 50)
+        }
         return VStack(spacing: 0) {
             HStack {
                 TextField("筛选字段或值", text: $search).textFieldStyle(.plain)
@@ -377,9 +382,10 @@ struct DeveloperToolsView: View {
                             Button { if collapsed.contains(row.id) { collapsed.remove(row.id) } else { collapsed.insert(row.id) } } label: {
                                 Image(systemName: collapsed.contains(row.id) ? "chevron.right" : "chevron.down").frame(width: 10).opacity(row.value.children.isEmpty ? 0 : 1)
                             }.buttonStyle(.plain).disabled(row.value.children.isEmpty)
-                            Text(row.name).foregroundStyle(.blue)
-                            Text(row.value.summary).lineLimit(1)
+                            Text(row.name + ":").foregroundStyle(.blue).fixedSize()
+                            Text(row.value.summary).foregroundStyle(jsonColor(row.value)).fixedSize().textSelection(.enabled)
                         }
+                        .fixedSize(horizontal: true, vertical: false)
                         .font(.system(size: 12, design: .monospaced)).padding(.leading, CGFloat(row.depth) * 15).padding(.vertical, 3)
                         .contextMenu {
                             Button("复制路径") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(row.pointer, forType: .string) }
@@ -388,27 +394,98 @@ struct DeveloperToolsView: View {
                         }
                     }
                     if visibleRows.count >= 5000 { Text("树形预览最多显示 5000 个节点，完整内容可在代码视图查看。").font(.caption) }
-                }.padding(10)
+                }.frame(width: contentWidth, alignment: .leading).padding(10)
             }
         }
     }
-    private func table(_ root: JSONValue) -> some View {
-        let values: [JSONValue] = { if case .array(let items) = root { return items }; return [root] }()
-        let columns = Array(Set(values.prefix(200).flatMap { value in value.typeName == "object" ? value.children.map(\.0) : ["值"] })).sorted()
-        return ScrollView([.horizontal, .vertical]) {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 0) { ForEach(columns, id: \.self) { key in Text(key).fontWeight(.semibold).frame(width: 150, alignment: .leading) } }.padding(8).background(.primary.opacity(0.05))
-                ForEach(Array(values.prefix(200).enumerated()), id: \.offset) { _, value in
-                    HStack(spacing: 0) {
-                        ForEach(columns, id: \.self) { key in
-                            Text(value.typeName == "object" ? (value.children.first { $0.0 == key }?.1.rendered(indent: 0) ?? "—") : (key == "值" ? value.rendered(indent: 0) : "—")).lineLimit(2).textSelection(.enabled).frame(width: 150, alignment: .leading)
-                        }
-                    }.padding(8)
-                    Divider()
-                }
-                if values.count > 200 { Text("预览前 200 行，复制和导出包含完整结果。").padding(8) }
-            }.font(.system(size: 11, design: .monospaced))
+    private func jsonColor(_ value: JSONValue) -> Color {
+        switch value {
+        case .string: return .green
+        case .number: return .orange
+        case .bool, .null: return .purple
+        default: return .secondary
         }
+    }
+    private func table(_ root: JSONValue) -> some View {
+        // Objects are field/value records; only arrays of objects become columnar tables.
+        let records: [JSONValue] = { if case .array(let items) = root { return items }; return [] }()
+        let columnar = !records.isEmpty && records.allSatisfy { $0.typeName == "object" }
+        var keys: [String] = []
+        if columnar {
+            var seen = Set<String>()
+            for record in records.prefix(200) {
+                for (key, _) in record.children where seen.insert(key).inserted { keys.append(key) }
+            }
+        }
+        let fields = root.typeName == "object" || root.typeName == "array" ? root.children : [("$", root)]
+        let headings = columnar ? ["#"] + keys : [root.typeName == "array" ? "索引" : "字段", "值"]
+        let count = columnar ? records.count : fields.count
+        return GeometryReader { geometry in
+            let keyWidth = min(220.0, max(150.0, geometry.size.width * 0.35))
+            let widths: [CGFloat] = columnar ? [44] + keys.map { _ in CGFloat(220) } : [keyWidth, max(240, geometry.size.width - keyWidth)]
+            ScrollView([.horizontal, .vertical]) {
+                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                    Section {
+                        ForEach(0..<min(count, 200), id: \.self) { index in
+                            HStack(alignment: .top, spacing: 0) {
+                                ForEach(headings.indices, id: \.self) { column in
+                                    if columnar {
+                                        if column == 0 {
+                                            tableCell(String(index), width: widths[column], color: .secondary)
+                                        } else {
+                                            let value = records[index].children.first { $0.0 == keys[column - 1] }?.1
+                                            tableCell(value.map(tableText) ?? "—", width: widths[column], color: value.map(jsonColor) ?? .secondary)
+                                        }
+                                    } else if column == 0 {
+                                        tableCell(fields[index].0, width: widths[column], color: .blue)
+                                    } else {
+                                        tableCell(tableText(fields[index].1), width: widths[column], color: jsonColor(fields[index].1))
+                                    }
+                                }
+                            }
+                            .background(.primary.opacity(index.isMultiple(of: 2) ? 0.025 : 0))
+                            .overlay { tableGridLines(widths) }
+                            .overlay(alignment: .bottom) { Rectangle().fill(.primary.opacity(0.08)).frame(height: 1) }
+                        }
+                    } header: {
+                        HStack(spacing: 0) {
+                            ForEach(headings.indices, id: \.self) { index in
+                                tableCell(headings[index], width: widths[index], color: .primary).fontWeight(.semibold)
+                            }
+                        }.background(Color(nsColor: .controlBackgroundColor))
+                        .overlay { tableGridLines(widths) }
+                    }
+                    if count == 0 { Text("没有可显示的数据").foregroundStyle(.secondary).padding(12) }
+                    if count > 200 { Text("预览前 200 行，复制和导出包含完整结果。").foregroundStyle(.secondary).padding(12) }
+                }
+                .frame(width: widths.reduce(0, +), alignment: .leading)
+                .font(.system(size: 12, design: .monospaced))
+            }
+        }
+    }
+    private func tableText(_ value: JSONValue) -> String {
+        if case .string(let text) = value { return text }
+        return value.rendered(indent: value.children.isEmpty ? 0 : 2)
+    }
+    private func tableCell(_ text: String, width: CGFloat, color: Color) -> some View {
+        Text(text)
+            .foregroundStyle(color)
+            .textSelection(.enabled)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(width: width - 24, alignment: .leading)
+            .padding(12)
+    }
+    private func tableGridLines(_ widths: [CGFloat]) -> some View {
+        GeometryReader { geometry in
+            Path { path in
+                var x: CGFloat = 0
+                for width in widths.dropLast() {
+                    x += width
+                    path.move(to: CGPoint(x: x, y: 0))
+                    path.addLine(to: CGPoint(x: x, y: geometry.size.height))
+                }
+            }.stroke(.primary.opacity(0.08), lineWidth: 1)
+        }.allowsHitTesting(false)
     }
     private func present(_ item: JSONSheet) { pointer = ""; sheetText = item == .edit ? document.output : ""; sheetMessage = ""; sheet = item }
     private func detailSheet(_ item: JSONSheet) -> some View {
