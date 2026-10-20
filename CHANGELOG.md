@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-20
+
+- Add clipboard history with text, images, files, richer paste formats, OCR search, and application exclusions.
+- Add screen text capture with offline text and QR-code recognition and configurable line-break handling.
+- Add developer-tool settings and a JSON workspace with formatting, validation, escaping, tree and table views, field extraction, node editing, and file import/export; preserve large numbers and pin preferences.
+- Add standalone calendar navigation and a weekly agenda, plus Markdown preview and interactive task lists in notes.
+- Add light, dark, and system notch appearances, live settings previews, and optional music perimeter progress.
+- Reorganize settings and permission controls; fix timer previews, desktop ping input, OSD contrast, device picker appearance, and Codex quota-window classification.
+- Update bundled LLM pricing and use Eave's pricing source.
 - Add input-source display and switching, shared by the menu bar and Dock.
 - Add a configurable full-ring battery threshold while preserving the actual percentage.
 - Show local IP addresses in network summaries and link to Internet Sharing settings.
