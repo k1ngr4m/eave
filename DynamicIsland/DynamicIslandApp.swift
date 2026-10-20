@@ -236,6 +236,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         DesktopPingManager.shared.stop()
+        ClipboardHistoryStore.shared.stop()
         // Guarantee the native OSD is usable after we exit: if we were
         // suppressing it, OSDUIHelper is SIGSTOP-frozen and the async restore in
         // enableSystemHUD() would not finish before the process dies. Resume it
@@ -657,6 +658,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = EaveUpdater.shared
         DesktopPingManager.shared.start()
+        if !AppRuntimeEnvironment.isUITesting { ClipboardHistoryStore.shared.start() }
         Self.shared = self
         LockScreenLiveActivityWindowManager.shared.configure(viewModel: vm)
         LockScreenManager.shared.configure(viewModel: vm)
@@ -888,6 +890,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 if !change.newValue { ScreenTextManager.shared.cancel() }
                 self.updateFeatureShortcutAvailability()
             }
+        }.store(in: &cancellables)
+
+        ClipboardHistoryStore.shared.$enabled.dropFirst().sink { [weak self] _ in
+            Task { @MainActor [weak self] in self?.updateFeatureShortcutAvailability() }
         }.store(in: &cancellables)
 
         Defaults.publisher(.enableScreenText, options: []).sink { [weak self] change in
@@ -1402,6 +1408,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard !optionalShortcutHandlersRegistered else { return }
         optionalShortcutHandlersRegistered = true
 
+        KeyboardShortcuts.onKeyDown(for: .toggleClipboard) {
+            guard Defaults[.enableShortcuts] else { return }
+            ClipboardPanelController.shared.toggle()
+        }
+
         KeyboardShortcuts.onKeyDown(for: .copyScreenText) {
             guard Defaults[.enableShortcuts] else { return }
             ScreenTextManager.shared.capture()
@@ -1463,6 +1474,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func updateFeatureShortcutAvailability() {
+        updateShortcut(.toggleClipboard, isEnabled: Defaults[.enableShortcuts] && ClipboardHistoryStore.shared.enabled)
         updateShortcut(.copyScreenText, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableScreenText])
         updateShortcut(.openMonitoring, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableStatsFeature])
         updateShortcut(.startDemoTimer, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableTimerFeature])

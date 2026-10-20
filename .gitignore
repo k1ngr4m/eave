@@ -213,3 +213,5 @@ __pycache__/
 !tests/test_desktop_ping.py
 
 !scripts/test-screen-text.sh
+
+!scripts/test-clipboard.sh

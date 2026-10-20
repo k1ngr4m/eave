@@ -54,6 +54,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     case stocks
     case desktopPing
     case screenText
+    case clipboard
     case shelf
     case shortcuts
     case notes
@@ -68,7 +69,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .general, .appearance, .menuBar:                                return .core
         case .liveActivities, .lockScreen, .devices, .hudAndOSD, .battery:
             return .displayAndSystem
-        case .media, .timer, .calendar, .notes, .shelf, .stocks, .desktopPing, .screenText, .stats, .llmAgents, .terminal:
+        case .media, .timer, .calendar, .notes, .shelf, .stocks, .desktopPing, .screenText, .clipboard, .stats, .llmAgents, .terminal:
             return .utilities
         case .shortcuts, .about:                                             return .info
         }
@@ -87,6 +88,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .calendar: return String(localized: "Calendar")
         case .hudAndOSD: return String(localized: "Controls")
         case .battery: return String(localized: "Battery")
+        case .clipboard: return "剪贴板"
         case .screenText: return String(localized: "Copy text from screen")
         case .desktopPing: return String(localized: "Desktop Pings")
         case .stocks: return String(localized: "Stocks")
@@ -113,6 +115,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .calendar: return "calendar"
         case .hudAndOSD: return "dial.medium.fill"
         case .battery: return "battery.100.bolt"
+        case .clipboard: return "doc.on.clipboard"
         case .screenText: return "text.viewfinder"
         case .desktopPing: return "scope"
         case .stocks: return "chart.line.uptrend.xyaxis"
@@ -139,6 +142,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .calendar: return .cyan
         case .hudAndOSD: return .indigo
         case .battery: return Color(red: 0.202, green: 0.783, blue: 0.348, opacity: 1.000)
+        case .clipboard: return .blue
         case .screenText: return .blue
         case .desktopPing: return .cyan
         case .stocks: return .red
@@ -411,6 +415,7 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .lockScreen, title: "Reminder alignment", keywords: ["reminder", "alignment", "position"], highlightID: SettingsTab.lockScreen.highlightID(for: "Reminder alignment"), lockScreenSection: .widgets),
         SettingsSearchEntry(tab: .lockScreen, title: "Reminder vertical offset", keywords: ["reminder", "offset", "position"], highlightID: SettingsTab.lockScreen.highlightID(for: "Reminder vertical offset"), lockScreenSection: .widgets),
 
+        SettingsSearchEntry(tab: .clipboard, title: "剪贴板", keywords: ["clipboard", "paste", "启用剪贴板", "音效", "纯文本", "粘贴", "保留历史", "删除历史"], highlightID: nil),
         // Shortcuts
         SettingsSearchEntry(tab: .screenText, title: "Enable copy text from screen", keywords: ["OCR", "enable", "启用", "开启", "拷贝屏幕文字"], highlightID: SettingsTab.screenText.highlightID(for: "Enable copy text from screen")),
         SettingsSearchEntry(tab: .screenText, title: "Copy text from screen", keywords: ["OCR", "copy", "screen", "text", "QR", "文字", "识别", "复制", "拷贝", "二维码", "换行"], highlightID: SettingsTab.screenText.highlightID(for: "Copy text from screen")),
@@ -754,6 +759,7 @@ struct SettingsView: View {
             .stocks,
             .desktopPing,
             .screenText,
+            .clipboard,
             .stats,
             .llmAgents,
             .terminal,
@@ -1008,6 +1014,8 @@ struct SettingsView: View {
             SettingsForm(tab: .battery) {
                 Charge()
             }
+        case .clipboard:
+            SettingsForm(tab: .clipboard) { ClipboardSettingsView() }
         case .screenText:
             SettingsForm(tab: .screenText) { ScreenTextSettings() }
         case .desktopPing:
@@ -7048,6 +7056,7 @@ private struct ScreenTextSettings: View {
 }
 
 struct Shortcuts: View {
+    @ObservedObject private var clipboardStore = ClipboardHistoryStore.shared
     @Default(.enableScreenText) private var enableScreenText
     @Default(.enableTimerFeature) var enableTimerFeature
     @Default(.enableShortcuts) var enableShortcuts
@@ -7083,6 +7092,12 @@ struct Shortcuts: View {
                 Text("Configure recognition options in Utilities → Copy text from screen.")
             }
             .settingsHighlight(id: highlightID("Screen Text"))
+
+            Section("Clipboard") {
+                KeyboardShortcuts.Recorder("Open Clipboard:", name: .toggleClipboard)
+                    .disabled(!enableShortcuts || !clipboardStore.enabled)
+                Button("Open Clipboard") { ClipboardPanelController.shared.toggle() }.disabled(!clipboardStore.enabled)
+            }
 
             Group {
                 Section {
