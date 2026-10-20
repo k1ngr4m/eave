@@ -14,6 +14,7 @@ import UniformTypeIdentifiers
 
 struct DeveloperToolsSettings: View {
     @Default(.enableDeveloperTools) private var enabled
+    @Default(.enableJSONTool) private var jsonEnabled
     @Default(.jsonIndent) private var indent
     @Default(.jsonSort) private var sort
     @Default(.jsonAutoValidate) private var autoValidate
@@ -30,15 +31,7 @@ struct DeveloperToolsSettings: View {
                         Text("格式化、校验、转义与结构化浏览").font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button("打开") {
-                        guard let delegate = AppDelegate.shared else { return }
-                        let coordinator = DynamicIslandViewCoordinator.shared
-                        coordinator.developerToolOpen = true
-                        coordinator.currentView = .developerTools
-                        let target = delegate.viewModels.first { $0.key.localizedName == coordinator.selectedScreen }?.value ?? delegate.vm
-                        delegate.cancelPendingNotchAutoClose()
-                        target.open(target: .developerTools)
-                    }
+                    Toggle("启用 JSON 美化", isOn: $jsonEnabled).labelsHidden()
                 }
             }.disabled(!enabled)
             Section("JSON 默认设置") {
@@ -52,7 +45,7 @@ struct DeveloperToolsSettings: View {
                     Text("降序").tag("descending")
                 }
                 Toggle("输入时自动校验", isOn: $autoValidate)
-            }.disabled(!enabled)
+            }.disabled(!enabled || !jsonEnabled)
         }.formStyle(.grouped)
     }
 }
@@ -144,7 +137,8 @@ struct DeveloperToolsView: View {
     @ObservedObject private var coordinator = DynamicIslandViewCoordinator.shared
     @ObservedObject private var document = JSONWorkspace.shared
     @State private var token = UUID()
-    @State private var pinned = true
+    @Default(.jsonWorkspacePinned) private var pinned
+    @Default(.enableJSONTool) private var jsonEnabled
     @State private var cardHovered = false
     @State private var fileDialogOpen = false
     @State private var sheet: JSONSheet?
@@ -163,7 +157,7 @@ struct DeveloperToolsView: View {
     }
     var body: some View {
         VStack(spacing: 12) {
-            if coordinator.developerToolOpen { workspace } else { toolList }
+            if coordinator.developerToolOpen && jsonEnabled { workspace } else { toolList }
         }
         .padding(.horizontal, 16).padding(.bottom, 14).padding(.top, 6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -173,6 +167,10 @@ struct DeveloperToolsView: View {
         .onChange(of: autoValidate) { _, _ in document.changed() }
         .onChange(of: sheet) { _, _ in updatePin() }
         .onChange(of: fileDialogOpen) { _, _ in updatePin() }
+        .onChange(of: jsonEnabled) { _, enabled in
+            if !enabled { sheet = nil }
+            updatePin()
+        }
         .onChange(of: pinned) { _, _ in updatePin() }
         .onChange(of: coordinator.developerToolOpen) { _, _ in updatePin() }
         .onDisappear {
@@ -181,7 +179,7 @@ struct DeveloperToolsView: View {
         }
         .sheet(item: $sheet) { item in detailSheet(item) }
     }
-    private func updatePin() { vm.setAutoCloseSuppression(coordinator.developerToolOpen && (pinned || sheet != nil || fileDialogOpen), token: token) }
+    private func updatePin() { vm.setAutoCloseSuppression(coordinator.developerToolOpen && jsonEnabled && (pinned || sheet != nil || fileDialogOpen), token: token) }
     private var toolList: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -191,23 +189,34 @@ struct DeveloperToolsView: View {
             }
             ScrollView(.vertical) {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 160, maximum: 210))], alignment: .leading, spacing: 12) {
-                    Button {
-                        coordinator.developerToolOpen = true
-                    } label: {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Image(systemName: "curlybraces").font(.system(size: 27, weight: .medium)).foregroundStyle(.blue)
-                            Text("JSON 美化").font(.system(size: 15, weight: .semibold))
-                            Text("格式化 · 校验 · 转义").font(.system(size: 11)).foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading).padding(18)
-                        .background(.primary.opacity(cardHovered ? 0.09 : 0.045), in: RoundedRectangle(cornerRadius: 16))
-                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(.blue.opacity(cardHovered ? 0.8 : 0.45), lineWidth: 1))
-                        .contentShape(RoundedRectangle(cornerRadius: 16))
-                    }.buttonStyle(.plain).help("打开 JSON 美化")
-                    .onHover { cardHovered = $0 }
-                    .animation(.easeOut(duration: 0.15), value: cardHovered)
+                    if jsonEnabled {
+                        Button {
+                            coordinator.developerToolOpen = true
+                        } label: {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Image(systemName: "curlybraces").font(.system(size: 27, weight: .medium)).foregroundStyle(.blue)
+                                Text("JSON 美化").font(.system(size: 15, weight: .semibold))
+                                Text("格式化 · 校验 · 转义").font(.system(size: 11)).foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(18)
+                            .background(.primary.opacity(cardHovered ? 0.09 : 0.045), in: RoundedRectangle(cornerRadius: 16))
+                            .overlay(RoundedRectangle(cornerRadius: 16).stroke(.blue.opacity(cardHovered ? 0.8 : 0.45), lineWidth: 1))
+                            .contentShape(RoundedRectangle(cornerRadius: 16))
+                        }.buttonStyle(.plain).help("打开 JSON 美化")
+                        .onHover { cardHovered = $0 }
+                        .animation(.easeOut(duration: 0.15), value: cardHovered)
+                    }
                 }
             }.scrollIndicators(.hidden)
+            .overlay {
+                if !jsonEnabled {
+                    VStack(spacing: 8) {
+                        Image(systemName: "curlybraces").font(.title2)
+                        Text("暂无启用的工具").font(.subheadline)
+                        Text("在设置的开发工具页中启用 JSON 美化").font(.caption)
+                    }.foregroundStyle(.secondary)
+                }
+            }
         }
     }
     private var workspace: some View {

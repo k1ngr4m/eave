@@ -133,6 +133,12 @@ class DynamicIslandViewCoordinator: ObservableObject {
     
     private init() {
         selectedScreen = preferredScreen
+        Defaults.publisher(.enableJSONTool)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] change in
+                if !change.newValue { self?.developerToolOpen = false }
+            }
+            .store(in: &cancellables)
         Defaults.publisher(.timerDisplayMode)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] change in
