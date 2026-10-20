@@ -23,6 +23,9 @@ import AppKit
 #endif
 
 struct NotchTimerView: View {
+    var isSettingsPreview = false
+
+    private var isTimerActive: Bool { !isSettingsPreview && timerManager.isTimerActive }
     @EnvironmentObject var vm: DynamicIslandViewModel
     @ObservedObject var timerManager = TimerManager.shared
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
@@ -46,8 +49,8 @@ struct NotchTimerView: View {
 
     var body: some View {
         Group {
-            if enableTimerFeature {
-                HStack(alignment: .top, spacing: timerManager.isTimerActive ? 0 : 20) {
+            if enableTimerFeature || isSettingsPreview {
+                HStack(alignment: .top, spacing: isTimerActive ? 0 : 20) {
                     leftColumn
                     if shouldShowPresetColumn {
                         Divider()
@@ -72,7 +75,7 @@ struct NotchTimerView: View {
         .onAppear {
             lockAccentColorIfNeeded()
         }
-        .onChange(of: timerManager.isTimerActive) { _, isActive in
+        .onChange(of: isTimerActive) { _, isActive in
             if isActive {
                 lockAccentColorIfNeeded()
             } else {
@@ -80,7 +83,7 @@ struct NotchTimerView: View {
             }
         }
         .onChange(of: timerManager.activePresetId) { _, _ in
-            if timerManager.isTimerActive && lockedAccentColor == nil {
+            if isTimerActive && lockedAccentColor == nil {
                 lockAccentColorIfNeeded()
             }
         }
@@ -88,7 +91,7 @@ struct NotchTimerView: View {
 
     private var leftColumn: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if timerManager.isTimerActive {
+            if isTimerActive {
                 Spacer(minLength: 0)
                 activeTimerCard
                 Spacer(minLength: 0)
@@ -118,7 +121,7 @@ struct NotchTimerView: View {
                 ZStack {
                     List {
                         ForEach(timerPresets) { preset in
-                            TimerPresetCard(preset: preset, isActive: timerManager.activePresetId == preset.id) {
+                            TimerPresetCard(preset: preset, isActive: isTimerActive && timerManager.activePresetId == preset.id) {
                                 timerManager.startTimer(duration: preset.duration, name: preset.name, preset: preset)
                                 if !enableMinimalisticUI {
                                     coordinator.currentView = .timer
@@ -365,7 +368,7 @@ struct NotchTimerView: View {
     }
 
     private var shouldShowPresetColumn: Bool {
-        !timerManager.isTimerActive && showTimerPresetsInNotchTab
+        !isTimerActive && showTimerPresetsInNotchTab
     }
 
     private var resolvedNotchHeight: CGFloat {
@@ -378,12 +381,13 @@ struct NotchTimerView: View {
     }
 
     private var maxTabContentHeight: CGFloat {
+        if isSettingsPreview { return 148 }
         let available = resolvedNotchHeight - headerHeight - 36
         return max(130, available)
     }
 
     private func lockAccentColorIfNeeded() {
-        if timerManager.isTimerActive {
+        if isTimerActive {
             lockedAccentColor = resolvedAccentColor
         }
     }
@@ -544,7 +548,7 @@ struct NotchTimerView: View {
     }
 
     private func updateStoredCustomDuration() {
-        guard !isSyncingCustomDuration else { return }
+        guard !isSettingsPreview, !isSyncingCustomDuration else { return }
         customTimerDuration = customDurationInSeconds
     }
 }
