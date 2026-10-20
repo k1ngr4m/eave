@@ -71,216 +71,232 @@ struct DynamicIslandHeader: View {
             .frame(width: 20, height: 20)
     }
 
+    private var notchExclusionWidth: CGFloat {
+        guard vm.notchState == .open else { return 0 }
+        let screen = NSScreen.screens.first { $0.localizedName == vm.screen } ?? NSScreen.main
+        if let screen, screen.safeAreaInsets.top > 0,
+           let left = screen.auxiliaryTopLeftArea,
+           let right = screen.auxiliaryTopRightArea {
+            return max(vm.closedNotchSize.width, screen.frame.width - left.width - right.width + 4)
+        }
+        return min(vm.closedNotchSize.width, 300)
+    }
+
     var body: some View {
-        HStack(spacing: 0) {
-            HStack {
-                if !enableMinimalisticUI || coordinator.currentView == .calendar {
-                    TabSelectionView()
-                } else if Defaults[.showCalendar] {
-                    Button { coordinator.currentView = .calendar } label: {
-                        Image(systemName: "calendar")
-                            .frame(width: 28, height: 28)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Calendar")
-                    .help("Calendar")
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .opacity(vm.notchState == .closed ? 0 : 1)
-            .blur(radius: vm.notchState == .closed ? 20 : 0)
-            .animation(.smooth.delay(0.1), value: vm.notchState)
-            .zIndex(2)
-            .padding(8)
-
-            if vm.notchState == .open {
-                let spacerWidth = min(vm.closedNotchSize.width, 300)
-                Rectangle()
-                    .fill(enableMinimalisticUI ? .clear : (NSScreen.screens
-                        .first(where: { $0.localizedName == coordinator.selectedScreen })?.safeAreaInsets.top ?? 0 > 0 ? Color.notchBackground : .clear))
-                    .frame(width: spacerWidth)
-                    .mask {
-                        NotchShape()
-                    }
-            }
-
-            // 30pt targets sitting 4pt apart read as one run of buttons rather
-            // than as separate ones; 8 is the gap Apple leaves between controls
-            // of this size.
-            HStack(spacing: 8) {
-                if vm.notchState == .open && !enableMinimalisticUI {
-                    if Defaults[.showMirror] {
-                        Button(action: {
-                            vm.toggleCameraPreview()
-                        }) {
-                            Capsule()
-                                .fill(Color.notchBackground)
-                                .frame(width: 30, height: 30)
-                                .overlay {
-                                    headerGlyph("web.camera")
-                                }
+        GeometryReader { geometry in
+            let spacerWidth = notchExclusionWidth
+            let sideWidth = max(0, (geometry.size.width - spacerWidth) / 2)
+            HStack(spacing: 0) {
+                HStack {
+                    if !enableMinimalisticUI || coordinator.currentView == .calendar {
+                        TabSelectionView()
+                    } else if Defaults[.showCalendar] {
+                        Button { coordinator.currentView = .calendar } label: {
+                            Image(systemName: "calendar")
+                                .frame(width: 28, height: 28)
                         }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                    
-                    if Defaults[.enableTimerFeature] && timerDisplayMode == .popover {
-                        Button(action: {
-                            withAnimation(.smooth) {
-                                showTimerPopover.toggle()
-                            }
-                        }) {
-                            Capsule()
-                                .fill(Color.notchBackground)
-                                .frame(width: 30, height: 30)
-                                .overlay {
-                                    headerGlyph("timer")
-                                }
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .popover(isPresented: $showTimerPopover, arrowEdge: .bottom) {
-                            TimerPopover()
-                        }
-                        .onChange(of: showTimerPopover) { isActive in
-                            vm.isTimerPopoverActive = isActive
-                            if !isActive {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    vm.shouldRecheckHover.toggle()
-                                }
-                            }
-                        }
-                    }
-                    
-                    if enablePerAppVolume && showPerAppVolumeIcon {
-                        Button(action: {
-                            withAnimation(.smooth) {
-                                showPerAppVolumePopover.toggle()
-                            }
-                        }) {
-                            Capsule()
-                                .fill(Color.notchBackground)
-                                .frame(width: 30, height: 30)
-                                .overlay {
-                                    headerGlyph("slider.vertical.3")
-                                }
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .popover(isPresented: $showPerAppVolumePopover, arrowEdge: .bottom) {
-                            PerAppVolumePopover()
-                        }
-                        .onChange(of: showPerAppVolumePopover) { isActive in
-                            vm.isPerAppVolumePopoverActive = isActive
-
-                            if !isActive {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    vm.shouldRecheckHover.toggle()
-                                }
-                            }
-                        }
-                    }
-
-                    if enableCaffeinate && showCaffeinateIcon {
-                        Button(action: {
-                            withAnimation(.smooth) {
-                                showCaffeinatePopover.toggle()
-                            }
-                        }) {
-                            Capsule()
-                                .fill(Color.notchBackground)
-                                .frame(width: 30, height: 30)
-                                .overlay {
-                                    // Tinting the active state is the only
-                                    // signal the closed row can give that the
-                                    // Mac is being held awake, so it is not
-                                    // just a filled-vs-hollow glyph swap.
-                                    headerGlyph(
-                                        caffeinateManager.isActive ? "cup.and.saucer.fill" : "cup.and.saucer",
-                                        color: caffeinateManager.isActive ? .yellow : Color.primary
-                                    )
-                                }
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .popover(isPresented: $showCaffeinatePopover, arrowEdge: .bottom) {
-                            CaffeinatePopover()
-                        }
-                        .onChange(of: showCaffeinatePopover) { isActive in
-                            vm.isCaffeinatePopoverActive = isActive
-
-                            if !isActive {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    vm.shouldRecheckHover.toggle()
-                                }
-                            }
-                        }
-                    }
-
-                    if Defaults[.settingsIconInNotch] {
-                        Button(action: {
-                            SettingsWindowController.shared.showWindow()
-                        }) {
-                            Capsule()
-                                .fill(Color.notchBackground)
-                                .frame(width: 30, height: 30)
-                                .overlay {
-                                    headerGlyph("gearshape")
-                                }
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                    
-                    // Screen Recording Indicator
-                    if Defaults[.enableScreenRecordingDetection] && Defaults[.showRecordingIndicator] {
-                        RecordingIndicator()
-                            .frame(width: 30, height: 30) // Same size as other header elements
-                    }
-
-                    if Defaults[.enableDoNotDisturbDetection]
-                        && Defaults[.showDoNotDisturbIndicator]
-                        && doNotDisturbManager.isDoNotDisturbActive {
-                        FocusIndicator()
-                            .frame(width: 30, height: 30)
-                            .transition(.opacity)
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Calendar")
+                        .help("Calendar")
                     }
                 }
+                .frame(width: max(0, sideWidth - 16), alignment: .leading)
+                .opacity(vm.notchState == .closed ? 0 : 1)
+                .blur(radius: vm.notchState == .closed ? 20 : 0)
+                .animation(.smooth.delay(0.1), value: vm.notchState)
+                .zIndex(2)
+                .padding(8)
 
-                if vm.notchState == .open && showBatteryIndicator {
-                    if enableMinimalisticUI {
-                        // In minimalistic notch mode, show the battery pill only when
-                        // showMinimalisticBatteryIndicator is enabled (and not DI mode).
-                        if !shouldUseDynamicIslandMode(for: vm.screen) && showMinimalisticBatteryIndicator {
-                            MinimalisticBatteryView(
-                                levelBattery: batteryModel.levelBattery,
-                                isPluggedIn: batteryModel.isPluggedIn,
+                if vm.notchState == .open {
+                    Rectangle()
+                        .fill(enableMinimalisticUI ? .clear : (NSScreen.screens
+                            .first(where: { $0.localizedName == coordinator.selectedScreen })?.safeAreaInsets.top ?? 0 > 0 ? Color.notchBackground : .clear))
+                        .frame(width: spacerWidth)
+                        .mask {
+                            NotchShape()
+                        }
+                }
+
+                // 30pt targets sitting 4pt apart read as one run of buttons rather
+                // than as separate ones; 8 is the gap Apple leaves between controls
+                // of this size.
+                HStack(spacing: 8) {
+                    if vm.notchState == .open && !enableMinimalisticUI {
+                        if Defaults[.showMirror] {
+                            Button(action: {
+                                vm.toggleCameraPreview()
+                            }) {
+                                Capsule()
+                                    .fill(Color.notchBackground)
+                                    .frame(width: 30, height: 30)
+                                    .overlay {
+                                        headerGlyph("web.camera")
+                                    }
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    
+                        if Defaults[.enableTimerFeature] && timerDisplayMode == .popover {
+                            Button(action: {
+                                withAnimation(.smooth) {
+                                    showTimerPopover.toggle()
+                                }
+                            }) {
+                                Capsule()
+                                    .fill(Color.notchBackground)
+                                    .frame(width: 30, height: 30)
+                                    .overlay {
+                                        headerGlyph("timer")
+                                    }
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .popover(isPresented: $showTimerPopover, arrowEdge: .bottom) {
+                                TimerPopover()
+                            }
+                            .onChange(of: showTimerPopover) { isActive in
+                                vm.isTimerPopoverActive = isActive
+                                if !isActive {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        vm.shouldRecheckHover.toggle()
+                                    }
+                                }
+                            }
+                        }
+                    
+                        if enablePerAppVolume && showPerAppVolumeIcon {
+                            Button(action: {
+                                withAnimation(.smooth) {
+                                    showPerAppVolumePopover.toggle()
+                                }
+                            }) {
+                                Capsule()
+                                    .fill(Color.notchBackground)
+                                    .frame(width: 30, height: 30)
+                                    .overlay {
+                                        headerGlyph("slider.vertical.3")
+                                    }
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .popover(isPresented: $showPerAppVolumePopover, arrowEdge: .bottom) {
+                                PerAppVolumePopover()
+                            }
+                            .onChange(of: showPerAppVolumePopover) { isActive in
+                                vm.isPerAppVolumePopoverActive = isActive
+
+                                if !isActive {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        vm.shouldRecheckHover.toggle()
+                                    }
+                                }
+                            }
+                        }
+
+                        if enableCaffeinate && showCaffeinateIcon {
+                            Button(action: {
+                                withAnimation(.smooth) {
+                                    showCaffeinatePopover.toggle()
+                                }
+                            }) {
+                                Capsule()
+                                    .fill(Color.notchBackground)
+                                    .frame(width: 30, height: 30)
+                                    .overlay {
+                                        // Tinting the active state is the only
+                                        // signal the closed row can give that the
+                                        // Mac is being held awake, so it is not
+                                        // just a filled-vs-hollow glyph swap.
+                                        headerGlyph(
+                                            caffeinateManager.isActive ? "cup.and.saucer.fill" : "cup.and.saucer",
+                                            color: caffeinateManager.isActive ? .yellow : Color.primary
+                                        )
+                                    }
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .popover(isPresented: $showCaffeinatePopover, arrowEdge: .bottom) {
+                                CaffeinatePopover()
+                            }
+                            .onChange(of: showCaffeinatePopover) { isActive in
+                                vm.isCaffeinatePopoverActive = isActive
+
+                                if !isActive {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        vm.shouldRecheckHover.toggle()
+                                    }
+                                }
+                            }
+                        }
+
+                        if Defaults[.settingsIconInNotch] {
+                            Button(action: {
+                                SettingsWindowController.shared.showWindow()
+                            }) {
+                                Capsule()
+                                    .fill(Color.notchBackground)
+                                    .frame(width: 30, height: 30)
+                                    .overlay {
+                                        headerGlyph("gearshape")
+                                    }
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    
+                        // Screen Recording Indicator
+                        if Defaults[.enableScreenRecordingDetection] && Defaults[.showRecordingIndicator] {
+                            RecordingIndicator()
+                                .frame(width: 30, height: 30) // Same size as other header elements
+                        }
+
+                        if Defaults[.enableDoNotDisturbDetection]
+                            && Defaults[.showDoNotDisturbIndicator]
+                            && doNotDisturbManager.isDoNotDisturbActive {
+                            FocusIndicator()
+                                .frame(width: 30, height: 30)
+                                .transition(.opacity)
+                        }
+                    }
+
+                    if vm.notchState == .open && showBatteryIndicator {
+                        if enableMinimalisticUI {
+                            // In minimalistic notch mode, show the battery pill only when
+                            // showMinimalisticBatteryIndicator is enabled (and not DI mode).
+                            if !shouldUseDynamicIslandMode(for: vm.screen) && showMinimalisticBatteryIndicator {
+                                MinimalisticBatteryView(
+                                    levelBattery: batteryModel.levelBattery,
+                                    isPluggedIn: batteryModel.isPluggedIn,
+                                    isCharging: batteryModel.isCharging,
+                                    isInLowPowerMode: batteryModel.isInLowPowerMode,
+                                    bodyWidth: 28,
+                                    bodyHeight: 14,
+                                    isForNotification: false,
+                                    showPercentInside: showBatteryPercentInside
+                                )
+                                .padding(.trailing, 4)
+                                .transition(.opacity.combined(with: .scale(scale: 0.85)))
+                            }
+                        } else {
+                            DynamicIslandBatteryView(
+                                batteryWidth: 30,
                                 isCharging: batteryModel.isCharging,
                                 isInLowPowerMode: batteryModel.isInLowPowerMode,
-                                bodyWidth: 28,
-                                bodyHeight: 14,
-                                isForNotification: false,
-                                showPercentInside: showBatteryPercentInside
+                                isPluggedIn: batteryModel.isPluggedIn,
+                                levelBattery: batteryModel.levelBattery,
+                                maxCapacity: batteryModel.maxCapacity,
+                                timeToFullCharge: batteryModel.timeToFullCharge,
+                                isForNotification: false
                             )
-                            .padding(.trailing, 4)
-                            .transition(.opacity.combined(with: .scale(scale: 0.85)))
                         }
-                    } else {
-                        DynamicIslandBatteryView(
-                            batteryWidth: 30,
-                            isCharging: batteryModel.isCharging,
-                            isInLowPowerMode: batteryModel.isInLowPowerMode,
-                            isPluggedIn: batteryModel.isPluggedIn,
-                            levelBattery: batteryModel.levelBattery,
-                            maxCapacity: batteryModel.maxCapacity,
-                            timeToFullCharge: batteryModel.timeToFullCharge,
-                            isForNotification: false
-                        )
                     }
                 }
+                .font(.system(.headline, design: .rounded))
+                .frame(width: sideWidth, alignment: .trailing)
+                .opacity(vm.notchState == .closed ? 0 : 1)
+                .blur(radius: vm.notchState == .closed ? 20 : 0)
+                .animation(.smooth.delay(0.1), value: vm.notchState)
+                .zIndex(2)
             }
-            .font(.system(.headline, design: .rounded))
-            .frame(maxWidth: .infinity, alignment: .trailing)
-            .opacity(vm.notchState == .closed ? 0 : 1)
-            .blur(radius: vm.notchState == .closed ? 20 : 0)
-            .animation(.smooth.delay(0.1), value: vm.notchState)
-            .zIndex(2)
+            .frame(height: geometry.size.height)
         }
+        .frame(idealHeight: 42)
         .foregroundColor(.gray)
         .environmentObject(vm)
         .onChange(of: enablePerAppVolume) { _, newValue in

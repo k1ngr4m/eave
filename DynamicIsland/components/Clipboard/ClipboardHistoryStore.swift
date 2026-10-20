@@ -63,7 +63,7 @@ final class ClipboardHistoryStore: ObservableObject {
                     ready = true
                     if enabled { applyLimits() }
                 } catch {
-                    message = "剪贴板历史无法读取，已停止记录以保护原数据：\(error.localizedDescription)"
+                    message = String(localized: "Clipboard history could not be read. Recording stopped to protect existing data: \(error.localizedDescription)")
                 }
             }
         }
@@ -132,7 +132,7 @@ final class ClipboardHistoryStore: ObservableObject {
         guard change != lastChange else { return }
         if #available(macOS 15.4, *) {
             if pasteboard.accessBehavior == .alwaysDeny || pasteboard.accessBehavior == .ask {
-                message = "需要允许读取剪贴板。请在设置中选择“允许读取”，或在系统设置中允许 Eave 从其他 App 粘贴。"
+                message = String(localized: "Clipboard access is required. Grant access in clipboard settings, or allow Eave to paste from other apps in System Settings.")
                 return
             }
         }
@@ -144,11 +144,12 @@ final class ClipboardHistoryStore: ObservableObject {
         guard pasteboard.changeCount == change else { return }
         lastChange = change
         var candidate = history
-        var entry = payload.entry(sourceID: sourceID, sourceName: app?.localizedName ?? "未知应用")
+        var entry = payload.entry(sourceID: sourceID, sourceName: app?.localizedName ?? "")
         var newPayload: (UUID, ClipboardPayload)? = (entry.id, payload)
         if let index = candidate.entries.firstIndex(where: { $0.checksum == entry.checksum }) {
             let previous = candidate.entries.remove(at: index)
             entry.id = previous.id
+            entry.name = previous.name
             entry.isFavorite = previous.isFavorite
             entry.collectionIDs = previous.collectionIDs
             newPayload = nil
@@ -157,7 +158,7 @@ final class ClipboardHistoryStore: ObservableObject {
         candidate.expire(retention: retention)
         guard candidate.trim(limit: max(1, itemLimit), bytes: max(1, capacityMB) * 1024 * 1024),
               candidate.entries.contains(where: { $0.id == entry.id }) else {
-            message = "剪贴板容量已满，请删除部分收藏或提高容量上限。"
+            message = String(localized: "Clipboard storage is full. Delete some favorites or increase the storage limit.")
             return
         }
         commit(candidate, payload: newPayload, captureSound: true)
@@ -171,6 +172,43 @@ final class ClipboardHistoryStore: ObservableObject {
         commit(candidate)
     }
 
+    func editText(_ id: UUID, text: String) async -> UUID? {
+        guard ready, !busy, let index = history.entries.firstIndex(where: { $0.id == id }),
+              history.entries[index].kind != .image else { return nil }
+        let data = Data(text.utf8)
+        guard data.count <= ClipboardPayload.maxBytes else {
+            message = String(localized: "Text exceeds the 20 MB limit.")
+            return nil
+        }
+        let original = history.entries[index]
+        let payload = ClipboardPayload(items: [[NSPasteboard.PasteboardType.string.rawValue: data]])
+        // A new payload ID keeps the original readable if writing the metadata fails.
+        var edited = payload.entry(sourceID: original.sourceBundleID, sourceName: original.sourceName)
+        edited.timestamp = original.timestamp
+        edited.name = original.name
+        edited.isFavorite = original.isFavorite
+        edited.collectionIDs = original.collectionIDs
+        var candidate = history
+        candidate.entries[index] = edited
+        guard candidate.entries.reduce(0, { $0 + $1.byteCount }) <= max(1, capacityMB) * 1024 * 1024 else {
+            message = String(localized: "Clipboard storage is full. Delete some favorites or increase the storage limit.")
+            return nil
+        }
+        busy = true
+        defer {
+            busy = false
+            if limitsPending { applyLimits() }
+        }
+        do {
+            message = try await disk.save(candidate, newPayload: (edited.id, payload))
+            history = candidate
+            return edited.id
+        } catch {
+            message = String(localized: "Could not save changes: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
     func delete(_ id: UUID) {
         var candidate = history
         candidate.entries.removeAll { $0.id == id }
@@ -179,11 +217,32 @@ final class ClipboardHistoryStore: ObservableObject {
 
     func clear() { commit(ClipboardHistory(entries: [], collections: history.collections)) }
 
-    func addCollection(_ name: String) {
-        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+    func addCollection(_ name: String, pinning entryID: UUID? = nil) {
+        let name = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(40))
         guard !name.isEmpty, !history.collections.contains(where: { $0.name == name }) else { return }
         var candidate = history
-        candidate.collections.append(ClipboardCollection(name: String(name.prefix(40))))
+        let collection = ClipboardCollection(name: name)
+        candidate.collections.append(collection)
+        if let entryID, let index = candidate.entries.firstIndex(where: { $0.id == entryID }) {
+            candidate.entries[index].collectionIDs.insert(collection.id)
+        }
+        commit(candidate)
+    }
+
+    func renameCollection(_ id: UUID, to name: String) {
+        let name = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(40))
+        guard !name.isEmpty,
+              !history.collections.contains(where: { $0.id != id && $0.name == name }),
+              let index = history.collections.firstIndex(where: { $0.id == id }) else { return }
+        var candidate = history
+        candidate.collections[index].name = name
+        commit(candidate)
+    }
+
+    func setCollectionColor(_ id: UUID, to color: ClipboardCollection.Tint) {
+        guard let index = history.collections.firstIndex(where: { $0.id == id }) else { return }
+        var candidate = history
+        candidate.collections[index].color = color
         commit(candidate)
     }
 
@@ -200,7 +259,7 @@ final class ClipboardHistoryStore: ObservableObject {
         var candidate = history
         candidate.expire(retention: retention)
         guard candidate.trim(limit: max(1, itemLimit), bytes: max(1, capacityMB) * 1024 * 1024) else {
-            message = "收藏已超过容量上限，请先删除部分收藏。"
+            message = String(localized: "Favorites exceed the storage limit. Delete some favorites first.")
             return
         }
         if candidate.entries != history.entries { commit(candidate) }
@@ -217,7 +276,7 @@ final class ClipboardHistoryStore: ObservableObject {
                 if captureSound && enabled && soundEffects { NSSound(named: "Pop")?.play() }
             } catch {
                 paused = true
-                message = "保存失败，已暂停记录：\(error.localizedDescription)"
+                message = String(localized: "Saving failed. Recording paused: \(error.localizedDescription)")
             }
             busy = false
             if limitsPending { applyLimits() }
@@ -230,7 +289,7 @@ final class ClipboardHistoryStore: ObservableObject {
             let payload = try await disk.payload(id)
             guard enabled, ifCurrent() else { return false }
             guard payload.write(to: .general, plain: plain) else {
-                message = plain ? "这条记录没有可粘贴的文字。" : "无法写入剪贴板。"
+                message = plain ? String(localized: "This item has no text to paste.") : String(localized: "Could not write to the clipboard.")
                 return false
             }
             lastChange = NSPasteboard.general.changeCount
@@ -238,7 +297,7 @@ final class ClipboardHistoryStore: ObservableObject {
             if soundEffects { NSSound(named: "Tink")?.play() }
             return true
         } catch {
-            message = "无法读取这条记录：\(error.localizedDescription)"
+            message = String(localized: "Could not read this item: \(error.localizedDescription)")
             return false
         }
     }

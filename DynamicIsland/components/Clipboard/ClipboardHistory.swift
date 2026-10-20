@@ -14,13 +14,36 @@ struct ClipboardEntry: Codable, Identifiable, Equatable, Sendable {
     var detail: String
     var checksum: String
     var byteCount: Int
+    var localizedDetail: String {
+        kind == .image ? detail : String(localized: "\(text.count) characters")
+    }
+    var name: String?
+    var isPinned: Bool { isFavorite || !collectionIDs.isEmpty }
     var isFavorite = false
     var collectionIDs: Set<UUID> = []
 }
 
 struct ClipboardCollection: Codable, Identifiable, Equatable, Sendable {
+    enum Tint: String, Codable, CaseIterable, Sendable {
+        case red = "红色", orange = "橙色", yellow = "黄色", green = "绿色"
+        case blue = "蓝色", purple = "紫色", pink = "粉色", gray = "灰色"
+
+        var title: String {
+            switch self {
+            case .red: String(localized: "Red")
+            case .orange: String(localized: "Orange")
+            case .yellow: String(localized: "Yellow")
+            case .green: String(localized: "Green")
+            case .blue: String(localized: "Blue")
+            case .purple: String(localized: "Purple")
+            case .pink: String(localized: "Pink")
+            case .gray: String(localized: "Gray")
+            }
+        }
+    }
     var id = UUID()
     var name: String
+    var color: Tint? // Older histories have no color; display them in red.
 }
 
 enum ClipboardRetention: Int, CaseIterable, Sendable {
@@ -39,11 +62,11 @@ enum ClipboardRetention: Int, CaseIterable, Sendable {
     private var index: Int { Self.allCases.firstIndex(of: self)! }
     var title: String {
         switch index {
-        case 0...5: return "\(index + 1)天"
-        case 6...8: return "\(index - 5)周"
-        case 9...19: return "\(index - 8)个月"
-        case 20: return "1年"
-        default: return "永久"
+        case 0...5: return String(localized: "\(index + 1) days")
+        case 6...8: return String(localized: "\(index - 5) weeks")
+        case 9...19: return String(localized: "\(index - 8) months")
+        case 20: return String(localized: "1 year")
+        default: return String(localized: "Forever")
         }
     }
     // Five equally spaced landmarks; each unit range has its own finer steps.
@@ -86,14 +109,14 @@ struct ClipboardHistory: Codable, Sendable {
 
     mutating func expire(retention: ClipboardRetention, now: Date = Date()) {
         guard let cutoff = retention.cutoff(now: now) else { return }
-        entries.removeAll { !$0.isFavorite && $0.timestamp < cutoff }
+        entries.removeAll { !$0.isPinned && $0.timestamp < cutoff }
     }
 
     // Favorites are never evicted automatically. Refuse new content if they fill the budget.
     mutating func trim(limit: Int, bytes: Int) -> Bool {
         // ponytail: bounded history uses a linear eviction scan; index it if the cap grows substantially.
-        while entries.filter({ !$0.isFavorite }).count > limit || entries.reduce(0, { $0 + $1.byteCount }) > bytes {
-            guard let index = entries.lastIndex(where: { !$0.isFavorite }) else { return false }
+        while entries.filter({ !$0.isPinned }).count > limit || entries.reduce(0, { $0 + $1.byteCount }) > bytes {
+            guard let index = entries.lastIndex(where: { !$0.isPinned }) else { return false }
             entries.remove(at: index)
         }
         return true
@@ -172,7 +195,7 @@ struct ClipboardPayload: Codable, Sendable {
     func entry(sourceID: String, sourceName: String) -> ClipboardEntry {
         let text = plainText
         var kind: ClipboardEntry.Kind = .text
-        var detail = "\(text.count) 个字符"
+        var detail = String(localized: "\(text.count) characters")
         if let data = imageData, let source = CGImageSourceCreateWithData(data as CFData, nil) {
             kind = .image
             if let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
@@ -247,7 +270,7 @@ actor ClipboardDiskStore {
                 try fm.removeItem(at: url)
             }
         } catch {
-            return "历史已保存，但部分旧内容文件未能清理：\(error.localizedDescription)"
+            return String(localized: "History was saved, but some old content files could not be removed: \(error.localizedDescription)")
         }
         return nil
     }

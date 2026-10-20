@@ -16,6 +16,13 @@ final class ClipboardPanelController: ObservableObject {
     @Published var favoritesOnly = false
     @Published var sourceID = ""
     @Published var selectedID: UUID?
+    @Published private(set) var keyboardSelectionID: UUID?
+    struct ItemPresentation: Identifiable {
+        enum Action { case edit, rename, preview }
+        let id: UUID
+        let action: Action
+    }
+    @Published var itemPresentation: ItemPresentation?
     @Published var settingsPresented = false
     @Published var collectionPresented = false
     @Published private(set) var pasting = false
@@ -33,7 +40,7 @@ final class ClipboardPanelController: ObservableObject {
             (!favoritesOnly || $0.isFavorite) &&
             (collectionID == nil || $0.collectionIDs.contains(collectionID!)) &&
             (sourceID.isEmpty || $0.sourceBundleID == sourceID) &&
-            (query.isEmpty || $0.text.localizedStandardContains(query) || $0.sourceName.localizedStandardContains(query))
+            (query.isEmpty || $0.text.localizedStandardContains(query) || ($0.name ?? "").localizedStandardContains(query) || $0.sourceName.localizedStandardContains(query))
         }
     }
 
@@ -50,10 +57,12 @@ final class ClipboardPanelController: ObservableObject {
             targetWindow = Self.element(kAXFocusedWindowAttribute, of: app)
             targetInput = Self.element(kAXFocusedUIElementAttribute, of: app)
         }
+        keyboardSelectionID = nil
         query = ""
         sourceID = ""
         favoritesOnly = false
         collectionID = nil
+        itemPresentation = nil
         settingsPresented = false
         collectionPresented = false
         selectedID = ClipboardHistoryStore.shared.history.entries.first?.id
@@ -98,6 +107,7 @@ final class ClipboardPanelController: ObservableObject {
         if let outsideMonitor { NSEvent.removeMonitor(outsideMonitor) }
         localMonitor = nil
         outsideMonitor = nil
+        itemPresentation = nil
         settingsPresented = false
         collectionPresented = false
     }
@@ -111,6 +121,20 @@ final class ClipboardPanelController: ObservableObject {
         guard !entries.isEmpty else { selectedID = nil; return }
         let index = entries.firstIndex(where: { $0.id == selectedID }) ?? 0
         selectedID = entries[min(max(index + offset, 0), entries.count - 1)].id
+        keyboardSelectionID = selectedID
+    }
+
+    var pasteActionTitle: String {
+        if ClipboardHistoryStore.shared.pasteTarget == .clipboard { return String(localized: "Copy to Clipboard") }
+        guard let targetName = targetApplication?.localizedName else { return String(localized: "Paste") }
+        return String(localized: "Paste to \(targetName)")
+    }
+
+    func presentItem(_ id: UUID, action: ItemPresentation.Action) {
+        guard let entry = ClipboardHistoryStore.shared.history.entries.first(where: { $0.id == id }),
+              action != .edit || entry.kind != .image else { return }
+        selectedID = id
+        itemPresentation = ItemPresentation(id: id, action: action)
     }
 
     func paste(_ id: UUID, plain: Bool = false) {
@@ -132,11 +156,11 @@ final class ClipboardPanelController: ObservableObject {
             permission.refreshStatus()
             guard permission.isAuthorized else {
                 permission.requestAuthorizationPrompt()
-                ClipboardHistoryStore.shared.message = "请在系统设置 → 隐私与安全性 → 辅助功能中允许 Eave；授权后重新打开面板，双击或按 Enter 即可直接粘贴。"
+                ClipboardHistoryStore.shared.message = String(localized: "Allow Eave in System Settings → Privacy & Security → Accessibility. Then reopen the panel and double-click or press Enter to paste directly.")
                 return
             }
             guard let target, !target.isTerminated, target.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
-                ClipboardHistoryStore.shared.message = "已复制，请切换到目标应用后按 ⌘V。"
+                ClipboardHistoryStore.shared.message = String(localized: "Copied. Switch to the target app and press ⌘V to paste.")
                 return
             }
             // A nonactivating panel can own keyboard focus while the target app remains frontmost.
@@ -183,7 +207,7 @@ final class ClipboardPanelController: ObservableObject {
                 }
             }
             // Never send keys to a different app if activation failed.
-            ClipboardHistoryStore.shared.message = "已复制，但原输入框未恢复焦点。请点击输入框后按 ⌘V 粘贴。"
+            ClipboardHistoryStore.shared.message = String(localized: "Copied, but the original input could not regain focus. Click the input and press ⌘V to paste.")
             if token == presentation { panel?.makeKeyAndOrderFront(nil) }
         }
     }
@@ -203,8 +227,28 @@ final class ClipboardPanelController: ObservableObject {
                 return event
             }
             guard event.window === self.panel, self.panel?.attachedSheet == nil,
-                  !self.settingsPresented, !self.collectionPresented else { return event }
+                  !self.settingsPresented, !self.collectionPresented, self.itemPresentation == nil else { return event }
             if let editor = self.panel?.firstResponder as? NSTextView, editor.hasMarkedText() { return event }
+            if let id = self.selectedID {
+                let store = ClipboardHistoryStore.shared
+                let modifiers = event.modifierFlags.intersection([.command, .shift, .control, .option])
+                let textSelection = (self.panel?.firstResponder as? NSTextView)?.selectedRange().length ?? 0
+                if modifiers == .command {
+                    switch event.keyCode {
+                    case 8 where textSelection == 0:
+                        Task { _ = await store.copy(id, plain: false) }; return nil
+                    case 14: self.presentItem(id, action: .edit); return nil
+                    case 15: self.presentItem(id, action: .rename); return nil
+                    default: break
+                    }
+                } else if modifiers.isEmpty && self.query.isEmpty {
+                    if event.keyCode == 49 { self.presentItem(id, action: .preview); return nil }
+                    if event.keyCode == 51 || event.keyCode == 117 {
+                        if !store.busy { store.delete(id) }
+                        return nil
+                    }
+                }
+            }
             switch event.keyCode {
             case 53: self.dismiss(); return nil
             case 123 where !event.modifierFlags.contains(.command): self.select(offset: -1); return nil

@@ -1100,10 +1100,10 @@ private struct HomeIdleView: View {
                 .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("暂无播放")
+                    Text("Not Playing")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Color.primary.opacity(0.75))
-                    Text("让音乐慢慢响起")
+                    Text("Let the music begin")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary.opacity(0.45))
                 }

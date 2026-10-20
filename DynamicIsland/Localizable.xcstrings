@@ -1,6 +1,1862 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Text exceeds the 20 MB limit." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字内容超过 20 MB 上限。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字內容超過 20 MB 上限。"
+          }
+        }
+      }
+    },
+    "Could not save changes: %@" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法保存修改：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法儲存修改：%@"
+          }
+        }
+      }
+    },
+    "Could not save changes." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法保存修改。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法儲存修改。"
+          }
+        }
+      }
+    },
+    "Paste to %@" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘贴到 %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "貼上至 %@"
+          }
+        }
+      }
+    },
+    "Edit…" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯…"
+          }
+        }
+      }
+    },
+    "Pin" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "固定"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "固定"
+          }
+        }
+      }
+    },
+    "Edit Item" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑项目"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯項目"
+          }
+        }
+      }
+    },
+    "Rename Item" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重命名项目"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新命名項目"
+          }
+        }
+      }
+    },
+    "Item name" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目名称"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目名稱"
+          }
+        }
+      }
+    },
+    "Item content" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目内容"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目內容"
+          }
+        }
+      }
+    },
+    "The name is only a label; copied content stays unchanged. Leave it empty to restore the default name." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称仅用于显示，不改变复制内容。留空可恢复默认名称。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名稱僅用於顯示，不改變複製內容。留空可恢復預設名稱。"
+          }
+        }
+      }
+    },
+    "Saving replaces this item's content with plain text." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存后将以纯文本替换此项目的内容。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存後將以純文字取代此項目的內容。"
+          }
+        }
+      }
+    },
+    "Could not preview this image." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法预览此图片。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法預覽此圖片。"
+          }
+        }
+      }
+    },
+    "Unpinned item limit" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未固定记录上限"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未固定記錄上限"
+          }
+        }
+      }
+    },
+    "Items pinned to favorites or collections do not expire automatically. Shortening the period immediately deletes expired unpinned items. “Forever” is still subject to item and storage limits." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "固定到收藏或分类中的项目不会自动过期。缩短期限将立即删除过期的未固定记录；“永久”仍受条数和容量上限约束。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "固定至收藏或分類中的項目不會自動過期。縮短期限將立即刪除過期的未固定記錄；「永久」仍受筆數和容量上限限制。"
+          }
+        }
+      }
+    },
+    "Copy something to see it here" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制一些内容，它们会出现在这里"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製一些內容，它們會出現在這裡"
+          }
+        }
+      }
+    },
+    "No matching items" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有找到匹配的记录"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有找到匹配的記錄"
+          }
+        }
+      }
+    },
+    "Text, links, and images · Stored only on this Mac" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文本、链接与图片 · 仅保存在这台 Mac 上"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文本、鏈接與圖片 · 僅保存在這台 Mac 上"
+          }
+        }
+      }
+    },
+    "Recording paused" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "记录已暂停"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記錄已暫停"
+          }
+        }
+      }
+    },
+    "%lld items" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 条"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 條"
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld item"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld items"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "← → Select   ↩ Copy   ⇧↩ Plain text   esc Close" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "← → 选择   ↩ 复制   ⇧↩ 纯文本   esc 关闭"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "← → 選擇   ↩ 複製   ⇧↩ 純文本   esc 關閉"
+          }
+        }
+      }
+    },
+    "← → Select   ↩ Paste   ⇧↩ Plain text   esc Close" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "← → 选择   ↩ 粘贴   ⇧↩ 纯文本   esc 关闭"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "← → 選擇   ↩ 粘貼   ⇧↩ 純文本   esc 關閉"
+          }
+        }
+      }
+    },
+    "Clear all clipboard history?" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空所有剪贴板历史？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空所有剪貼簿歷史？"
+          }
+        }
+      }
+    },
+    "This includes favorites and cannot be undone. Collection names will be kept." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包括收藏的内容，删除后无法恢复。分类名称会保留。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包括收藏的內容，刪除後無法恢復。分類名稱會保留。"
+          }
+        }
+      }
+    },
+    "Search clipboard" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索剪贴板"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索剪貼簿"
+          }
+        }
+      }
+    },
+    "Search clipboard history" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索剪贴板历史"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索剪貼簿歷史"
+          }
+        }
+      }
+    },
+    "Rename…" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重命名…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重命名…"
+          }
+        }
+      }
+    },
+    "Delete Collection" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除分类"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除分類"
+          }
+        }
+      }
+    },
+    "Color" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "颜色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顏色"
+          }
+        }
+      }
+    },
+    "New Collection" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建分类"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建分類"
+          }
+        }
+      }
+    },
+    "All Sources" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部来源"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部來源"
+          }
+        }
+      }
+    },
+    "Filter by source app" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按来源应用筛选"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按來源應用篩選"
+          }
+        }
+      }
+    },
+    "Pause recording" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂停记录"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫停記錄"
+          }
+        }
+      }
+    },
+    "Clipboard Settings…" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板设置…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪貼簿設置…"
+          }
+        }
+      }
+    },
+    "Clear History…" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空历史…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空歷史…"
+          }
+        }
+      }
+    },
+    "More actions" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多操作"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多操作"
+          }
+        }
+      }
+    },
+    "Copy to Clipboard" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制到剪贴板"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製到剪貼簿"
+          }
+        }
+      }
+    },
+    "Paste" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘贴"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘貼"
+          }
+        }
+      }
+    },
+    "Copy as Plain Text" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制为纯文本"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製為純文本"
+          }
+        }
+      }
+    },
+    "Paste as Plain Text" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘贴为纯文本"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘貼為純文本"
+          }
+        }
+      }
+    },
+    "Remove from Favorites" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消收藏"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消收藏"
+          }
+        }
+      }
+    },
+    "Add to Collection" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入分类"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入分類"
+          }
+        }
+      }
+    },
+    "New Collection…" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建分类…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建分類…"
+          }
+        }
+      }
+    },
+    "Exclude This App" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不记录此应用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不記錄此應用"
+          }
+        }
+      }
+    },
+    "Rename Collection" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重命名分类"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重命名分類"
+          }
+        }
+      }
+    },
+    "Collection name" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分类名称"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分類名稱"
+          }
+        }
+      }
+    },
+    "Create" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創建"
+          }
+        }
+      }
+    },
+    "Link" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "链接"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鏈接"
+          }
+        }
+      }
+    },
+    "Enable Clipboard" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用剪贴板"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用剪貼簿"
+          }
+        }
+      }
+    },
+    "Turning this off stops recording, closes the panel, and disables its shortcut. Existing history is kept." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭后停止记录、关闭面板并禁用呼出快捷键，已有历史保留。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關閉後停止記錄、關閉面板並禁用呼出快捷鍵，已有歷史保留。"
+          }
+        }
+      }
+    },
+    "Clipboard Access" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "读取剪贴板"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "讀取剪貼簿"
+          }
+        }
+      }
+    },
+    "Required to record copied items. Allow Eave under “Paste from Other Apps” in System Settings." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用于记录复制历史。请在系统设置的“从其他 App 粘贴”中允许 Eave 读取。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用於記錄複製歷史。請在系統設置的“從其他 App 粘貼”中允許 Eave 讀取。"
+          }
+        }
+      }
+    },
+    "Required to paste directly into the current app. Not needed when only copying to the clipboard." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用于将选中内容直接粘贴到当前应用；仅复制到剪贴板时不需要。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用於將選中內容直接粘貼到當前應用；僅複製到剪貼簿時不需要。"
+          }
+        }
+      }
+    },
+    "Sound effects" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音效"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音效"
+          }
+        }
+      }
+    },
+    "Open Clipboard:" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开剪贴板："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開剪貼簿："
+          }
+        }
+      }
+    },
+    "Paste Items" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘贴项目"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘貼項目"
+          }
+        }
+      }
+    },
+    "Paste to" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘贴到"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘貼到"
+          }
+        }
+      }
+    },
+    "To the Active App" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "到当前活动应用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "到當前活動應用"
+          }
+        }
+      }
+    },
+    "Paste the selected item directly into the app you were using before opening the panel." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将选定的项目直接粘贴到打开面板前正在使用的应用程序中。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將選定的項目直接粘貼到打開面板前正在使用的應用程序中。"
+          }
+        }
+      }
+    },
+    "To the Clipboard" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "到剪贴板"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "到剪貼簿"
+          }
+        }
+      }
+    },
+    "Copy the selected item to the system clipboard to paste manually later." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将选定的项目复制到系统剪贴板，以便稍后手动粘贴。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將選定的項目複製到系統剪貼簿，以便稍後手動粘貼。"
+          }
+        }
+      }
+    },
+    "Always paste as plain text" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "始终以纯文本粘贴"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "始終以純文本粘貼"
+          }
+        }
+      }
+    },
+    "Plain text mode removes formatting. Images without text cannot be pasted as plain text." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "纯文本模式会移除文字格式；不含文字的图片无法以纯文本粘贴。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "純文本模式會移除文字格式；不含文字的圖片無法以純文本粘貼。"
+          }
+        }
+      }
+    },
+    "Keep History" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留历史"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留歷史"
+          }
+        }
+      }
+    },
+    "History retention period" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "历史保留期限"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歷史保留期限"
+          }
+        }
+      }
+    },
+    "Favorites do not expire automatically. Shortening the period immediately deletes expired non-favorite items. “Forever” is still subject to item and storage limits." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收藏不自动过期。缩短期限将立即删除过期的普通历史；“永久”仍受条数和容量上限约束。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收藏不自動過期。縮短期限將立即刪除過期的普通歷史；“永久”仍受條數和容量上限約束。"
+          }
+        }
+      }
+    },
+    "Delete History…" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除历史…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除歷史…"
+          }
+        }
+      }
+    },
+    "Storage" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "容量"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "容量"
+          }
+        }
+      }
+    },
+    "Non-favorite item limit" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "普通历史上限"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "普通歷史上限"
+          }
+        }
+      }
+    },
+    "Storage limit" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内容容量上限"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "內容容量上限"
+          }
+        }
+      }
+    },
+    "Up to 20 MB per copy. Copied files are not recorded yet." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "单次复制最多 20 MB；文件复制暂不记录。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "單次複製最多 20 MB；文件複製暫不記錄。"
+          }
+        }
+      }
+    },
+    "Excluded app bundle IDs (one per line)" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排除的应用 Bundle ID（每行一个）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排除的應用 Bundle ID（每行一個）"
+          }
+        }
+      }
+    },
+    "Content marked as sensitive or transient is not saved. Unmarked sensitive content may still be recorded; exclude apps or pause recording as needed." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "带有敏感或临时标记的内容不会保存。未标记的敏感内容仍可能被记录，请按需排除应用或暂停。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "帶有敏感或臨時標記的內容不會保存。未標記的敏感內容仍可能被記錄，請按需排除應用或暫停。"
+          }
+        }
+      }
+    },
+    "Delete all clipboard history?" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除所有剪贴板历史？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除所有剪貼簿歷史？"
+          }
+        }
+      }
+    },
+    "Delete History" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除历史"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除歷史"
+          }
+        }
+      }
+    },
+    "This includes favorites and items in collections and cannot be undone. Collection names will be kept." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包括收藏和分类中的内容，删除后无法恢复。分类名称会保留。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包括收藏和分類中的內容，刪除後無法恢復。分類名稱會保留。"
+          }
+        }
+      }
+    },
+    "Allow Eave in System Settings → Privacy & Security → Accessibility. Then reopen the panel and double-click or press Enter to paste directly." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在系统设置 → 隐私与安全性 → 辅助功能中允许 Eave；授权后重新打开面板，双击或按 Enter 即可直接粘贴。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請在系統設置 → 隱私與安全性 → 輔助功能中允許 Eave；授權後重新打開面板，雙擊或按 Enter 即可直接粘貼。"
+          }
+        }
+      }
+    },
+    "Copied. Switch to the target app and press ⌘V to paste." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已复制，请切换到目标应用后按 ⌘V。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已複製，請切換到目標應用後按 ⌘V。"
+          }
+        }
+      }
+    },
+    "Copied, but the original input could not regain focus. Click the input and press ⌘V to paste." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已复制，但原输入框未恢复焦点。请点击输入框后按 ⌘V 粘贴。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已複製，但原輸入框未恢復焦點。請點擊輸入框後按 ⌘V 粘貼。"
+          }
+        }
+      }
+    },
+    "Clipboard history could not be read. Recording stopped to protect existing data: %@" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板历史无法读取，已停止记录以保护原数据：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪貼簿歷史無法讀取，已停止記錄以保護原數據：%@"
+          }
+        }
+      }
+    },
+    "Clipboard access is required. Grant access in clipboard settings, or allow Eave to paste from other apps in System Settings." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要允许读取剪贴板。请在设置中选择“允许读取”，或在系统设置中允许 Eave 从其他 App 粘贴。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要允許讀取剪貼簿。請在設置中選擇“允許讀取”，或在系統設置中允許 Eave 從其他 App 粘貼。"
+          }
+        }
+      }
+    },
+    "Unknown App" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知应用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知應用"
+          }
+        }
+      }
+    },
+    "Clipboard storage is full. Delete some favorites or increase the storage limit." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板容量已满，请删除部分收藏或提高容量上限。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪貼簿容量已滿，請刪除部分收藏或提高容量上限。"
+          }
+        }
+      }
+    },
+    "Favorites exceed the storage limit. Delete some favorites first." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收藏已超过容量上限，请先删除部分收藏。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收藏已超過容量上限，請先刪除部分收藏。"
+          }
+        }
+      }
+    },
+    "Saving failed. Recording paused: %@" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存失败，已暂停记录：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存失敗，已暫停記錄：%@"
+          }
+        }
+      }
+    },
+    "This item has no text to paste." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这条记录没有可粘贴的文字。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這條記錄沒有可粘貼的文字。"
+          }
+        }
+      }
+    },
+    "Could not write to the clipboard." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法写入剪贴板。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法寫入剪貼簿。"
+          }
+        }
+      }
+    },
+    "Could not read this item: %@" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法读取这条记录：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法讀取這條記錄：%@"
+          }
+        }
+      }
+    },
+    "%lld days" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld天"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld天"
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld day"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld days"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld weeks" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld周"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld周"
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld week"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld weeks"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld months" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld个月"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld個月"
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld month"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld months"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "1 year" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1年"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1年"
+          }
+        }
+      }
+    },
+    "Forever" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "永久"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "永久"
+          }
+        }
+      }
+    },
+    "%lld characters" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个字符"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個字符"
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld character"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld characters"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "History was saved, but some old content files could not be removed: %@" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "历史已保存，但部分旧内容文件未能清理：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歷史已保存，但部分舊內容文件未能清理：%@"
+          }
+        }
+      }
+    },
+    "Red" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "红色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "紅色"
+          }
+        }
+      }
+    },
+    "Orange" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "橙色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "橙色"
+          }
+        }
+      }
+    },
+    "Yellow" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "黄色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "黃色"
+          }
+        }
+      }
+    },
+    "Blue" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "蓝色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "藍色"
+          }
+        }
+      }
+    },
+    "Purple" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "紫色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "紫色"
+          }
+        }
+      }
+    },
+    "Pink" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粉色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粉色"
+          }
+        }
+      }
+    },
+    "Gray" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "灰色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "灰色"
+          }
+        }
+      }
+    },
+  "Top tab spacing": {
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "顶部标签间距"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "頂部標籤間距"
+        }
+      }
+    }
+  },
+  "Spacing automatically tightens when needed to keep tabs clear of the notch.": {
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "空间不足时会自动缩小间距，避免标签被刘海遮挡。"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "空間不足時會自動縮小間距，避免標籤被瀏海遮擋。"
+        }
+      }
+    }
+  },
     "" : {
       "localizations" : {
         "ar" : {
@@ -15181,122 +17037,123 @@
       }
     },
     "Cancel" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cancel"
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cancel"
           }
         },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Zrušit"
+        "cs": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zrušit"
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abbrechen"
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abbrechen"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
           }
         },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cancelar"
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cancelar"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Annuler"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annuler"
           }
         },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cancel"
+        "hu": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cancel"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Annulla"
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Annulla"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "취소"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "취소"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Annuleer"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annuleer"
           }
         },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Anuluj"
+        "pl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Anuluj"
           }
         },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancelar"
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отмена"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отмена"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ยกเลิก"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ยกเลิก"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İptal"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptal"
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Скасувати"
+        "uk": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Скасувати"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "取消"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "取消"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "取消"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "取消"
           }
         }
-      }
+      },
+      "extractionState": "manual"
     },
     "CANCEL" : {
       "extractionState" : "manual",
@@ -17538,62 +19395,63 @@
       }
     },
     "Clear" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Effacer"
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Effacer"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "지우기"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지우기"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wis"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wis"
           }
         },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Limpar"
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limpar"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Очистить"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистить"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ล้าง"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ล้าง"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Temizle"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temizle"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除"
           }
         }
-      }
+      },
+      "extractionState": "manual"
     },
     "Clear Data" : {
       "localizations" : {
@@ -17654,58 +19512,59 @@
       }
     },
     "Clear search" : {
-      "comment" : "An accessibility label for the button that clears the search field in the sidebar.",
-      "isCommentAutoGenerated" : true,
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "검색 지우기"
+      "comment": "An accessibility label for the button that clears the search field in the sidebar.",
+      "isCommentAutoGenerated": true,
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "검색 지우기"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wis zoekopdracht"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wis zoekopdracht"
           }
         },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Limpar a pesquisa"
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limpar a pesquisa"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Очистить поиск"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистить поиск"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ล้างการค้นหา"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ล้างการค้นหา"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aramayı temizle"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aramayı temizle"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除搜索"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除搜索"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除搜尋"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除搜尋"
           }
         }
-      }
+      },
+      "extractionState": "manual"
     },
     "Clear slot" : {
       "comment" : "A label for a button that clears a music control slot.",
@@ -17968,60 +19827,60 @@
       }
     },
     "Clipboard" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Presse-papiers"
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presse-papiers"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "클립보드"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "클립보드"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Klembord"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klembord"
           }
         },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Área de Transferência"
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Área de Transferência"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Буфер обмена"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Буфер обмена"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "คลิปบอร์ด"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คลิปบอร์ด"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pano"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pano"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪贴板"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪貼簿"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪貼簿"
           }
         }
       }
@@ -20537,7 +22396,21 @@
       }
     },
     "Copy" : {
-
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製"
+          }
+        }
+      }
     },
     "Copy event link" : {
       "comment" : "A tooltip for a button that copies the link of a reminder event to the clipboard.",
@@ -24275,62 +26148,63 @@
       }
     },
     "Delete" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Supprimer"
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "삭제"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "삭제"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verwijderen"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijderen"
           }
         },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deletar"
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deletar"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удалить"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ลบ"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลบ"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sil"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sil"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "删除"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刪除"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除"
           }
         }
-      }
+      },
+      "extractionState": "manual"
     },
     "Delete %@" : {
       "localizations" : {
@@ -26934,58 +28808,59 @@
       }
     },
     "Done" : {
-      "comment" : "A button label that indicates that the user has finished editing a note.",
-      "isCommentAutoGenerated" : true,
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "완료"
+      "comment": "A button label that indicates that the user has finished editing a note.",
+      "isCommentAutoGenerated": true,
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "완료"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Klaar"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klaar"
           }
         },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Feito"
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Feito"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Поддержать"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поддержать"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "เสร็จ"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เสร็จ"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bitti"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitti"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "完成"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "完成"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
           }
         }
-      }
+      },
+      "extractionState": "manual"
     },
     "Down" : {
       "extractionState" : "stale",
@@ -35136,50 +37011,50 @@
       }
     },
     "Favorites" : {
-      "comment" : "Localized name of the \"Favorites\" tab in the clipboard.",
-      "extractionState" : "stale",
-      "isCommentAutoGenerated" : true,
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "즐겨찾기"
+      "comment": "Localized name of the \"Favorites\" tab in the clipboard.",
+      "extractionState": "manual",
+      "isCommentAutoGenerated": true,
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "즐겨찾기"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Favorieten"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favorieten"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Избранное"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Избранное"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "รายการโปรด"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รายการโปรด"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Favoriler"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favoriler"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "收藏"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收藏"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "收藏"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收藏"
           }
         }
       }
@@ -38612,50 +40487,50 @@
       }
     },
     "Green" : {
-      "comment" : "Display name for the green caps lock indicator tint mode.",
-      "extractionState" : "stale",
-      "isCommentAutoGenerated" : true,
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "초록"
+      "comment": "Display name for the green caps lock indicator tint mode.",
+      "extractionState": "manual",
+      "isCommentAutoGenerated": true,
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "초록"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Groen"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Groen"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Зеленый"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зеленый"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "เขียว"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เขียว"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yeşil"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeşil"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "绿色"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绿色"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "綠色"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "綠色"
           }
         }
       }
@@ -40995,50 +42870,50 @@
       }
     },
     "Image" : {
-      "comment" : "Name of the \"Image\" clipboard item type.",
-      "extractionState" : "stale",
-      "isCommentAutoGenerated" : true,
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "이미지"
+      "comment": "Name of the \"Image\" clipboard item type.",
+      "extractionState": "manual",
+      "isCommentAutoGenerated": true,
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이미지"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afbeelding"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afbeelding"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Изображение"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Изображение"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "รูปภาพ"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รูปภาพ"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resim"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resim"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "图片"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图片"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖片"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖片"
           }
         }
       }
@@ -42581,52 +44456,53 @@
       }
     },
     "Just now" : {
-      "comment" : "A string indicating that an action was performed just recently.",
-      "isCommentAutoGenerated" : true,
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "방금"
+      "comment": "A string indicating that an action was performed just recently.",
+      "isCommentAutoGenerated": true,
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "방금"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zojuist"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zojuist"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Только что"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Только что"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "เมื่อกี้"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เมื่อกี้"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Az önce"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Az önce"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刚刚"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刚刚"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剛剛"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剛剛"
           }
         }
-      }
+      },
+      "extractionState": "manual"
     },
     "Keep album art visible during fullscreen artwork" : {
       "localizations" : {
@@ -60811,62 +62687,63 @@
       }
     },
     "Preview" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aperçu"
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aperçu"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "미리보기"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "미리보기"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voorbeeld"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voorbeeld"
           }
         },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pré-Vizualização"
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pré-Vizualização"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Предпросмотр"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Предпросмотр"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ตัวอย่าง"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ตัวอย่าง"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Önizleme"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önizleme"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "预览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "预览"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "預覽"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預覽"
           }
         }
-      }
+      },
+      "extractionState": "manual"
     },
     "Preview Emote" : {
       "extractionState" : "manual",
@@ -61125,18 +63002,18 @@
       }
     },
     "Privacy" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐私"
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐私"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隱私"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱私"
           }
         }
       }
@@ -66844,62 +68721,63 @@
       }
     },
     "Save" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enregistrer"
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrer"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "저장"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "저장"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Opslaan"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opslaan"
           }
         },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salvar"
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvar"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сохранить"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "บันทึก"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บันทึก"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kaydet"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保存"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "儲存"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存"
           }
         }
-      }
+      },
+      "extractionState": "manual"
     },
     "Save Changes" : {
       "localizations" : {
@@ -68520,64 +70398,65 @@
       }
     },
     "Selected" : {
-      "comment" : "A label indicating that an animation is currently selected.",
-      "isCommentAutoGenerated" : true,
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sélectionnée"
+      "comment": "A label indicating that an animation is currently selected.",
+      "isCommentAutoGenerated": true,
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sélectionnée"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "선택됨"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택됨"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geselecteerd"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geselecteerd"
           }
         },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecionado"
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecionado"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выбрано"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбрано"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ถูกเลือก"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ถูกเลือก"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seçildi"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçildi"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已选择"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已選擇"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已選擇"
           }
         }
-      }
+      },
+      "extractionState": "manual"
     },
     "Selected animation" : {
       "localizations" : {
@@ -79776,50 +81655,50 @@
       }
     },
     "Text" : {
-      "comment" : "Name of a clipboard item type that contains plain text.",
-      "extractionState" : "stale",
-      "isCommentAutoGenerated" : true,
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "텍스트"
+      "comment": "Name of a clipboard item type that contains plain text.",
+      "extractionState": "manual",
+      "isCommentAutoGenerated": true,
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "텍스트"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tekst"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekst"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Текст"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Текст"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ข้อความ"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ข้อความ"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Metin"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metin"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文本"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文本"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文字"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字"
           }
         }
       }
@@ -90266,11 +92145,243 @@
         }
       }
     },
-    "暂无播放" : {
-
+    "Not Playing" : {
+      "comment": "Title of the music placeholder when no media is playing.",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يتم التشغيل"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic se nepřehrává"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Wiedergabe"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Playing"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Playing"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin reproducción"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucune lecture"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nincs lejátszás"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna riproduzione"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "재생 중인 음악 없음"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er wordt niets afgespeeld"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie jest odtwarzane"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nada tocando"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ничего не играет"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่มีเพลงที่กำลังเล่น"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çalan müzik yok"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нічого не відтворюється"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无播放"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無播放"
+          }
+        }
+      }
     },
-    "让音乐慢慢响起" : {
-
+    "Let the music begin" : {
+      "comment": "Gentle invitation to start music, shown beneath the idle music placeholder title.",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دع الموسيقى تبدأ"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nechte hudbu rozeznít"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lass die Musik erklingen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let the music begin"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let the music begin"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Que empiece la música"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Que la musique commence"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szólaljon meg a zene"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Che la musica abbia inizio"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "음악을 시작해 보세요"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laat de muziek beginnen"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niech zabrzmi muzyka"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deixe a música começar"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пусть зазвучит музыка"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ให้เสียงเพลงเริ่มบรรเลง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Müzik başlasın"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нехай зазвучить музика"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "让音乐慢慢响起"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "讓音樂慢慢響起"
+          }
+        }
+      }
     }
   },
   "version" : "1.2"

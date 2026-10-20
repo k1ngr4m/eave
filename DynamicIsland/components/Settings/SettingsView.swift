@@ -88,7 +88,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .calendar: return String(localized: "Calendar")
         case .hudAndOSD: return String(localized: "Controls")
         case .battery: return String(localized: "Battery")
-        case .clipboard: return "剪贴板"
+        case .clipboard: return String(localized: "Clipboard")
         case .screenText: return String(localized: "Copy text from screen")
         case .desktopPing: return String(localized: "Desktop Pings")
         case .stocks: return String(localized: "Stocks")
@@ -233,14 +233,14 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .general, title: "Enable close gesture", keywords: ["pinch", "swipe"], highlightID: SettingsTab.general.highlightID(for: "Enable close gesture")),
         SettingsSearchEntry(tab: .general, title: "Reverse swipe gestures", keywords: ["reverse", "swipe", "media"], highlightID: SettingsTab.general.highlightID(for: "Reverse swipe gestures")),
         SettingsSearchEntry(tab: .general, title: "Reverse scroll gestures", keywords: ["reverse", "scroll", "open", "close"], highlightID: SettingsTab.general.highlightID(for: "Reverse scroll gestures")),
-        SettingsSearchEntry(tab: .general, title: "Extend hover area", keywords: ["hover", "cursor"], highlightID: SettingsTab.general.highlightID(for: "Extend hover area")),
-        SettingsSearchEntry(tab: .general, title: "Enable haptics", keywords: ["haptic", "feedback"], highlightID: SettingsTab.general.highlightID(for: "Enable haptics")),
-        SettingsSearchEntry(tab: .general, title: "When reopening", keywords: ["reopen", "last tab", "default tab", "重新打开", "上次的页面"], highlightID: SettingsTab.general.highlightID(for: "When reopening")),
-        SettingsSearchEntry(tab: .general, title: "Keep expanded", keywords: ["keep open", "pin", "保持展开", "常驻"], highlightID: SettingsTab.general.highlightID(for: "Keep expanded")),
-        SettingsSearchEntry(tab: .general, title: "Open notch on hover", keywords: ["hover to open", "auto open"], highlightID: SettingsTab.general.highlightID(for: "Open notch on hover")),
-        SettingsSearchEntry(tab: .general, title: "External display style", keywords: ["dynamic island", "pill", "external display", "non-notch", "floating", "capsule"], highlightID: SettingsTab.general.highlightID(for: "External display style")),
-        SettingsSearchEntry(tab: .general, title: "Hide until hovered", keywords: ["hide", "hover", "external", "non-notch", "auto hide", "slide"], highlightID: SettingsTab.general.highlightID(for: "Hide until hovered")),
-        SettingsSearchEntry(tab: .general, title: "Notch display height", keywords: ["display height", "menu bar size"], highlightID: SettingsTab.general.highlightID(for: "Notch display height")),
+        SettingsSearchEntry(tab: .appearance, title: "Extend hover area", keywords: ["hover", "cursor"], highlightID: SettingsTab.appearance.highlightID(for: "Extend hover area")),
+        SettingsSearchEntry(tab: .appearance, title: "Enable haptics", keywords: ["haptic", "feedback"], highlightID: SettingsTab.appearance.highlightID(for: "Enable haptics")),
+        SettingsSearchEntry(tab: .appearance, title: "When reopening", keywords: ["reopen", "last tab", "default tab", "重新打开", "上次的页面"], highlightID: SettingsTab.appearance.highlightID(for: "When reopening")),
+        SettingsSearchEntry(tab: .appearance, title: "Keep expanded", keywords: ["keep open", "pin", "保持展开", "常驻"], highlightID: SettingsTab.appearance.highlightID(for: "Keep expanded")),
+        SettingsSearchEntry(tab: .appearance, title: "Open notch on hover", keywords: ["hover to open", "auto open"], highlightID: SettingsTab.appearance.highlightID(for: "Open notch on hover")),
+        SettingsSearchEntry(tab: .appearance, title: "External display style", keywords: ["dynamic island", "pill", "external display", "non-notch", "floating", "capsule"], highlightID: SettingsTab.appearance.highlightID(for: "External display style")),
+        SettingsSearchEntry(tab: .appearance, title: "Hide until hovered", keywords: ["hide", "hover", "external", "non-notch", "auto hide", "slide"], highlightID: SettingsTab.appearance.highlightID(for: "Hide until hovered")),
+        SettingsSearchEntry(tab: .appearance, title: "Notch display height", keywords: ["display height", "menu bar size"], highlightID: SettingsTab.appearance.highlightID(for: "Notch display height")),
 
         // Live Activities
         SettingsSearchEntry(tab: .liveActivities, title: "Enable download detection", keywords: ["downloads", "下载", "detection"], highlightID: SettingsTab.liveActivities.highlightID(for: "Enable download detection")),
@@ -368,13 +368,14 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .appearance, title: "Notch appearance", keywords: ["light", "dark", "system", "theme", "浅色", "深色", "跟随系统", "淺色", "跟隨系統", "刘海", "瀏海"], highlightID: SettingsTab.appearance.highlightID(for: "Notch appearance")),
         SettingsSearchEntry(tab: .appearance, title: "Main screen style", keywords: ["dynamic island", "pill", "non-notch", "display style", "notch style"], highlightID: SettingsTab.appearance.highlightID(for: "Main screen style")),
         SettingsSearchEntry(tab: .appearance, title: "Show settings icon in the notch", keywords: ["settings button", "toolbar"], highlightID: SettingsTab.appearance.highlightID(for: "Show settings icon in the notch")),
+        SettingsSearchEntry(tab: .appearance, title: "Top tab spacing", keywords: ["tabs", "icons", "spacing", "刘海", "间距", "图标"], highlightID: SettingsTab.appearance.highlightID(for: "Top tab spacing")),
         SettingsSearchEntry(tab: .appearance, title: "Enable window shadow", keywords: ["shadow", "appearance"], highlightID: SettingsTab.appearance.highlightID(for: "Enable window shadow")),
         SettingsSearchEntry(tab: .appearance, title: "Scale corner radius with notch size", keywords: ["corner radius", "shape"], highlightID: SettingsTab.appearance.highlightID(for: "Scale corner radius with notch size")),
         SettingsSearchEntry(tab: .appearance, title: "Use simpler close animation", keywords: ["close animation", "notch"], highlightID: SettingsTab.appearance.highlightID(for: "Use simpler close animation")),
         SettingsSearchEntry(tab: .appearance, title: "Notch Width", keywords: ["expanded notch", "width", "resize"], highlightID: SettingsTab.appearance.highlightID(for: "Expanded notch width")),
-        SettingsSearchEntry(tab: .appearance, title: "Use colored spectrograms", keywords: ["spectrogram", "audio"], highlightID: SettingsTab.appearance.highlightID(for: "Use colored spectrograms")),
-        SettingsSearchEntry(tab: .appearance, title: "Enable blur effect behind album art", keywords: ["blur", "album art"], highlightID: SettingsTab.appearance.highlightID(for: "Enable blur effect behind album art")),
-        SettingsSearchEntry(tab: .appearance, title: "Slider color", keywords: ["slider", "accent"], highlightID: SettingsTab.appearance.highlightID(for: "Slider color")),
+        SettingsSearchEntry(tab: .media, title: "Use colored spectrograms", keywords: ["spectrogram", "audio"], highlightID: SettingsTab.media.highlightID(for: "Use colored spectrograms")),
+        SettingsSearchEntry(tab: .media, title: "Enable blur effect behind album art", keywords: ["blur", "album art"], highlightID: SettingsTab.media.highlightID(for: "Enable blur effect behind album art")),
+        SettingsSearchEntry(tab: .media, title: "Slider color", keywords: ["slider", "accent"], highlightID: SettingsTab.media.highlightID(for: "Slider color")),
         SettingsSearchEntry(tab: .appearance, title: "Enable dynamic mirror", keywords: ["mirror", "reflection"], highlightID: SettingsTab.appearance.highlightID(for: "Enable dynamic mirror")),
         SettingsSearchEntry(tab: .appearance, title: "Mirror shape", keywords: ["mirror shape", "circle", "rectangle"], highlightID: SettingsTab.appearance.highlightID(for: "Mirror shape")),
         SettingsSearchEntry(tab: .appearance, title: "Enable idle animation", keywords: ["face animation", "idle", "cool face"], highlightID: SettingsTab.appearance.highlightID(for: "Enable idle animation")),
@@ -415,7 +416,7 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .lockScreen, title: "Reminder alignment", keywords: ["reminder", "alignment", "position"], highlightID: SettingsTab.lockScreen.highlightID(for: "Reminder alignment"), lockScreenSection: .widgets),
         SettingsSearchEntry(tab: .lockScreen, title: "Reminder vertical offset", keywords: ["reminder", "offset", "position"], highlightID: SettingsTab.lockScreen.highlightID(for: "Reminder vertical offset"), lockScreenSection: .widgets),
 
-        SettingsSearchEntry(tab: .clipboard, title: "剪贴板", keywords: ["clipboard", "paste", "启用剪贴板", "音效", "纯文本", "粘贴", "保留历史", "删除历史"], highlightID: nil),
+        SettingsSearchEntry(tab: .clipboard, title: "Clipboard", keywords: ["clipboard", "paste", "启用剪贴板", "音效", "纯文本", "粘贴", "保留历史", "删除历史"], highlightID: nil),
         // Shortcuts
         SettingsSearchEntry(tab: .screenText, title: "Enable copy text from screen", keywords: ["OCR", "enable", "启用", "开启", "拷贝屏幕文字"], highlightID: SettingsTab.screenText.highlightID(for: "Enable copy text from screen")),
         SettingsSearchEntry(tab: .screenText, title: "Copy text from screen", keywords: ["OCR", "copy", "screen", "text", "QR", "文字", "识别", "复制", "拷贝", "二维码", "换行"], highlightID: SettingsTab.screenText.highlightID(for: "Copy text from screen")),
@@ -1063,18 +1064,12 @@ struct GeneralSettings: View {
     @Default(.mirrorShape) var mirrorShape
     @Default(.showEmojis) var showEmojis
     @Default(.gestureSensitivity) var gestureSensitivity
-    @Default(.minimumHoverDuration) var minimumHoverDuration
-    @Default(.nonNotchHeight) var nonNotchHeight
-    @Default(.nonNotchHeightMode) var nonNotchHeightMode
-    @Default(.notchHeight) var notchHeight
     @Default(.closedNotchWidth) var closedNotchWidth
     @Default(.customizePhysicalNotchWidth) var customizePhysicalNotchWidth
-    @Default(.notchHeightMode) var notchHeightMode
     @Default(.showOnAllDisplays) var showOnAllDisplays
     @Default(.automaticallySwitchDisplay) var automaticallySwitchDisplay
     @Default(.enableGestures) var enableGestures
     @Default(.openNotchOnHover) var openNotchOnHover
-    @Default(.reopenTab) private var reopenTab
     @Default(.enableMinimalisticUI) var enableMinimalisticUI
     @Default(.showBatteryIndicator) var showBatteryIndicator
     @Default(.showMinimalisticBatteryIndicator) var showMinimalisticBatteryIndicator
@@ -1082,8 +1077,6 @@ struct GeneralSettings: View {
     @Default(.musicGestureBehavior) var musicGestureBehavior
     @Default(.reverseSwipeGestures) var reverseSwipeGestures
     @Default(.reverseScrollGestures) var reverseScrollGestures
-    @Default(.externalDisplayStyle) var externalDisplayStyle
-    @Default(.hideNonNotchUntilHover) var hideNonNotchUntilHover
     @Default(.enableCaffeinate) var enableCaffeinate
     @Default(.caffeinateDefaultDuration) var caffeinateDefaultDuration
 
@@ -1213,69 +1206,6 @@ struct GeneralSettings: View {
                 Text("Holds a power assertion so the Mac will not sleep, the way the caffeinate command does. Turning this off also ends a session that is already running. With the display option off, the screen can still sleep while the system stays up.")
             }
 
-            Section {
-                Picker(selection: $notchHeightMode, label:
-                        Text("Notch display height")) {
-                    Text("Match real notch size")
-                        .tag(WindowHeightMode.matchRealNotchSize)
-                    Text("Match menubar height")
-                        .tag(WindowHeightMode.matchMenuBar)
-                    Text("Custom height")
-                        .tag(WindowHeightMode.custom)
-                }
-                        .onChange(of: notchHeightMode) {
-                            switch notchHeightMode {
-                            case .matchRealNotchSize:
-                                notchHeight = 38
-                            case .matchMenuBar:
-                                notchHeight = 44
-                            case .custom:
-                                notchHeight = 38
-                            }
-                            NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
-                        }
-                        .settingsHighlight(id: highlightID("Notch display height"))
-                if notchHeightMode == .custom {
-                    Slider(value: $notchHeight, in: 15...45, step: 1) {
-                        Text("Custom notch size - \(notchHeight, specifier: "%.0f")")
-                    }
-                    .onChange(of: notchHeight) {
-                        NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
-                    }
-                }
-                Picker("Non-notch display height", selection: $nonNotchHeightMode) {
-                    Text("Match menubar height")
-                        .tag(WindowHeightMode.matchMenuBar)
-                    Text("Match real notch size")
-                        .tag(WindowHeightMode.matchRealNotchSize)
-                    Text("Custom height")
-                        .tag(WindowHeightMode.custom)
-                }
-                .onChange(of: nonNotchHeightMode) {
-                    switch nonNotchHeightMode {
-                    case .matchMenuBar:
-                        nonNotchHeight = 24
-                    case .matchRealNotchSize:
-                        nonNotchHeight = 32
-                    case .custom:
-                        nonNotchHeight = 32
-                    }
-                    NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
-                }
-                if nonNotchHeightMode == .custom {
-                    Slider(value: $nonNotchHeight, in: 0...40, step: 1) {
-                        Text("Custom notch size - \(nonNotchHeight, specifier: "%.0f")")
-                    }
-                    .onChange(of: nonNotchHeight) {
-                        NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
-                    }
-                }
-            } header: {
-                Text("Notch Height")
-            }
-
-            NotchBehaviour()
-
             gestureControls()
         }
         .toolbar {
@@ -1285,11 +1215,6 @@ struct GeneralSettings: View {
             .controlSize(.extraLarge)
         }
         .navigationTitle("General")
-        .onChange(of: openNotchOnHover) {
-            if !openNotchOnHover {
-                enableGestures = true
-            }
-        }
     }
 
     @ViewBuilder
@@ -1357,77 +1282,6 @@ struct GeneralSettings: View {
         }
     }
 
-    @ViewBuilder
-    func NotchBehaviour() -> some View {
-        Section {
-            Defaults.Toggle(key: .extendHoverArea) {
-                Text("Extend hover area")
-            }
-            .settingsHighlight(id: highlightID("Extend hover area"))
-            Defaults.Toggle(key: .enableHaptics) {
-                Text("Enable haptics")
-            }
-            .settingsHighlight(id: highlightID("Enable haptics"))
-            Defaults.Toggle(key: .openNotchOnHover) {
-                Text("Open notch on hover")
-            }
-            .settingsHighlight(id: highlightID("Open notch on hover"))
-            Defaults.Toggle(key: .keepNotchExpanded) {
-                Text("Keep expanded")
-            }
-            .settingsHighlight(id: highlightID("Keep expanded"))
-            Text("Keeps the panel expanded after opening, even when the pointer leaves. You can still close it manually.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Picker("When reopening", selection: Binding(
-                get: { coordinator.availableTabs.contains { $0.id == reopenTab } ? reopenTab : ReopenTabSelection.lastPage },
-                set: { reopenTab = $0 }
-            )) {
-                Text("Last page").tag(ReopenTabSelection.lastPage)
-                ForEach(coordinator.availableTabs) { tab in
-                    Text(LocalizedStringKey(tab.label))
-                        .tag(tab.id)
-                }
-            }
-            .pickerStyle(.menu)
-            .settingsHighlight(id: highlightID("When reopening"))
-            if openNotchOnHover {
-                Slider(value: $minimumHoverDuration, in: 0...1, step: 0.1) {
-                    HStack {
-                        Text("Minimum hover duration")
-                        Spacer()
-                        Text("\(minimumHoverDuration, specifier: "%.1f")s")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .onChange(of: minimumHoverDuration) {
-                    NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
-                }
-            }
-            Picker("External display style", selection: $externalDisplayStyle) {
-                ForEach(ExternalDisplayStyle.allCases) { style in
-                    Text(style.localizedName)
-                        .tag(style)
-                }
-            }
-            .onChange(of: externalDisplayStyle) {
-                NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
-            }
-            .settingsHighlight(id: highlightID("External display style"))
-            Text(externalDisplayStyle.description)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Defaults.Toggle(key: .hideNonNotchUntilHover) {
-                Text("Hide until hovered on non-notch displays")
-            }
-            .settingsHighlight(id: highlightID("Hide until hovered"))
-            Text("When enabled, the notch slides up and hides on external (non-notch) displays until you hover over it.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        } header: {
-            Text("Notch behavior")
-        }
-    }
 }
 
 struct Charge: View {
@@ -3124,6 +2978,7 @@ private extension MediaControllerType {
 }
 
 struct Media: View {
+    @Default(.sliderColor) private var sliderColor
     @Default(.waitInterval) var waitInterval
     @Default(.mediaController) var mediaController
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
@@ -3645,6 +3500,28 @@ struct Media: View {
             }
             .onChange(of: hideNotchOption) {
                 Defaults[.enableFullscreenMediaDetection] = hideNotchOption != .never
+            }
+
+            Section {
+                Defaults.Toggle(key: .coloredSpectrogram) {
+                    Text("Use colored spectrograms")
+                }
+                .settingsHighlight(id: highlightID("Use colored spectrograms"))
+                Defaults.Toggle(key: .playerColorTinting) {
+                    Text("Use album artwork colors for player controls")
+                }
+                Defaults.Toggle(key: .lightingEffect) {
+                    Text("Enable blur effect behind album art")
+                }
+                .settingsHighlight(id: highlightID("Enable blur effect behind album art"))
+                Picker("Slider color", selection: $sliderColor) {
+                    ForEach(SliderColorEnum.allCases, id: \.self) { option in
+                        Text(option.localizedName)
+                    }
+                }
+                .settingsHighlight(id: highlightID("Slider color"))
+            } header: {
+                Text("Media")
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
@@ -4736,10 +4613,18 @@ struct LiveActivitiesSettings: View {
 }
 
 struct Appearance: View {
+    @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
+    @Default(.openNotchOnHover) var openNotchOnHover
+    @Default(.minimumHoverDuration) var minimumHoverDuration
+    @Default(.nonNotchHeight) var nonNotchHeight
+    @Default(.nonNotchHeightMode) var nonNotchHeightMode
+    @Default(.notchHeight) var notchHeight
+    @Default(.notchHeightMode) var notchHeightMode
+    @Default(.reopenTab) private var reopenTab
     @ObservedObject var webcamManager = WebcamManager.shared
+    @Default(.headerTabSpacing) private var headerTabSpacing
     @Default(.mirrorShape) var mirrorShape
     @Default(.selectedCameraID) var selectedCameraID
-    @Default(.sliderColor) var sliderColor
     @Default(.useMusicVisualizer) var useMusicVisualizer
     @Default(.customVisualizers) var customVisualizers
     @Default(.selectedVisualizer) var selectedVisualizer
@@ -4803,6 +4688,23 @@ struct Appearance: View {
                     Text("Show settings icon in the notch")
                 }
                 .settingsHighlight(id: highlightID("Show settings icon in the notch"))
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Top tab spacing")
+                        Spacer()
+                        Text(verbatim: "\(Int(headerTabSpacing)) pt")
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                        Button("Reset") { Defaults.reset(.headerTabSpacing) }
+                            .disabled(headerTabSpacing == 24)
+                    }
+                    Slider(value: $headerTabSpacing, in: 4...32, step: 1)
+                        .accessibilityLabel(Text("Top tab spacing"))
+                    Text("Spacing automatically tightens when needed to keep tabs clear of the notch.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .settingsHighlight(id: highlightID("Top tab spacing"))
                 Defaults.Toggle(key: .enableShadow) {
                     Text("Enable window shadow")
                 }
@@ -4841,28 +4743,9 @@ struct Appearance: View {
             }
 
             notchWidthControls()
+            notchHeightControls()
+            notchBehaviorControls()
 
-            Section {
-                Defaults.Toggle(key: .coloredSpectrogram) {
-                    Text("Use colored spectrograms")
-                }
-                .settingsHighlight(id: highlightID("Use colored spectrograms"))
-                Defaults.Toggle(key: .playerColorTinting) {
-                    Text("Use album artwork colors for player controls")
-                }
-                Defaults.Toggle(key: .lightingEffect) {
-                    Text("Enable blur effect behind album art")
-                }
-                .settingsHighlight(id: highlightID("Enable blur effect behind album art"))
-                Picker("Slider color", selection: $sliderColor) {
-                    ForEach(SliderColorEnum.allCases, id: \.self) { option in
-                        Text(option.localizedName)
-                    }
-                }
-                .settingsHighlight(id: highlightID("Slider color"))
-            } header: {
-                Text("Media")
-            }
 
             Section {
                 Toggle(
@@ -5281,6 +5164,147 @@ struct Appearance: View {
         }
 
         return false
+    }
+
+    @ViewBuilder
+    private func notchHeightControls() -> some View {
+        Section {
+            Picker(selection: $notchHeightMode, label:
+                    Text("Notch display height")) {
+                Text("Match real notch size")
+                    .tag(WindowHeightMode.matchRealNotchSize)
+                Text("Match menubar height")
+                    .tag(WindowHeightMode.matchMenuBar)
+                Text("Custom height")
+                    .tag(WindowHeightMode.custom)
+            }
+                    .onChange(of: notchHeightMode) {
+                        switch notchHeightMode {
+                        case .matchRealNotchSize:
+                            notchHeight = 38
+                        case .matchMenuBar:
+                            notchHeight = 44
+                        case .custom:
+                            notchHeight = 38
+                        }
+                        NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
+                    }
+                    .settingsHighlight(id: highlightID("Notch display height"))
+            if notchHeightMode == .custom {
+                Slider(value: $notchHeight, in: 15...45, step: 1) {
+                    Text("Custom notch size - \(notchHeight, specifier: "%.0f")")
+                }
+                .onChange(of: notchHeight) {
+                    NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
+                }
+            }
+            Picker("Non-notch display height", selection: $nonNotchHeightMode) {
+                Text("Match menubar height")
+                    .tag(WindowHeightMode.matchMenuBar)
+                Text("Match real notch size")
+                    .tag(WindowHeightMode.matchRealNotchSize)
+                Text("Custom height")
+                    .tag(WindowHeightMode.custom)
+            }
+            .onChange(of: nonNotchHeightMode) {
+                switch nonNotchHeightMode {
+                case .matchMenuBar:
+                    nonNotchHeight = 24
+                case .matchRealNotchSize:
+                    nonNotchHeight = 32
+                case .custom:
+                    nonNotchHeight = 32
+                }
+                NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
+            }
+            if nonNotchHeightMode == .custom {
+                Slider(value: $nonNotchHeight, in: 0...40, step: 1) {
+                    Text("Custom notch size - \(nonNotchHeight, specifier: "%.0f")")
+                }
+                .onChange(of: nonNotchHeight) {
+                    NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
+                }
+            }
+        } header: {
+            Text("Notch Height")
+        }
+    }
+
+    @ViewBuilder
+    private func notchBehaviorControls() -> some View {
+        Section {
+            Defaults.Toggle(key: .extendHoverArea) {
+                Text("Extend hover area")
+            }
+            .settingsHighlight(id: highlightID("Extend hover area"))
+            Defaults.Toggle(key: .enableHaptics) {
+                Text("Enable haptics")
+            }
+            .settingsHighlight(id: highlightID("Enable haptics"))
+            Defaults.Toggle(key: .openNotchOnHover) {
+                Text("Open notch on hover")
+            }
+            .onChange(of: openNotchOnHover) {
+                if !openNotchOnHover {
+                    Defaults[.enableGestures] = true
+                }
+            }
+            .settingsHighlight(id: highlightID("Open notch on hover"))
+            Defaults.Toggle(key: .keepNotchExpanded) {
+                Text("Keep expanded")
+            }
+            .settingsHighlight(id: highlightID("Keep expanded"))
+            Text("Keeps the panel expanded after opening, even when the pointer leaves. You can still close it manually.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Picker("When reopening", selection: Binding(
+                get: { coordinator.availableTabs.contains { $0.id == reopenTab } ? reopenTab : ReopenTabSelection.lastPage },
+                set: { reopenTab = $0 }
+            )) {
+                Text("Last page").tag(ReopenTabSelection.lastPage)
+                ForEach(coordinator.availableTabs) { tab in
+                    Text(LocalizedStringKey(tab.label))
+                        .tag(tab.id)
+                }
+            }
+            .pickerStyle(.menu)
+            .settingsHighlight(id: highlightID("When reopening"))
+            if openNotchOnHover {
+                Slider(value: $minimumHoverDuration, in: 0...1, step: 0.1) {
+                    HStack {
+                        Text("Minimum hover duration")
+                        Spacer()
+                        Text("\(minimumHoverDuration, specifier: "%.1f")s")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .onChange(of: minimumHoverDuration) {
+                    NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
+                }
+            }
+            Picker("External display style", selection: $externalDisplayStyle) {
+                ForEach(ExternalDisplayStyle.allCases) { style in
+                    Text(style.localizedName)
+                        .tag(style)
+                }
+            }
+            .onChange(of: externalDisplayStyle) {
+                NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
+            }
+            .settingsHighlight(id: highlightID("External display style"))
+            Text(externalDisplayStyle.description)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Defaults.Toggle(key: .hideNonNotchUntilHover) {
+                Text("Hide until hovered on non-notch displays")
+            }
+            .settingsHighlight(id: highlightID("Hide until hovered"))
+            Text("When enabled, the notch slides up and hides on external (non-notch) displays until you hover over it.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } header: {
+            Text("Notch behavior")
+        }
     }
 
     @ViewBuilder

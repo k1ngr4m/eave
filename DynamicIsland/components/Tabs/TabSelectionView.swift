@@ -86,42 +86,56 @@ struct TabModel: Identifiable {
 
 struct TabSelectionView: View {
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
+    @Default(.headerTabSpacing) private var headerTabSpacing
     @Namespace var animation
 
     private var tabs: [TabModel] {
         coordinator.availableTabs
     }
     var body: some View {
-        HStack(spacing: 24) {
-            ForEach(Array(tabs.enumerated()), id: \.element.id) { idx, tab in
-                let isSelected = isSelected(tab)
-
-                // Render the tab button
-                TabButton(label: tab.label, icon: tab.icon, selected: isSelected) {
-                    coordinator.currentView = tab.view
+        ViewThatFits(in: .horizontal) {
+            tabRow(spacing: CGFloat(headerTabSpacing))
+            tabRow(spacing: CGFloat(max(4, headerTabSpacing / 2)))
+            tabRow(spacing: 4)
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal) {
+                    tabRow(spacing: 4)
                 }
-                .frame(height: 26)
-                .foregroundStyle(isSelected ? Color.primary : .gray)
-                .background {
-                    if isSelected {
-                        Capsule()
-                            .fill(Color(nsColor: .secondarySystemFill).opacity(0.25))
-                            .matchedGeometryEffect(id: "capsule", in: animation)
-                    } else {
-                        Capsule()
-                            .fill(Color.clear)
-                            .matchedGeometryEffect(id: "capsule", in: animation)
-                            .hidden()
-                    }
+                .scrollIndicators(.hidden)
+                .onAppear {
+                    proxy.scrollTo(coordinator.currentView, anchor: .center)
                 }
-
-                
+                .onChange(of: coordinator.currentView) { _, selection in
+                    proxy.scrollTo(selection, anchor: .center)
+                }
             }
         }
-        .clipShape(Capsule())
+        .frame(height: 26)
         .onAppear {
             ensureValidSelection(with: coordinator.availableTabs)
         }
+    }
+
+    private func tabRow(spacing: CGFloat) -> some View {
+        HStack(spacing: spacing) {
+            ForEach(tabs) { tab in
+                let selected = isSelected(tab)
+                TabButton(label: tab.label, icon: tab.icon, selected: selected) {
+                    coordinator.currentView = tab.view
+                }
+                .frame(width: 20, height: 26)
+                .foregroundStyle(selected ? Color.primary : .gray)
+                .background {
+                    if selected {
+                        Capsule()
+                            .fill(Color(nsColor: .secondarySystemFill).opacity(0.25))
+                            .matchedGeometryEffect(id: "capsule", in: animation)
+                    }
+                }
+                .id(tab.view)
+            }
+        }
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     private func isSelected(_ tab: TabModel) -> Bool {

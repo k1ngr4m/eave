@@ -70,9 +70,7 @@ struct ClipboardHistoryChecks {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         assert(ClipboardRetention.allCases.count == 22)
-        assert(ClipboardRetention.allCases.map(\.title) ==
-            (1...6).map { "\($0)天" } + (1...3).map { "\($0)周" } +
-            (1...11).map { "\($0)个月" } + ["1年", "永久"])
+        assert(Set(ClipboardRetention.allCases.map(\.title)).count == 22)
         for value in ClipboardRetention.allCases {
             assert(ClipboardRetention.atSliderPosition(value.sliderPosition) == value)
             assert(ClipboardRetention(rawValue: value.rawValue) == value)
@@ -139,6 +137,77 @@ struct ClipboardHistoryChecks {
         let reopened = ClipboardHistoryStore(defaults: preferences, directory: directory)
         assert(!reopened.enabled && !reopened.soundEffects && reopened.alwaysPlainText)
         assert(reopened.pasteTarget == .clipboard && reopened.retention == .forever)
+        // Legacy collection metadata remains readable, and edits preserve membership/payloads.
+        let legacy = Data("{\"id\":\"\(collection.id.uuidString)\",\"name\":\"参考\"}".utf8)
+        let decoded = try JSONDecoder().decode(ClipboardCollection.self, from: legacy)
+        assert(decoded.color == nil && decoded.id == collection.id)
+        let collectionDirectory = directory.appendingPathComponent("collections")
+        let collectionDisk = ClipboardDiskStore(directory: collectionDirectory)
+        try await collectionDisk.save(saved, newPayload: (first.id, payload))
+        let collectionStore = ClipboardHistoryStore(defaults: preferences, directory: collectionDirectory)
+        collectionStore.start()
+        for _ in 0..<100 where collectionStore.history.collections.isEmpty {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        collectionStore.stop()
+        assert(collectionStore.history.collections.count == 1)
+        collectionStore.renameCollection(collection.id, to: "  实用链接  ")
+        while collectionStore.busy { try await Task.sleep(for: .milliseconds(10)) }
+        collectionStore.setCollectionColor(collection.id, to: .purple)
+        while collectionStore.busy { try await Task.sleep(for: .milliseconds(10)) }
+        let edited = try await collectionDisk.load()
+        assert(edited.collections[0].name == "实用链接" && edited.collections[0].color == .purple)
+        assert(edited.entries == saved.entries)
+        collectionStore.renameCollection(collection.id, to: "   ")
+        assert(!collectionStore.busy && collectionStore.history.collections[0].name == "实用链接")
+        collectionStore.deleteCollection(collection.id)
+        while collectionStore.busy { try await Task.sleep(for: .milliseconds(10)) }
+        let deleted = try await collectionDisk.load()
+        assert(deleted.collections.isEmpty && deleted.entries.count == saved.entries.count)
+        assert(deleted.entries[0].collectionIDs.isEmpty)
+        let preservedPayload = try await collectionDisk.payload(first.id)
+        assert(preservedPayload.items == payload.items)
+        let menuDirectory = directory.appendingPathComponent("item-menu")
+        let menuDisk = ClipboardDiskStore(directory: menuDirectory)
+        try await menuDisk.save(saved, newPayload: (first.id, payload))
+        let menuStore = ClipboardHistoryStore(defaults: preferences, directory: menuDirectory)
+        menuStore.start()
+        for _ in 0..<100 where menuStore.history.entries.isEmpty { try await Task.sleep(for: .milliseconds(10)) }
+        menuStore.stop()
+        menuStore.update(first.id) { $0.name = "My reference" }
+        while menuStore.busy { try await Task.sleep(for: .milliseconds(10)) }
+        let renamedPayload = try await menuDisk.payload(first.id)
+        assert(renamedPayload.items == payload.items, "Renaming must not alter copied content")
+        let editedID = await menuStore.editText(first.id, text: "https://example.com/edited")
+        assert(editedID != nil && editedID != first.id)
+        let editedHistory = try await menuDisk.load()
+        let editedEntry = editedHistory.entries[0]
+        assert(editedEntry.name == "My reference" && editedEntry.kind == .link)
+        assert(editedEntry.timestamp == first.timestamp && editedEntry.collectionIDs == first.collectionIDs)
+        assert(editedEntry.isFavorite == first.isFavorite)
+        let editedPayload = try await menuDisk.payload(editedEntry.id)
+        assert(editedPayload.write(to: pasteboard, plain: false))
+        assert(pasteboard.string(forType: .string) == "https://example.com/edited")
+        assert(pasteboard.data(forType: .rtf) == nil, "Editing must not leave stale rich-text data")
+        let oversized = await menuStore.editText(editedEntry.id, text: String(repeating: "a", count: ClipboardPayload.maxBytes + 1))
+        assert(oversized == nil && menuStore.history.entries[0] == editedEntry)
+        // Simulate a metadata write failure: the old payload and in-memory item must survive.
+        let metadataURL = menuDirectory.appendingPathComponent("history.json")
+        try FileManager.default.removeItem(at: metadataURL)
+        try FileManager.default.createDirectory(at: metadataURL, withIntermediateDirectories: false)
+        let failed = await menuStore.editText(editedEntry.id, text: "must not replace the original")
+        assert(failed == nil && menuStore.history.entries[0] == editedEntry && !menuStore.busy)
+        let intactPayload = try await menuDisk.payload(editedEntry.id)
+        assert(intactPayload.items == editedPayload.items)
+        var pinned = first
+        pinned.isFavorite = false
+        pinned.timestamp = now.addingTimeInterval(-10 * 86400)
+        var pinnedHistory = ClipboardHistory(entries: [pinned], collections: [collection])
+        pinnedHistory.expire(retention: .day, now: now)
+        assert(pinnedHistory.entries.count == 1)
+        assert(!pinnedHistory.trim(limit: 0, bytes: 1), "Collection pins must survive expiry and capacity cleanup")
+        print("Item menu checks passed: rename, editable payloads, pin retention, size limits, and failed-save recovery.")
+        print("Collection checks passed: legacy metadata, rename, color persistence, and deletion preserving entries.")
         print("Clipboard settings checks passed: calendar retention, expiry boundary, favorites, permanent history, disabled copy and persisted preferences.")
         print("Clipboard checks passed: formats, private types, restore suppression, multi-item, dedup key, retention, persistence and deletion.")
     }
