@@ -25,6 +25,18 @@ final class ClipboardHistoryStore: ObservableObject {
     @Published var itemLimit: Int { didSet { defaults.set(itemLimit, forKey: "clipboardItemLimit") } }
     @Published var capacityMB: Int { didSet { defaults.set(capacityMB, forKey: "clipboardCapacityMB") } }
     @Published var excludedApps: String { didSet { defaults.set(excludedApps, forKey: "clipboardExcludedApps") } }
+    var excludedApplicationIDs: [String] {
+        Array(Set(excludedApps.split(whereSeparator: { $0.isWhitespace || $0 == "," }).map(String.init))).sorted()
+    }
+
+    func ignoreApplications(_ ids: [String]) {
+        excludedApps = Array(Set(excludedApplicationIDs + ids.filter { !$0.isEmpty })).sorted().joined(separator: "\n")
+    }
+
+    func removeIgnoredApplication(_ id: String) {
+        excludedApps = excludedApplicationIDs.filter { $0 != id }.joined(separator: "\n")
+    }
+
     private let defaults: UserDefaults
     let disk: ClipboardDiskStore
     private var timer: Timer?
@@ -138,8 +150,7 @@ final class ClipboardHistoryStore: ObservableObject {
         }
         let app = NSWorkspace.shared.frontmostApplication
         let sourceID = app?.bundleIdentifier ?? ""
-        let excluded = Set(excludedApps.split(whereSeparator: { $0.isWhitespace || $0 == "," }).map(String.init))
-        guard !excluded.contains(sourceID) else { lastChange = change; return }
+        guard !excludedApplicationIDs.contains(sourceID) else { lastChange = change; return }
         guard let payload = ClipboardPayload.read(from: pasteboard) else { lastChange = change; return }
         guard pasteboard.changeCount == change else { return }
         lastChange = change

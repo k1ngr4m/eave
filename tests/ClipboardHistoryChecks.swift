@@ -134,7 +134,14 @@ struct ClipboardHistoryChecks {
         assert(ClipboardPanelController.shared.dismissals > 0)
         let copied = await store.copy(first.id, plain: false)
         assert(!copied, "Disabled clipboard must reject copy before reading/writing payloads")
+        store.excludedApps = "com.example.first, com.example.second\ncom.example.first"
+        assert(store.excludedApplicationIDs == ["com.example.first", "com.example.second"])
+        store.ignoreApplications(["com.example.second", "com.example.third", ""])
+        assert(store.excludedApplicationIDs == ["com.example.first", "com.example.second", "com.example.third"])
+        store.removeIgnoredApplication("com.example.second")
+        assert(store.excludedApplicationIDs == ["com.example.first", "com.example.third"])
         let reopened = ClipboardHistoryStore(defaults: preferences, directory: directory)
+        assert(reopened.excludedApplicationIDs == store.excludedApplicationIDs)
         assert(!reopened.enabled && !reopened.soundEffects && reopened.alwaysPlainText)
         assert(reopened.pasteTarget == .clipboard && reopened.retention == .forever)
         // Legacy collection metadata remains readable, and edits preserve membership/payloads.

@@ -217,7 +217,7 @@ struct ClipboardPanelView: View {
             .keyboardShortcut(.space, modifiers: [])
         Divider()
         Button(String(localized: "Exclude This App")) {
-            if !entry.sourceBundleID.isEmpty { store.excludedApps += "\n" + entry.sourceBundleID }
+            if !entry.sourceBundleID.isEmpty { store.ignoreApplications([entry.sourceBundleID]) }
         }.disabled(entry.sourceBundleID.isEmpty)
     }
 

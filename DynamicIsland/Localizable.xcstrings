@@ -1,6 +1,125 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Ignore Applications" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "忽略应用程序"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "忽略應用程式"
+          }
+        }
+      }
+    },
+    "Do not save content copied from these applications." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不要保存从以下应用程序复制的内容。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不要儲存從以下應用程式複製的內容。"
+          }
+        }
+      }
+    },
+    "No ignored applications" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未添加忽略的应用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未加入忽略的應用程式"
+          }
+        }
+      }
+    },
+    "Add Application" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加应用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入應用程式"
+          }
+        }
+      }
+    },
+    "Remove Selected Application" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除选中的应用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除所選應用程式"
+          }
+        }
+      }
+    },
+    "Add Ignored Applications" : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加忽略的应用程序"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入忽略的應用程式"
+          }
+        }
+      }
+    },
+    "Some applications could not be added because their bundle identifier is missing." : {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "部分应用缺少 Bundle ID，无法添加。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "部分應用程式缺少 Bundle ID，無法加入。"
+          }
+        }
+      }
+    },
     "Text exceeds the 20 MB limit." : {
       "extractionState": "manual",
       "localizations": {
@@ -8588,122 +8707,123 @@
       }
     },
     "Add" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Add"
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Add"
           }
         },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Přidat"
+        "cs": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Přidat"
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hinzufügen"
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hinzufügen"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
           }
         },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add"
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Añadir"
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Añadir"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter"
           }
         },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Add"
+        "hu": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Add"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Aggiungi"
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aggiungi"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "추가"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "추가"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toevoegen"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toevoegen"
           }
         },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Dodaj"
+        "pl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dodaj"
           }
         },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar"
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicionar"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавить"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавить"
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "เพิ่ม"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เพิ่ม"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ekle"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekle"
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Додати"
+        "uk": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Додати"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "添加"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "添加"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "新增"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "新增"
           }
         }
-      }
+      },
+      "extractionState": "manual"
     },
     "Add Animation from URL" : {
       "comment" : "A title for the sheet that allows users to add animations from a URL. | A title for the sheet that allows users to add animations from a URL. | merge:ko:alt='URL에서 애니메이션 추가'",

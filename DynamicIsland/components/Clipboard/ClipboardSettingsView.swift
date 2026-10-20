@@ -94,9 +94,12 @@ struct ClipboardSettingsView: View {
                     Text(String(localized: "Up to 20 MB per copy. Copied files are not recorded yet."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
-                Section(String(localized: "Privacy")) {
-                    Text(String(localized: "Excluded app bundle IDs (one per line)")).font(.caption)
-                    TextEditor(text: $store.excludedApps).font(.system(.caption, design: .monospaced)).frame(height: 70)
+                Section {
+                    ClipboardIgnoredAppsView(store: store)
+                } header: {
+                    Text(String(localized: "Ignore Applications"))
+                    Text(String(localized: "Do not save content copied from these applications."))
+                } footer: {
                     Text(String(localized: "Content marked as sensitive or transient is not saved. Unmarked sensitive content may still be recorded; exclude apps or pause recording as needed."))
                         .font(.caption).foregroundStyle(.secondary)
 
