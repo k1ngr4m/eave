@@ -660,7 +660,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = EaveUpdater.shared
         DesktopPingManager.shared.start()
-        if !AppRuntimeEnvironment.isUITesting { ClipboardHistoryStore.shared.start() }
+        if !AppRuntimeEnvironment.isUITesting {
+            ClipboardHistoryStore.shared.$history.dropFirst().first()
+                .delay(for: .seconds(1), scheduler: DispatchQueue.main)
+                .sink { _ in ClipboardPanelController.shared.preload() }
+                .store(in: &cancellables)
+            ClipboardHistoryStore.shared.start()
+        }
         Self.shared = self
         LockScreenLiveActivityWindowManager.shared.configure(viewModel: vm)
         LockScreenManager.shared.configure(viewModel: vm)

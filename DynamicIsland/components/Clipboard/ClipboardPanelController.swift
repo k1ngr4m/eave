@@ -9,7 +9,7 @@ private final class ClipboardPanel: NSPanel {
 }
 
 @MainActor
-final class ClipboardPanelController: ObservableObject {
+final class ClipboardPanelController: NSObject, ObservableObject, NSWindowDelegate {
     static let shared = ClipboardPanelController()
     @Published var query = ""
     @Published var collectionID: UUID?
@@ -27,6 +27,9 @@ final class ClipboardPanelController: ObservableObject {
     @Published var collectionPresented = false
     @Published private(set) var pasting = false
     @Published private(set) var presentation = UUID()
+    @Published private(set) var searchFocusRequest = UUID()
+    @Published private(set) var isExpanded = false
+    private(set) var isDismissing = false
     private var panel: NSPanel?
     private var targetApplication: NSRunningApplication?
     private var targetWindow: AXUIElement?
@@ -44,11 +47,42 @@ final class ClipboardPanelController: ObservableObject {
         }
     }
 
+    func preload() {
+        guard ClipboardHistoryStore.shared.enabled, panel == nil,
+              let screen = NSScreen.main else { return }
+        let panel = preparePanel(frame: Self.frame(in: screen.frame))
+        // Warm SwiftUI layout and drawing without ordering a window in or taking focus.
+        panel.contentView?.layoutSubtreeIfNeeded()
+        panel.contentView?.displayIfNeeded()
+    }
+
+    private func preparePanel(frame: NSRect) -> NSPanel {
+        if let panel { return panel }
+        let panel = ClipboardPanel(contentRect: frame,
+            styleMask: [.borderless], backing: .buffered, defer: false)
+        panel.isReleasedWhenClosed = false
+        panel.delegate = self
+        panel.isFloatingPanel = true
+        panel.becomesKeyOnlyIfNeeded = false
+        panel.hidesOnDeactivate = false
+        panel.backgroundColor = .clear
+        panel.isOpaque = false
+        panel.hasShadow = true
+        panel.level = .popUpMenu
+        panel.animationBehavior = .none
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
+        panel.contentView = NSHostingView(rootView: ClipboardPanelView(controller: self, store: .shared))
+        self.panel = panel
+        return panel
+    }
+
     func toggle() {
         guard ClipboardHistoryStore.shared.enabled else { return }
-        if panel?.isVisible == true { dismiss(); return }
+        if panel?.isVisible == true && !isDismissing { dismiss(); return }
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }) ?? NSScreen.main else { return }
-        targetApplication = NSWorkspace.shared.frontmostApplication
+        if NSWorkspace.shared.frontmostApplication?.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            targetApplication = NSWorkspace.shared.frontmostApplication
+        }
         targetWindow = nil
         targetInput = nil
         if let targetApplication, AXIsProcessTrusted() {
@@ -67,28 +101,45 @@ final class ClipboardPanelController: ObservableObject {
         collectionPresented = false
         selectedID = ClipboardHistoryStore.shared.history.entries.first?.id
         presentation = UUID()
+        isDismissing = false
         let frame = Self.frame(in: screen.frame)
-        let panel = self.panel ?? ClipboardPanel(contentRect: frame,
-            styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-        panel.isReleasedWhenClosed = false
-        panel.isFloatingPanel = true
-        panel.hidesOnDeactivate = false
-        panel.backgroundColor = .clear
-        panel.isOpaque = false
-        panel.hasShadow = true
-        panel.level = .popUpMenu
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
-        panel.contentView = NSHostingView(rootView: ClipboardPanelView(controller: self, store: .shared))
-        self.panel = panel
-        panel.setFrame(frame.offsetBy(dx: 0, dy: -24), display: false)
-        panel.alphaValue = 0
+        let panel = preparePanel(frame: frame)
+        panel.ignoresMouseEvents = false
+        panel.setFrame(frame, display: false)
+        panel.alphaValue = 1
+        panel.contentView?.layoutSubtreeIfNeeded()
+        // Use a real app activation instead of borrowing another app's keyboard focus.
+        // A frontmost-app/AX check cannot detect a nonactivating panel's focus ownership.
+        NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.18
-            panel.animator().setFrame(frame, display: true)
-            panel.animator().alphaValue = 1
+        focusSearchIfVisible()
+        let token = presentation
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.presentation == token, panel.isVisible else { return }
+            self.isExpanded = true
         }
         installMonitors()
+    }
+
+    func windowDidBecomeKey(_ notification: Notification) {
+        focusSearchIfVisible()
+    }
+
+    func focusSearchIfVisible() {
+        guard !isDismissing, NSApp.isActive, let panel, panel.isVisible,
+              panel.attachedSheet == nil, !settingsPresented,
+              !collectionPresented, itemPresentation == nil else { return }
+        // Activation may complete after makeKeyAndOrderFront. Retry from the actual
+        // activation/key-window events instead of assuming the next run loop is ready.
+        if !panel.isKeyWindow { panel.makeKey() }
+        let token = presentation
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.presentation == token, NSApp.isActive,
+                  panel.isVisible, panel.isKeyWindow, panel.attachedSheet == nil,
+                  !self.settingsPresented, !self.collectionPresented,
+                  self.itemPresentation == nil else { return }
+            self.searchFocusRequest = UUID()
+        }
     }
 
     static func frame(in screenFrame: NSRect) -> NSRect {
@@ -96,11 +147,24 @@ final class ClipboardPanelController: ObservableObject {
                width: max(240, screenFrame.width - 24), height: min(350, screenFrame.height))
     }
 
-    func dismiss() {
+    func dismiss(restoreTarget: Bool = true) {
+        guard !isDismissing else { return }
+        let shouldRestoreTarget = restoreTarget && NSApp.isActive && panel?.isKeyWindow == true
         presentation = UUID() // Cancel pending focus restoration/paste when the user dismisses or reopens.
+        isDismissing = panel?.isVisible == true
+        panel?.makeFirstResponder(nil)
         panel?.resignKey()
-        panel?.orderOut(nil)
-        panel?.contentView = nil
+        panel?.ignoresMouseEvents = true
+        isExpanded = false
+        if isDismissing {
+            let token = presentation
+            let duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0.2 : 0.5
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
+                guard let self, self.presentation == token, self.isDismissing else { return }
+                self.panel?.orderOut(nil)
+                self.isDismissing = false
+            }
+        }
         targetWindow = nil
         targetInput = nil
         if let localMonitor { NSEvent.removeMonitor(localMonitor) }
@@ -110,6 +174,10 @@ final class ClipboardPanelController: ObservableObject {
         itemPresentation = nil
         settingsPresented = false
         collectionPresented = false
+        if shouldRestoreTarget, let targetApplication, !targetApplication.isTerminated,
+           targetApplication.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            targetApplication.activate(options: [])
+        }
     }
 
     func selectFirstIfNeeded() {
@@ -151,22 +219,23 @@ final class ClipboardPanelController: ObservableObject {
         Task {
             defer { pasting = false }
             guard await ClipboardHistoryStore.shared.copy(id, plain: usePlainText, ifCurrent: { token == self.presentation }) else { return }
-            if copyOnly { dismiss(); return }
             let copiedChange = NSPasteboard.general.changeCount
             let permission = AccessibilityPermissionStore.shared
             permission.refreshStatus()
-            guard permission.isAuthorized else {
+            guard copyOnly || permission.isAuthorized else {
                 permission.requestAuthorizationPrompt()
                 ClipboardHistoryStore.shared.message = String(localized: "Allow Eave in System Settings → Privacy & Security → Accessibility. Then reopen the panel and double-click or press Enter to paste directly.")
                 return
             }
             guard let target, !target.isTerminated, target.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
+                if copyOnly { dismiss(); return }
                 ClipboardHistoryStore.shared.message = String(localized: "Copied. Switch to the target app and press ⌘V to paste.")
                 return
             }
-            // A nonactivating panel can own keyboard focus while the target app remains frontmost.
-            panel?.resignKey()
-            panel?.orderOut(nil)
+            // Finish tearing down the search editor before restoring another app's input.
+            // Nothing may resign panel focus again after the target has regained it.
+            dismiss(restoreTarget: false)
+            let token = presentation
             target.activate(options: [])
             let app = AXUIElementCreateApplication(target.processIdentifier)
             AXUIElementSetMessagingTimeout(app, 0.2)
@@ -174,8 +243,7 @@ final class ClipboardPanelController: ObservableObject {
             // Wait for the original input, not just the frontmost application.
             for _ in 0..<40 {
                 try? await Task.sleep(for: .milliseconds(25))
-                guard token == presentation, NSPasteboard.general.changeCount == copiedChange else {
-                    if token == presentation { dismiss() }
+                guard token == presentation, copyOnly || NSPasteboard.general.changeCount == copiedChange else {
                     return
                 }
                 if NSWorkspace.shared.frontmostApplication?.processIdentifier == target.processIdentifier,
@@ -196,20 +264,22 @@ final class ClipboardPanelController: ObservableObject {
                         guard let focused = Self.element(kAXFocusedUIElementAttribute, of: app),
                               CFEqual(focused, targetInput) else { continue }
                     }
+                    if copyOnly {
+                        return
+                    }
                     guard let source = CGEventSource(stateID: .privateState),
                           let down = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true),
                           let up = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false) else { break }
                     down.flags = .maskCommand
                     up.flags = .maskCommand
-                    down.postToPid(target.processIdentifier)
-                    up.postToPid(target.processIdentifier)
-                    dismiss()
+                    // Follow the normal keyboard route after activation/focus is verified.
+                    down.post(tap: .cghidEventTap)
+                    up.post(tap: .cghidEventTap)
                     return
                 }
             }
             // Never send keys to a different app if activation failed.
             ClipboardHistoryStore.shared.message = String(localized: "Copied, but the original input could not regain focus. Click the input and press ⌘V to paste.")
-            if token == presentation { panel?.makeKeyAndOrderFront(nil) }
         }
     }
 
@@ -224,7 +294,7 @@ final class ClipboardPanelController: ObservableObject {
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .leftMouseDown, .rightMouseDown]) { [weak self] event in
             guard let self else { return event }
             if event.type != .keyDown {
-                if let window = event.window, window !== self.panel, self.panel?.attachedSheet == nil { self.dismiss() }
+                if let window = event.window, window !== self.panel, self.panel?.attachedSheet == nil { self.dismiss(restoreTarget: false) }
                 return event
             }
             guard event.window === self.panel, self.panel?.attachedSheet == nil,
@@ -261,7 +331,7 @@ final class ClipboardPanelController: ObservableObject {
             }
         }
         outsideMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            Task { @MainActor in self?.dismiss() }
+            Task { @MainActor in self?.dismiss(restoreTarget: false) }
         }
     }
 }

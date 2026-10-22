@@ -8,6 +8,7 @@ struct ClipboardPanelView: View {
     @ObservedObject var controller: ClipboardPanelController
     @ObservedObject var store: ClipboardHistoryStore
     @Default(.accentColor) private var accentColor
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var searchFocused: Bool
     @State private var collectionName = ""
     @State private var editingCollectionID: UUID?
@@ -47,6 +48,9 @@ struct ClipboardPanelView: View {
                         }.padding(4)
                     }
                     .scrollIndicators(.hidden)
+                    .onChange(of: controller.presentation) { _, _ in
+                        if let first = entries.first { proxy.scrollTo(first.id, anchor: .leading) }
+                    }
                     .onChange(of: controller.keyboardSelectionID) { _, id in
                         if let id { withAnimation(.easeOut(duration: 0.15)) { proxy.scrollTo(id, anchor: .center) } }
                     }
@@ -71,8 +75,31 @@ struct ClipboardPanelView: View {
         }
         .preferredColorScheme(.dark)
         .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(.white.opacity(0.14), lineWidth: 1))
+        .mask {
+            GeometryReader { geometry in
+                RoundedRectangle(cornerRadius: 24)
+                    .frame(width: controller.isExpanded || reduceMotion ? geometry.size.width : min(240, geometry.size.width),
+                           height: controller.isExpanded || reduceMotion ? geometry.size.height : 28)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            }
+        }
+        .opacity(controller.isExpanded ? 1 : 0)
+        .animation(reduceMotion ? .easeOut(duration: 0.2) : .spring(response: 0.42, dampingFraction: 1.0, blendDuration: 0),
+                   value: controller.isExpanded)
         .tint(accentColor)
+        .defaultFocus($searchFocused, true)
         .onAppear { searchFocused = true }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            controller.focusSearchIfVisible()
+        }
+        .onChange(of: controller.presentation) { _, _ in
+            searchFocused = false
+            confirmClear = false
+            collectionName = ""
+            editingCollectionID = nil
+            pinToNewCollection = nil
+        }
+        .onChange(of: controller.searchFocusRequest) { _, _ in searchFocused = true }
         .onChange(of: controller.settingsPresented) { _, presented in if !presented { searchFocused = true } }
         .onChange(of: controller.collectionPresented) { _, presented in if !presented { searchFocused = true } }
         .onChange(of: controller.query) { _, _ in controller.selectFirstIfNeeded() }
@@ -335,15 +362,23 @@ private struct ClipboardCard: View {
         .accessibilityLabel([title, sourceName, String(entry.text.prefix(160)), entry.localizedDetail].joined(separator: ", "))
         .accessibilityValue(selected ? String(localized: "Selected") : "")
         .task(id: entry.id) {
-            if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: entry.sourceBundleID) {
-                appIcon = NSWorkspace.shared.icon(forFile: url.path)
-            }
-            if entry.kind == .files, let payload = try? await disk.payload(entry.id), let file = payload.files?.first {
-                thumbnail = NSWorkspace.shared.icon(forFile: file.url.path)
-            }
-            if entry.kind == .image, let data = await disk.thumbnail(entry.id), !Task.isCancelled {
-                thumbnail = NSImage(data: data)
-            }
+            // Launch Services and file icons can be slow on their first lookup.
+            // Keep that work off the main actor while the panel slides in.
+            let images = await Task.detached(priority: .userInitiated) { [entry, disk] in
+                let appIcon = NSWorkspace.shared.urlForApplication(withBundleIdentifier: entry.sourceBundleID)
+                    .map { NSWorkspace.shared.icon(forFile: $0.path) }
+                var thumbnail: NSImage?
+                if entry.kind == .files, let payload = try? await disk.payload(entry.id), let file = payload.files?.first {
+                    thumbnail = NSWorkspace.shared.icon(forFile: file.url.path)
+                }
+                if entry.kind == .image, let data = await disk.thumbnail(entry.id) {
+                    thumbnail = NSImage(data: data)
+                }
+                return (appIcon, thumbnail)
+            }.value
+            guard !Task.isCancelled else { return }
+            appIcon = images.0
+            thumbnail = images.1
         }
     }
 }

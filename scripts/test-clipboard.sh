@@ -5,6 +5,11 @@ test_dir="$(mktemp -d "${TMPDIR:-/tmp}/eave-clipboard.XXXXXX")"
 trap 'rm -rf "$test_dir"' EXIT
 xcrun swiftc DynamicIsland/components/Clipboard/ClipboardHistory.swift DynamicIsland/components/Clipboard/ClipboardHistoryStore.swift tests/ClipboardHistoryChecks.swift -o "$test_dir/checks"
 "$test_dir/checks"
+xcrun swiftc DynamicIsland/components/Clipboard/ClipboardHistory.swift \
+    DynamicIsland/components/Clipboard/ClipboardHistoryStore.swift \
+    DynamicIsland/components/Clipboard/ClipboardPanelController.swift \
+    tests/ClipboardPanelPreloadChecks.swift -o "$test_dir/preload-checks"
+"$test_dir/preload-checks"
 
 python3 - <<'PYTHON'
 import json
