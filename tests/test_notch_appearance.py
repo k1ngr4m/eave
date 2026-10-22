@@ -17,6 +17,9 @@ func contrast(_ foreground: Color, _ background: Color, _ scheme: ColorScheme) -
 }
 assert(NotchAppearance.legacyAppearance(lightMode: true) == .light)
 assert(NotchAppearance.legacyAppearance(lightMode: false) == .dark)
+assert(NotchAppearance.light.preferredColorScheme == .light)
+assert(NotchAppearance.dark.preferredColorScheme == .dark)
+assert(NotchAppearance.system.preferredColorScheme == nil)
 for system in [ColorScheme.light, .dark] {
     assert(NotchAppearance.light.colorScheme(for: system) == .light)
     assert(NotchAppearance.dark.colorScheme(for: system) == .dark)

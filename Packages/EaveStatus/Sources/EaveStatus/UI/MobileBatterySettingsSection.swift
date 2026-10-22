@@ -16,9 +16,9 @@ struct MobileBatterySettingsSection: View {
 
     var body: some View {
         Section {
-            Toggle(localization.string(.settingsAppleDevicesAndBattery), isOn: $settings.showsAppleDevicesAndBattery)
+            Toggle(localization.string(.settingsAppleDevicesAndBattery), systemImage: "battery.100", isOn: $settings.showsAppleDevicesAndBattery)
             if settings.showsAppleDevicesAndBattery {
-                Toggle(localization.string(.settingsAppleBackgroundRefresh), isOn: $settings.refreshesAppleBatteriesInBackground)
+                Toggle(localization.string(.settingsAppleBackgroundRefresh), systemImage: "headphones", isOn: $settings.refreshesAppleBatteriesInBackground)
                 if settings.refreshesAppleBatteriesInBackground {
                     Stepper(value: $settings.appleBatteryRefreshIntervalMinutes,
                             in: SettingsStore.appleBatteryRefreshIntervalMinutesRange) {

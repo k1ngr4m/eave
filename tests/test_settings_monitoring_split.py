@@ -39,7 +39,7 @@ check.enableMinimalisticUI = false
 private let utilities: [SettingsTab] = [.media, .timer, .calendar, .notes, .shelf, .stocks, .desktopPing, .screenText, .stats, .llmAgents, .terminal]
 assert(check.availableTabs.filter { $0.group == .utilities } == utilities)
 assert(SettingsTabGroup.allCases == [.core, .utilities, .displayAndSystem, .info])
-private let displayAndSystem: [SettingsTab] = [.liveActivities, .lockScreen, .devices, .hudAndOSD, .battery]
+private let displayAndSystem: [SettingsTab] = [.liveActivities, .lockScreen, .devices, .hudAndOSD]
 assert(check.availableTabs.filter { $0.group == .displayAndSystem } == displayAndSystem)
 assert(check.availableTabs.firstIndex(of: .terminal)! < check.availableTabs.firstIndex(of: .liveActivities)!)
 assert(SettingsTab.stats.group == .utilities)

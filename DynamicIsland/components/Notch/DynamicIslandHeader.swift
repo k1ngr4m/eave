@@ -22,7 +22,6 @@ import SwiftUI
 struct DynamicIslandHeader: View {
     @EnvironmentObject var vm: DynamicIslandViewModel
     @EnvironmentObject var webcamManager: WebcamManager
-    @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
     @ObservedObject var timerManager = TimerManager.shared
     @ObservedObject var doNotDisturbManager = DoNotDisturbManager.shared
@@ -36,9 +35,6 @@ struct DynamicIslandHeader: View {
     @Default(.showPerAppVolumeIcon) var showPerAppVolumeIcon
     @Default(.enableCaffeinate) var enableCaffeinate
     @Default(.showCaffeinateIcon) var showCaffeinateIcon
-    @Default(.showBatteryIndicator) var showBatteryIndicator
-    @Default(.showBatteryPercentInside) var showBatteryPercentInside
-    @Default(.showMinimalisticBatteryIndicator) var showMinimalisticBatteryIndicator
     @Default(.enableMinimalisticUI) var enableMinimalisticUI
     
     /// Point size per symbol, so the row reads as one size.
@@ -252,38 +248,6 @@ struct DynamicIslandHeader: View {
                             FocusIndicator()
                                 .frame(width: 30, height: 30)
                                 .transition(.opacity)
-                        }
-                    }
-
-                    if vm.notchState == .open && showBatteryIndicator {
-                        if enableMinimalisticUI {
-                            // In minimalistic notch mode, show the battery pill only when
-                            // showMinimalisticBatteryIndicator is enabled (and not DI mode).
-                            if !shouldUseDynamicIslandMode(for: vm.screen) && showMinimalisticBatteryIndicator {
-                                MinimalisticBatteryView(
-                                    levelBattery: batteryModel.levelBattery,
-                                    isPluggedIn: batteryModel.isPluggedIn,
-                                    isCharging: batteryModel.isCharging,
-                                    isInLowPowerMode: batteryModel.isInLowPowerMode,
-                                    bodyWidth: 28,
-                                    bodyHeight: 14,
-                                    isForNotification: false,
-                                    showPercentInside: showBatteryPercentInside
-                                )
-                                .padding(.trailing, 4)
-                                .transition(.opacity.combined(with: .scale(scale: 0.85)))
-                            }
-                        } else {
-                            DynamicIslandBatteryView(
-                                batteryWidth: 30,
-                                isCharging: batteryModel.isCharging,
-                                isInLowPowerMode: batteryModel.isInLowPowerMode,
-                                isPluggedIn: batteryModel.isPluggedIn,
-                                levelBattery: batteryModel.levelBattery,
-                                maxCapacity: batteryModel.maxCapacity,
-                                timeToFullCharge: batteryModel.timeToFullCharge,
-                                isForNotification: false
-                            )
                         }
                     }
                 }

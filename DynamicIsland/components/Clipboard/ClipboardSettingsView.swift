@@ -15,7 +15,7 @@ struct ClipboardSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Toggle(String(localized: "Enable Clipboard"), isOn: $store.enabled)
+                Toggle(String(localized: "Enable Clipboard"), systemImage: "doc.on.clipboard", isOn: $store.enabled)
             } footer: {
                 Text(String(localized: "Turning this off stops recording, closes the panel, and disables its shortcut. Existing history is kept."))
             }
@@ -31,13 +31,13 @@ struct ClipboardSettingsView: View {
             }
             Group {
                 Section {
-                    Toggle(String(localized: "Sound effects"), isOn: $store.soundEffects)
-                    Toggle(String(localized: "Pause recording"), isOn: $store.paused)
+                    Toggle(String(localized: "Sound effects"), systemImage: "speaker.wave.2", isOn: $store.soundEffects)
+                    Toggle(String(localized: "Pause recording"), systemImage: "slider.horizontal.3", isOn: $store.paused)
                     KeyboardShortcuts.Recorder(String(localized: "Open Clipboard:"), name: .toggleClipboard)
                         .disabled(!shortcutsEnabled)
                 }
                 Section(String(localized: "Paste Items")) {
-                    Picker(String(localized: "Paste to"), selection: $store.pasteTarget) {
+                    Picker(selection: $store.pasteTarget) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(String(localized: "To the Active App"))
                             Text(String(localized: "Paste the selected item directly into the app you were using before opening the panel."))
@@ -48,14 +48,16 @@ struct ClipboardSettingsView: View {
                             Text(String(localized: "Copy the selected item to the system clipboard to paste manually later."))
                                 .font(.caption).foregroundStyle(.secondary)
                         }.tag(ClipboardPasteTarget.clipboard)
+                    } label: {
+                        Label(String(localized: "Paste to"), systemImage: "doc.on.clipboard")
                     }.pickerStyle(.radioGroup).labelsHidden()
-                    Toggle(String(localized: "Always paste as plain text"), isOn: $store.alwaysPlainText)
+                    Toggle(String(localized: "Always paste as plain text"), systemImage: "textformat", isOn: $store.alwaysPlainText)
                     Text(String(localized: "Plain text mode removes formatting. Images without text cannot be pasted as plain text."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Section(String(localized: "Keep History")) {
                     VStack(spacing: 12) {
-                        Slider(value: $retentionPosition, in: 0...4) { editing in
+                        SettingsSlider(value: $retentionPosition, in: 0...4, valueLabel: Text(ClipboardRetention.atSliderPosition(retentionPosition).title)) { editing in
                             if !editing {
                                 let value = ClipboardRetention.atSliderPosition(retentionPosition)
                                 store.retention = value
@@ -70,11 +72,12 @@ struct ClipboardSettingsView: View {
                                 Circle().fill(.secondary.opacity(0.5)).frame(width: 3, height: 3)
                                     .position(x: 12 + (geometry.size.width - 24) * Double(index) / 4, y: 2)
                             }
-                        }.frame(height: 4).accessibilityHidden(true)
-                        Text(ClipboardRetention.atSliderPosition(retentionPosition).title)
-                            .frame(maxWidth: .infinity)
+                        }.frame(width: 190, height: 4)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .accessibilityHidden(true)
 
-                    }.frame(maxWidth: .infinity).padding(.vertical, 8)
+                    }.frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(.vertical, 8)
                     Text(String(localized: "Items pinned to favorites or collections do not expire automatically. Shortening the period immediately deletes expired unpinned items. “Forever” is still subject to item and storage limits."))
                         .font(.caption).foregroundStyle(.secondary)
                     HStack {
@@ -85,15 +88,29 @@ struct ClipboardSettingsView: View {
                     }
                 }
                 Section(String(localized: "Image Text Recognition")) {
-                    Toggle(String(localized: "Recognize image text for search"), isOn: $store.ocrEnabled)
+                    Toggle(String(localized: "Recognize image text for search"), systemImage: "textformat", isOn: $store.ocrEnabled)
                     Text(String(localized: "Recognizes text locally in the background, including existing images. Pasting still uses the original image.")).font(.caption).foregroundStyle(.secondary)
                 }
                 Section(String(localized: "Storage")) {
-                    Picker(String(localized: "Unpinned item limit"), selection: $store.itemLimit) {
-                        ForEach([100, 300, 500, 1000], id: \.self) { Text(String(localized: "\($0) items")).tag($0) }
+                    HStack(spacing: 12) {
+                        Label(String(localized: "Unpinned item limit"), systemImage: "internaldrive").accessibilityHidden(true)
+                        Spacer(minLength: 12)
+                        Picker(selection: $store.itemLimit) {
+                            ForEach([100, 300, 500, 1000], id: \.self) { Text(String(localized: "\($0) items")).tag($0) }
+                        } label: {
+                            Label(String(localized: "Unpinned item limit"), systemImage: "internaldrive")
+                        }
+                            .labelsHidden()
                     }
-                    Picker(String(localized: "Storage limit"), selection: $store.capacityMB) {
-                        ForEach([50, 100, 250, 500], id: \.self) { Text("\($0) MB").tag($0) }
+                    HStack(spacing: 12) {
+                        Label(String(localized: "Storage limit"), systemImage: "internaldrive").accessibilityHidden(true)
+                        Spacer(minLength: 12)
+                        Picker(selection: $store.capacityMB) {
+                            ForEach([50, 100, 250, 500], id: \.self) { Text("\($0) MB").tag($0) }
+                        } label: {
+                            Label(String(localized: "Storage limit"), systemImage: "internaldrive")
+                        }
+                            .labelsHidden()
                     }
                     Text(String(localized: "Up to 20 MB per copy. Files are stored as references, not backups; originals must remain available."))
                         .font(.caption).foregroundStyle(.secondary)
@@ -113,7 +130,7 @@ struct ClipboardSettingsView: View {
                 Section { Text(message).font(.caption).foregroundStyle(.orange) }
             }
         }
-        .formStyle(.grouped)
+
         .onAppear {
             retentionPosition = store.retention.sliderPosition
             store.start()

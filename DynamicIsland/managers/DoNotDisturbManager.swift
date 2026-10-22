@@ -56,6 +56,7 @@ final class DoNotDisturbManager: ObservableObject {
     /// Timestamp of the last notification-driven state change.
     /// Used to suppress assertions polling from overriding a fresh notification for a short window.
     private var lastNotificationTimestamp: Date = .distantPast
+    private var lastSystemStateTimestamp: Date = .distantPast
     private static let notificationCooldown: TimeInterval = 4.0
 
     /// Delayed task that clears retained metadata after the OFF animation completes.
@@ -65,8 +66,8 @@ final class DoNotDisturbManager: ObservableObject {
     private var toastDismissTask: Task<Void, Never>?
 
     private init() {
-        focusLogStream.onMetadataUpdate = { [weak self] identifier, name in
-            self?.handleLogMetadataUpdate(identifier: identifier, name: name)
+        focusLogStream.onStateUpdate = { [weak self] state in
+            self?.publishSystemState(state)
         }
 
         modeCancellable = Defaults.publisher(.focusMonitoringMode, options: [])
@@ -105,6 +106,7 @@ final class DoNotDisturbManager: ObservableObject {
         )
 
         isMonitoring = true
+        lastSystemStateTimestamp = .distantPast
         applyMonitoringModeChange(Defaults[.focusMonitoringMode])
     }
 
@@ -151,7 +153,9 @@ final class DoNotDisturbManager: ObservableObject {
 
     private func publishMetadata(identifier: String?, name: String?, isActive: Bool?, source: String) {
         DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
+            guard let self = self, self.isMonitoring else { return }
+            // Synced Focus can be active without a local assertion on disk.
+            guard source != "assertions-poll" || self.lastSystemStateTimestamp == .distantPast else { return }
 
             let trimmedIdentifier = identifier?.trimmingCharacters(in: .whitespacesAndNewlines)
             let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -178,6 +182,15 @@ final class DoNotDisturbManager: ObservableObject {
                         self.currentFocusModeIdentifier = FocusModeType.doNotDisturb.rawValue
                         self.currentFocusModeName = FocusModeType.doNotDisturb.displayName
                     }
+                    if isActive {
+                        self.metadataClearTask?.cancel()
+                        self.metadataClearTask = nil
+                        self.cancelFocusToastDismiss()
+                    } else {
+                        self.scheduleMetadataClear()
+                        self.beginFocusToastDismissIfNeeded()
+                    }
+                    self.updateStateVerification(focusActive: isActive)
                     debugPrint("[DoNotDisturbManager] Focus active-only update -> source: \(source) | isActive: \(isActive)")
                 }
                 return
@@ -293,10 +306,11 @@ final class DoNotDisturbManager: ObservableObject {
 
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(3))
-                guard let self, self.isDoNotDisturbActive else { break }
+                guard let self, self.isDoNotDisturbActive, self.lastSystemStateTimestamp == .distantPast else { break }
 
                 // Check the assertions file directly (if FDA is available).
                 let focusStillActive = await self.verifyFocusActiveFromAssertions()
+                guard !Task.isCancelled, self.lastSystemStateTimestamp == .distantPast else { break }
                 if !focusStillActive {
                     withAnimation(.smooth(duration: 0.25)) {
                         self.isDoNotDisturbActive = false
@@ -327,8 +341,8 @@ final class DoNotDisturbManager: ObservableObject {
               let root = (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String: Any],
               let dataArray = root["data"] as? [[String: Any]],
               let firstItem = dataArray.first else {
-            // File unreadable/empty — assume focus is off.
-            return false
+            // An unreadable snapshot cannot confirm that Focus is off.
+            return true
         }
 
         let assertions = (firstItem["storeAssertionRecords"] as? [Any]) ?? []
@@ -371,18 +385,14 @@ final class DoNotDisturbManager: ObservableObject {
         isFocusToastDismissing = false
     }
 
-    private func handleLogMetadataUpdate(identifier: String?, name: String?) {
-        metadataExtractionQueue.async { [weak self] in
-            guard let self = self else { return }
-            let trimmedIdentifier = identifier?.trimmingCharacters(in: .whitespacesAndNewlines)
-            let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
-
-            let hasIdentifier = (trimmedIdentifier?.isEmpty == false)
-            let hasName = (trimmedName?.isEmpty == false)
-
-            guard hasIdentifier || hasName else { return }
-
-            self.publishMetadata(identifier: trimmedIdentifier, name: trimmedName, isActive: nil, source: "log-stream")
+    private func publishSystemState(_ state: FocusSystemState, initialReadStartedAt: Date? = nil) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.isMonitoring else { return }
+            if let startedAt = initialReadStartedAt,
+               max(self.lastSystemStateTimestamp, self.lastNotificationTimestamp) > startedAt { return }
+            self.lastSystemStateTimestamp = Date()
+            self.publishMetadata(identifier: state.identifier, name: state.name,
+                                 isActive: state.isActive, source: "system-state")
         }
     }
 
@@ -525,58 +535,40 @@ private extension DoNotDisturbManager {
     func applyMonitoringModeChange(_ mode: FocusMonitoringMode) {
         guard isMonitoring else { return }
 
+        // Both modes need state events: local Assertions.json omits cloud-synced Focus.
+        focusLogStream.start()
+        checkInitialFocusStateViaLog()
         if mode == .useDevTools {
             stopAssertionsPolling()
-            focusLogStream.start()
-            checkInitialFocusStateViaLog()
         } else {
-            focusLogStream.stop()
             startAssertionsPolling()
         }
     }
 
-    /// When using the log-stream mode, `log stream` only delivers future events — it misses any
-    /// focus mode that was already active when Eave launched. This one-shot `log show` reads
-    /// recent duetexpertd debug logs to find the most recent `semanticModeIdentifier` event and
-    /// seeds the initial focus state from it. Tries progressively larger windows so the common
-    /// case (focus toggled recently) resolves in ~1-2s without scanning a full day of logs.
     private func checkInitialFocusStateViaLog() {
-        metadataExtractionQueue.async { [weak self] in
+        let startedAt = Date()
+        DispatchQueue.global(qos: .utility).async { [weak self] in
             guard let self else { return }
-
-            for window in ["5m", "1h", "24h"] {
+            // ponytail: bounded history scan; use a persisted state snapshot if multi-day startup recovery is needed.
+            for window in ["5m", "1h", "6h", "24h"] {
                 let task = Process()
                 task.executableURL = URL(fileURLWithPath: "/usr/bin/log")
-                task.arguments = [
-                    "show",
-                    "--last", window,
-                    "--debug",
-                    "--style", "compact",
-                    "--predicate", "process == \"duetexpertd\" AND eventMessage CONTAINS \"semanticModeIdentifier\""
-                ]
+                task.arguments = ["show", "--last", window, "--debug", "--style", "compact",
+                                  "--predicate", FocusSystemState.logPredicate]
                 let pipe = Pipe()
                 task.standardOutput = pipe
-                task.standardError = Pipe()
-
+                task.standardError = FileHandle.nullDevice
                 guard (try? task.run()) != nil else { return }
+                // Drain before waiting: a full pipe otherwise deadlocks startup detection.
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
                 task.waitUntilExit()
-
-                let output = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-                let lines = output.components(separatedBy: "\n").filter {
-                    $0.contains("semanticModeIdentifier") && !$0.hasPrefix("Filtering")
+                guard task.terminationStatus == 0 else { return }
+                let output = String(decoding: data, as: UTF8.self)
+                if let state = output.components(separatedBy: "\n").reversed()
+                    .compactMap({ FocusSystemState.parse($0) }).first {
+                    self.publishSystemState(state, initialReadStartedAt: startedAt)
+                    return
                 }
-
-                guard let lastLine = lines.last(where: { !$0.isEmpty }) else { continue }
-
-                // starting: 0 means focus ended — nothing to activate.
-                guard !lastLine.contains("starting: 0") else { return }
-
-                let identifier = FocusMetadataDecoder.extractIdentifier(from: lastLine)
-                let name = FocusMetadataDecoder.extractName(from: lastLine)
-                guard identifier != nil || name != nil else { return }
-
-                self.publishMetadata(identifier: identifier, name: name, isActive: true, source: "log-initial")
-                return
             }
         }
     }
@@ -616,51 +608,47 @@ private extension DoNotDisturbManager {
             return
         }
 
-        // Update last-observed modification date before reading content.
+        guard let data = try? Data(contentsOf: assertionsURL),
+              !data.isEmpty,
+              let root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let dataArray = root["data"] as? [[String: Any]],
+              let firstItem = dataArray.first else { return }
+
         if let attributes = try? FileManager.default.attributesOfItem(atPath: assertionsURL.path),
            let modifiedAt = attributes[.modificationDate] as? Date {
             lastAssertionsModificationDate = modifiedAt
         }
 
-        // Default to OFF — if the file can't be read or parsed, treat as no active focus.
-        var isActive = false
         var identifier: String?
         var name: String?
+        let assertions = (firstItem["storeAssertionRecords"] as? [Any]) ?? []
+        let isActive = !assertions.isEmpty
 
-        if let data = try? Data(contentsOf: assertionsURL),
-           !data.isEmpty,
-           let root = (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String: Any],
-           let dataArray = root["data"] as? [[String: Any]],
-           let firstItem = dataArray.first {
+        if isActive {
+            let identifierKeys = [
+                "assertionDetailsModeIdentifier",
+                "modeIdentifier",
+                "FocusModeIdentifier",
+                "focusModeIdentifier",
+                "identifier",
+                "Identifier",
+                "focusModeUUID",
+                "UUID",
+                "uuid"
+            ]
 
-            let assertions = (firstItem["storeAssertionRecords"] as? [Any]) ?? []
-            isActive = !assertions.isEmpty
+            let nameKeys = [
+                "activityDisplayName",
+                "displayName",
+                "FocusModeName",
+                "focusModeName",
+                "focusMode",
+                "name",
+                "Name"
+            ]
 
-            if isActive {
-                let identifierKeys = [
-                    "modeIdentifier",
-                    "FocusModeIdentifier",
-                    "focusModeIdentifier",
-                    "identifier",
-                    "Identifier",
-                    "focusModeUUID",
-                    "UUID",
-                    "uuid"
-                ]
-
-                let nameKeys = [
-                    "activityDisplayName",
-                    "displayName",
-                    "FocusModeName",
-                    "focusModeName",
-                    "focusMode",
-                    "name",
-                    "Name"
-                ]
-
-                identifier = firstMatch(for: identifierKeys, in: assertions)
-                name = firstMatch(for: nameKeys, in: assertions)
-            }
+            identifier = firstMatch(for: identifierKeys, in: assertions)
+            name = firstMatch(for: nameKeys, in: assertions)
         }
 
         publishMetadata(identifier: identifier, name: name, isActive: isActive, source: "assertions-poll")
@@ -1110,6 +1098,30 @@ private extension DoNotDisturbManager {
 
 }
 
+struct FocusSystemState {
+    static let logPredicate = "process == \"donotdisturbd\" AND eventMessage CONTAINS \"Did receive state update, will handle\""
+    let identifier: String?
+    let name: String?
+    var isActive: Bool { identifier != nil }
+
+    static func parse(_ line: String) -> FocusSystemState? {
+        guard line.contains("Did receive state update, will handle"),
+              let start = line.range(of: "state: <DNDState:") else { return nil }
+        // Never interpret previousState as the current mode, especially on OFF events.
+        let current = String(line[start.upperBound...].components(separatedBy: "; previousState:")[0])
+        func field(_ key: String) -> String? {
+            guard let range = current.range(of: key) else { return nil }
+            let value = current[range.upperBound...].prefix { $0 != ";" && $0 != ">" }
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            return value.isEmpty || value == "<private" ? nil : value
+        }
+        guard let identifier = field("activeModeIdentifier:") else { return nil }
+        if identifier == "(null)" { return FocusSystemState(identifier: nil, name: nil) }
+        guard identifier.hasPrefix("com.apple.") else { return nil }
+        return FocusSystemState(identifier: identifier, name: field("name:"))
+    }
+}
+
 private final class FocusLogStream {
     private let queue = DispatchQueue(label: "com.dynamicisland.focus.logstream", qos: .utility)
     private var process: Process?
@@ -1122,7 +1134,7 @@ private final class FocusLogStream {
     private var lastIdentifier: String?
     private var lastName: String?
 
-    var onMetadataUpdate: ((String?, String?) -> Void)?
+    var onStateUpdate: ((FocusSystemState) -> Void)?
 
     func start() {
         queue.async { [weak self] in
@@ -1137,9 +1149,9 @@ private final class FocusLogStream {
                 "--style",
                 "compact",
                 "--level",
-                "info",
+                "debug",
                 "--predicate",
-                "process == \"duetexpertd\" AND eventMessage CONTAINS \"semanticModeIdentifier\""
+                FocusSystemState.logPredicate
             ]
 
             let pipe = Pipe()
@@ -1234,76 +1246,12 @@ private final class FocusLogStream {
     }
 
     private func processLine(_ line: String) {
-        let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-
-        if trimmed.hasPrefix("Filtering the log data") || trimmed.hasPrefix("Timestamp") {
-            return
-        }
-
-        if trimmed.lowercased().contains("error") && trimmed.lowercased().contains("predicate") {
-            debugPrint("[FocusLogStream] log stream error: \(trimmed)")
-        }
-
-        // Clear only when logs explicitly indicate no active mode (helps avoid wiping state during transitions).
-        if trimmed.contains("active mode assertion: (null)") || trimmed.contains("activeModeIdentifier: (null)") {
-            clearMetadata()
-            return
-        }
-
-        var updatedIdentifier: String?
-        var updatedName: String?
-
-        // Special-case parsing for donotdisturbd logs which include a full DNDMode description.
-        // Example: <DNDMode: ... name: Lock In; modeIdentifier: com.apple.donotdisturb.mode.graduationcap.fill; ...>
-        if trimmed.contains("<DNDMode:") {
-            func extractField(_ key: String) -> String? {
-                guard let r = trimmed.range(of: key) else { return nil }
-                let suffix = trimmed[r.upperBound...]
-                guard let end = suffix.range(of: ";") else { return nil }
-                let value = suffix[..<end.lowerBound].trimmingCharacters(in: .whitespacesAndNewlines)
-                return value.isEmpty ? nil : value
-            }
-
-            if let v = extractField("modeIdentifier:") { updatedIdentifier = v }
-            if let v = extractField("name:") { updatedName = v }
-        }
-
-        if updatedIdentifier == nil, let identifier = FocusMetadataDecoder.extractIdentifier(from: trimmed), !identifier.isEmpty {
-            updatedIdentifier = identifier
-        }
-
-        if updatedName == nil, let name = FocusMetadataDecoder.extractName(from: trimmed), !name.isEmpty {
-            updatedName = name
-        }
-
-        guard updatedIdentifier != nil || updatedName != nil else { return }
-
-        var identifierToSend: String?
-        var nameToSend: String?
-
+        guard let state = FocusSystemState.parse(line) else { return }
         metadataLock.lock()
-        if let identifier = updatedIdentifier, !identifier.isEmpty {
-            lastIdentifier = identifier
-        }
-
-        if let name = updatedName, !name.isEmpty {
-            lastName = name
-        }
-
-        identifierToSend = lastIdentifier
-        nameToSend = lastName
+        lastIdentifier = state.identifier
+        lastName = state.name
         metadataLock.unlock()
-
-        notifyMetadataUpdate(identifier: identifierToSend, name: nameToSend)
-    }
-
-    private func clearMetadata() {
-        metadataLock.lock()
-        lastIdentifier = nil
-        lastName = nil
-        metadataLock.unlock()
-        notifyMetadataUpdate(identifier: nil, name: nil)
+        onStateUpdate?(state)
     }
 
     private func handleTermination(terminateProcess: Bool = false) {
@@ -1320,14 +1268,13 @@ private final class FocusLogStream {
         process = nil
         buffer.removeAll(keepingCapacity: false)
         isRunning = false
-        clearMetadata()
+        metadataLock.lock()
+        lastIdentifier = nil
+        lastName = nil
+        metadataLock.unlock()
         debugPrint("[FocusLogStream] Stopped unified log tail for duetexpertd/donotdisturbd Focus metadata")
     }
 
-    private func notifyMetadataUpdate(identifier: String?, name: String?) {
-        guard let handler = onMetadataUpdate else { return }
-        handler(identifier, name)
-    }
 }
 
 private enum FocusNotificationParsing {

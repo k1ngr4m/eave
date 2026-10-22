@@ -1,6 +1,137 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Click the field to record. Esc stops recording; Delete clears the shortcut. Changes save automatically." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击录制区域后按下组合键。Esc 停止录制，Delete 清空快捷键。更改会自动保存。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊錄製區域後按下組合鍵。Esc 停止錄製，Delete 清除快捷鍵。更改會自動儲存。"
+          }
+        }
+      }
+    },
+    "Record Shortcut" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "录制快捷键"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錄製快捷鍵"
+          }
+        }
+      }
+    },
+    "Set Shortcut" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置快捷键"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定快捷鍵"
+          }
+        }
+      }
+    },
+  "Show battery alerts": {
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "显示电池提示"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "顯示電池提示"
+        }
+      }
+    }
+  },
+  "Battery Alerts": {
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "电池提示"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "電池提示"
+        }
+      }
+    }
+  },
+  "Charging Alert": {
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "充电提示"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "充電提示"
+        }
+      }
+    }
+  },
+  "Low Battery Alert": {
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "低电量提示"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "低電量提示"
+        }
+      }
+    }
+  },
+  "Full Battery Alert": {
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "充满提示"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "充滿提示"
+        }
+      }
+    }
+  },
   "Recognizes text locally in the background, including existing images. Pasting still uses the original image.": {
     "localizations": {
       "zh-Hans": {
@@ -1263,6 +1394,16 @@
             "state": "translated",
             "value": "音效"
           }
+        }
+      }
+    },
+    "Open Clipboard" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : { "state" : "translated", "value" : "打开剪贴板" }
+        },
+        "zh-Hant" : {
+          "stringUnit" : { "state" : "translated", "value" : "開啟剪貼簿" }
         }
       }
     },
@@ -13394,6 +13535,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "自動滾動到下一個事件"
+          }
+        }
+      }
+    },
+    "Auto Select" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动选择"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動選擇"
           }
         }
       }
@@ -53161,13 +53318,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "镜像摄像头"
+            "value" : "镜像使用的摄像头"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "鏡像攝像頭"
+            "value" : "鏡像使用的攝像頭"
           }
         }
       }

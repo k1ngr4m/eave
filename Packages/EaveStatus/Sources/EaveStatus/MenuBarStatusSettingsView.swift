@@ -24,32 +24,81 @@ public struct MenuBarStatusSettingsView: View {
         Form {
             Section(localization.string(.settingsIconSize)) {
                 HStack {
-                    Slider(value: $settings.iconSize, in: SettingsStore.iconSizeRange, step: 1) {
-                        Text(localization.string(.settingsIconSize))
+                    HStack(spacing: 12) {
+                        Label(localization.string(.settingsIconSize), systemImage: "arrow.left.and.right").accessibilityHidden(true)
+                        Spacer(minLength: 12)
+                        HStack(spacing: 6) {
+                            Slider(value: $settings.iconSize, in: SettingsStore.iconSizeRange, step: 1) {
+                                Label(localization.string(.settingsIconSize), systemImage: "arrow.left.and.right")
+                            }
+                            .labelsHidden()
+                            Text("\(Int(settings.iconSize)) pt")
+                                .font(.system(.callout, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .fixedSize()
+                        }
+                        .padding(.horizontal, 10)
+                        .frame(width: 190, height: 34)
+                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                     }
-                    Text("\(Int(settings.iconSize)) pt").monospacedDigit().frame(width: 44)
+
                 }
-                Picker(localization.string(.settingsRingStrokeStyle), selection: $settings.ringStrokeStyle) {
-                    Text(localization.string(.settingsRingStrokeStyleLight)).tag(RingStrokeStyle.light)
-                    Text(localization.string(.settingsRingStrokeStyleRegular)).tag(RingStrokeStyle.regular)
-                    Text(localization.string(.settingsRingStrokeStyleBold)).tag(RingStrokeStyle.bold)
+                HStack(spacing: 12) {
+                    Label(localization.string(.settingsRingStrokeStyle), systemImage: "circle.lefthalf.filled").accessibilityHidden(true)
+                    Spacer(minLength: 12)
+                    Picker(selection: $settings.ringStrokeStyle) {
+                        Text(localization.string(.settingsRingStrokeStyleLight)).tag(RingStrokeStyle.light)
+                        Text(localization.string(.settingsRingStrokeStyleRegular)).tag(RingStrokeStyle.regular)
+                        Text(localization.string(.settingsRingStrokeStyleBold)).tag(RingStrokeStyle.bold)
+                    } label: {
+                        Label(localization.string(.settingsRingStrokeStyle), systemImage: "circle.lefthalf.filled")
+                    }
+                        .labelsHidden()
                 }
             }
             Section(localization.string(.settingsBatteryTitle)) {
                 lowPowerModeSettings
-                Toggle(localization.string(.settingsBatteryShowPercentage), isOn: $settings.showsBatteryPercentage)
-                Toggle(localization.string(.settingsBatteryShowChargingIndicator), isOn: $settings.showsChargingIndicator)
-                Toggle(localization.string(.settingsBatteryChargingEffect), isOn: $settings.showsChargingEffect)
-                Toggle(localization.string(.settingsBatteryPercentageWhenConnected), isOn: $settings.showsPercentageWhenConnected)
-                Toggle(localization.string(.settingsBatteryStatusColors), isOn: $settings.usesBatteryStatusColors)
-                Slider(value: $settings.batteryCriticalThreshold, in: SettingsStore.batteryCriticalThresholdRange, step: 1) {
-                    Text(localization.string(.settingsBatteryCriticalThreshold))
+                Toggle(localization.string(.settingsBatteryShowPercentage), systemImage: "battery.100", isOn: $settings.showsBatteryPercentage)
+                Toggle(localization.string(.settingsBatteryShowChargingIndicator), systemImage: "battery.100", isOn: $settings.showsChargingIndicator)
+                Toggle(localization.string(.settingsBatteryChargingEffect), systemImage: "battery.100", isOn: $settings.showsChargingEffect)
+                Toggle(localization.string(.settingsBatteryPercentageWhenConnected), systemImage: "battery.100", isOn: $settings.showsPercentageWhenConnected)
+                Toggle(localization.string(.settingsBatteryStatusColors), systemImage: "battery.100", isOn: $settings.usesBatteryStatusColors)
+                HStack(spacing: 12) {
+                    Label(localization.string(.settingsBatteryCriticalThreshold), systemImage: "battery.25").accessibilityHidden(true)
+                    Spacer(minLength: 12)
+                    HStack(spacing: 6) {
+                        Slider(value: $settings.batteryCriticalThreshold, in: SettingsStore.batteryCriticalThresholdRange, step: 1) {
+                            Label(localization.string(.settingsBatteryCriticalThreshold), systemImage: "battery.25")
+                        }
+                        .labelsHidden()
+                        Text("\(Int(settings.batteryCriticalThreshold))%")
+                            .font(.system(.callout, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .fixedSize()
+                    }
+                    .padding(.horizontal, 10)
+                    .frame(width: 190, height: 34)
+                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                 }
                 HStack {
-                    Slider(value: $settings.batteryFullThreshold, in: SettingsStore.batteryFullThresholdRange, step: 1) {
-                        Text(localization.string(.settingsBatteryFullThreshold))
+                    HStack(spacing: 12) {
+                        Label(localization.string(.settingsBatteryFullThreshold), systemImage: "battery.100").accessibilityHidden(true)
+                        Spacer(minLength: 12)
+                        HStack(spacing: 6) {
+                            Slider(value: $settings.batteryFullThreshold, in: SettingsStore.batteryFullThresholdRange, step: 1) {
+                                Label(localization.string(.settingsBatteryFullThreshold), systemImage: "battery.100")
+                            }
+                            .labelsHidden()
+                            Text("\(Int(settings.batteryFullThreshold))%")
+                                .font(.system(.callout, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .fixedSize()
+                        }
+                        .padding(.horizontal, 10)
+                        .frame(width: 190, height: 34)
+                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                     }
-                    Text("\(Int(settings.batteryFullThreshold))%").monospacedDigit().frame(width: 44)
+
                 }
                 Text(localization.string(.settingsBatteryFullThresholdDescription)).font(.caption).foregroundStyle(.secondary)
                 if settings.canReadSystemChargeLimit {
@@ -60,36 +109,50 @@ public struct MenuBarStatusSettingsView: View {
             }
             Section(localization.string(.settingsNetworkConnectionIcons)) {
                 LocationSettingsPermissionRow(message: "Optional. Allows displaying the current Wi-Fi network name.")
-                Picker(localization.string(.settingsNetworkCenterSource), selection: $settings.connectionCenterSource) {
-                    Text(localization.string(.settingsNetworkCenterSourceAutomatic)).tag(ConnectionCenterSource.automatic)
-                    Text(localization.string(.settingsNetworkCenterSourceInputSource)).tag(ConnectionCenterSource.inputSource)
+                HStack(spacing: 12) {
+                    Label(localization.string(.settingsNetworkCenterSource), systemImage: "wifi").accessibilityHidden(true)
+                    Spacer(minLength: 12)
+                    Picker(selection: $settings.connectionCenterSource) {
+                        Text(localization.string(.settingsNetworkCenterSourceAutomatic)).tag(ConnectionCenterSource.automatic)
+                        Text(localization.string(.settingsNetworkCenterSourceInputSource)).tag(ConnectionCenterSource.inputSource)
+                    } label: {
+                        Label(localization.string(.settingsNetworkCenterSource), systemImage: "wifi")
+                    }
+                        .labelsHidden()
                 }
                 if settings.connectionCenterSource == .inputSource {
-                    Toggle(localization.string(.settingsNetworkCenterSourceNetworkWarnings), isOn: $settings.prioritizesNetworkErrorsOverInputSource)
+                    Toggle(localization.string(.settingsNetworkCenterSourceNetworkWarnings), systemImage: "wifi", isOn: $settings.prioritizesNetworkErrorsOverInputSource)
                 }
-                Toggle(localization.string(.settingsPopupOrderInputSource), isOn: Binding(
+                Toggle(localization.string(.settingsPopupOrderInputSource), systemImage: "slider.horizontal.3", isOn: Binding(
                     get: { settings.enabledPopupSections.contains(.inputSource) },
                     set: { settings.setPopupSection(.inputSource, enabled: $0) }
                 ))
-                Toggle(localization.string(.settingsNetworkShowLocalIP), isOn: $settings.showsLocalIPAddress)
-                Toggle(localization.string(.settingsNetworkWiFiIconForEthernet), isOn: $settings.showsWiFiIconForEthernet)
-                Toggle(localization.string(.settingsNetworkWiFiIconForHotspot), isOn: $settings.showsWiFiIconForHotspot)
+                Toggle(localization.string(.settingsNetworkShowLocalIP), systemImage: "wifi", isOn: $settings.showsLocalIPAddress)
+                Toggle(localization.string(.settingsNetworkWiFiIconForEthernet), systemImage: "wifi", isOn: $settings.showsWiFiIconForEthernet)
+                Toggle(localization.string(.settingsNetworkWiFiIconForHotspot), systemImage: "wifi", isOn: $settings.showsWiFiIconForHotspot)
             }
             BluetoothSettingsSection(controller: controller)
             Section(localization.string(.settingsAudioIndicatorStyleTitle)) {
-                Picker(localization.string(.settingsAudioIndicatorStyle), selection: $settings.volumeDisplayStyle) {
-                    Text(localization.string(.settingsAudioIndicatorStyleDots)).tag(VolumeDisplayStyle.dots)
-                    Text(localization.string(.settingsAudioIndicatorStyleArc)).tag(VolumeDisplayStyle.arc)
+                HStack(spacing: 12) {
+                    Label(localization.string(.settingsAudioIndicatorStyle), systemImage: "speaker.wave.2").accessibilityHidden(true)
+                    Spacer(minLength: 12)
+                    Picker(selection: $settings.volumeDisplayStyle) {
+                        Text(localization.string(.settingsAudioIndicatorStyleDots)).tag(VolumeDisplayStyle.dots)
+                        Text(localization.string(.settingsAudioIndicatorStyleArc)).tag(VolumeDisplayStyle.arc)
+                    } label: {
+                        Label(localization.string(.settingsAudioIndicatorStyle), systemImage: "speaker.wave.2")
+                    }
+                        .labelsHidden()
                 }
-                Toggle(localization.string(.settingsAudioShowAll), isOn: $settings.alwaysShowsAllOutputDevices)
+                Toggle(localization.string(.settingsAudioShowAll), systemImage: "speaker.wave.2", isOn: $settings.alwaysShowsAllOutputDevices)
                 Stepper(value: $settings.maxVisibleOutputDevices, in: SettingsStore.outputDeviceLimitRange) {
                     HStack {
-                        Text(localization.string(.settingsAudioMaximumVisible))
+                        Label(localization.string(.settingsAudioMaximumVisible), systemImage: "list.bullet")
                         Spacer()
                         Text("\(settings.maxVisibleOutputDevices)").monospacedDigit()
                     }
                 }
-                Toggle(localization.string(.settingsPopupVolumeScroll), isOn: $settings.popupScrollAdjustsVolume)
+                Toggle(localization.string(.settingsPopupVolumeScroll), systemImage: "speaker.wave.2", isOn: $settings.popupScrollAdjustsVolume)
             }
             Section(localization.string(.settingsPopupOrder)) {
                 List {
@@ -135,7 +198,7 @@ public struct MenuBarStatusSettingsView: View {
                 .frame(height: CGFloat(settings.popupSectionOrder.count) * 32 + 12)
             }
         }
-        .formStyle(.grouped)
+
         .safeAreaInset(edge: .top, spacing: 0) {
             iconPreview
                 .padding(.horizontal, 20)
@@ -180,7 +243,7 @@ public struct MenuBarStatusSettingsView: View {
 
     private var lowPowerModeSettings: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Toggle(localization.string(.lowPowerModeControl), isOn: helper.isEnabledBinding)
+            Toggle(localization.string(.lowPowerModeControl), systemImage: "slider.horizontal.3", isOn: helper.isEnabledBinding)
                 .disabled(!helper.isAvailable)
             Text(localization.string(.lowPowerModeControlDescription))
                 .font(.caption).foregroundStyle(.secondary)

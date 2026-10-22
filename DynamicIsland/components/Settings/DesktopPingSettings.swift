@@ -6,7 +6,7 @@ struct DesktopPingSettings: View {
     var body: some View {
         Form {
             Section {
-                Toggle("Enable desktop pings", isOn: $manager.configuration.enabled)
+                Toggle("Enable desktop pings", systemImage: "power", isOn: $manager.configuration.enabled)
             }
             Section {
                 AccessibilitySettingsPermissionRow(message: "Allows Desktop Pings to detect the trigger key and mouse gestures.")
@@ -21,42 +21,51 @@ struct DesktopPingSettings: View {
             }
             Group {
                 Section("Trigger") {
-                    Picker("Trigger Key", selection: $manager.configuration.trigger) {
-                        ForEach(DesktopPingConfiguration.Trigger.allCases, id: \.self) { trigger in
-                            Text(trigger.label).tag(trigger)
+                    HStack(spacing: 12) {
+                        Label("Trigger Key", systemImage: "keyboard").accessibilityHidden(true)
+                        Spacer(minLength: 12)
+                        Picker(selection: $manager.configuration.trigger) {
+                            ForEach(DesktopPingConfiguration.Trigger.allCases, id: \.self) { trigger in
+                                Text(trigger.label).tag(trigger)
+                            }
+                        } label: {
+                            Label("Trigger Key", systemImage: "keyboard")
                         }
+                            .labelsHidden()
                     }
-                    Toggle("Send a Ping on Trigger + Click", isOn: $manager.configuration.clickPing)
-                    LabeledContent("Drag Threshold") {
-                        Slider(value: $manager.configuration.dragThreshold, in: 2...40, step: 1)
-                        Text("\(Int(manager.configuration.dragThreshold)) pt").monospacedDigit().frame(width: 52)
+                    Toggle("Send a Ping on Trigger + Click", systemImage: "keyboard", isOn: $manager.configuration.clickPing)
+                    LabeledContent() {
+                        SettingsSlider(value: $manager.configuration.dragThreshold, in: 2...40, step: 1, valueLabel: Text("\(Int(manager.configuration.dragThreshold)) pt"))
+                    } label: {
+                        Label("Drag Threshold", systemImage: "slider.horizontal.3")
                     }
                     Text("The trigger replaces that key’s normal drag action while Desktop Pings is active. Change it or pause to use other apps’ drag shortcuts.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Signal and Sound") {
-                    LabeledContent("Signal Size") {
-                        Slider(value: $manager.configuration.size, in: 60...220, step: 1)
-                        Text("\(Int(manager.configuration.size)) pt").monospacedDigit().frame(width: 52)
+                    LabeledContent() {
+                        SettingsSlider(value: $manager.configuration.size, in: 60...220, step: 1, valueLabel: Text("\(Int(manager.configuration.size)) pt"))
+                    } label: {
+                        Label("Signal Size", systemImage: "arrow.left.and.right")
                     }
-                    LabeledContent("Signal Duration") {
-                        Slider(value: $manager.configuration.duration, in: 1...8, step: 0.1)
-                        Text(manager.configuration.duration, format: .number.precision(.fractionLength(1)))
-                            .monospacedDigit().frame(width: 36)
-                        Text("seconds")
+                    LabeledContent() {
+                        SettingsSlider(value: $manager.configuration.duration, in: 1...8, step: 0.1, valueLabel: Text(manager.configuration.duration, format: .number.precision(.fractionLength(1))) + Text(" ") + Text("seconds"))
+                    } label: {
+                        Label("Signal Duration", systemImage: "clock")
                     }
-                    Toggle("Play desktop sounds", isOn: Binding(
+                    Toggle("Play desktop sounds", systemImage: "speaker.wave.2", isOn: Binding(
                         get: { !manager.configuration.muted },
                         set: { manager.configuration.muted = !$0 }
                     ))
                     Text("Desktop sounds control ping and emote audio.")
                         .font(.caption).foregroundStyle(.secondary)
-                    LabeledContent("Ping Volume") {
-                        Slider(value: $manager.configuration.volume, in: 0...100, step: 1)
+                    LabeledContent() {
+                        SettingsSlider(value: $manager.configuration.volume, in: 0...100, step: 1, valueLabel: Text("\(Int(manager.configuration.volume))%"))
                             .disabled(manager.configuration.muted)
-                        Text("\(Int(manager.configuration.volume))%").monospacedDigit().frame(width: 40)
+                    } label: {
+                        Label("Ping Volume", systemImage: "speaker.wave.2")
                     }
-                    Toggle("Play wheel tick sound", isOn: $manager.configuration.tickSound)
+                    Toggle("Play wheel tick sound", systemImage: "speaker.wave.2", isOn: $manager.configuration.tickSound)
                         .disabled(manager.configuration.muted)
                 }
                 Section {
@@ -66,7 +75,7 @@ struct DesktopPingSettings: View {
             }
             .disabled(!manager.configuration.enabled)
         }
-        .formStyle(.grouped)
+
     }
 
 }

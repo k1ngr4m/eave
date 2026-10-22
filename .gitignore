@@ -215,3 +215,7 @@ __pycache__/
 !scripts/test-screen-text.sh
 
 !scripts/test-clipboard.sh
+
+!tests/test_battery_settings.py
+
+!tests/test_focus_system_state.py

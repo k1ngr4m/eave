@@ -31,12 +31,12 @@ struct BluetoothSettingsSection: View {
                 .onDisappear { bluetoothDevices.releaseVisibleSurface(Self.orderSurfaceToken) }
             MobileBatterySettingsSection(controller: controller)
             Section(localization.string(.settingsBluetoothDeviceListGroup)) {
-                Toggle(localization.string(.settingsBluetoothShowDeviceList), isOn: $store.showsBluetoothDeviceList)
+                Toggle(localization.string(.settingsBluetoothShowDeviceList), systemImage: "headphones", isOn: $store.showsBluetoothDeviceList)
                     .help(localization.string(.settingsBluetoothShowDeviceListDescription))
                 if store.showsBluetoothDeviceList {
                     Stepper(value: $store.maxVisibleBluetoothDevices, in: SettingsStore.bluetoothDeviceLimitRange) {
                         HStack {
-                            Text(localization.string(.settingsBluetoothMaximumVisible))
+                            Label(localization.string(.settingsBluetoothMaximumVisible), systemImage: "list.bullet")
                             Spacer()
                             Text("\(store.maxVisibleBluetoothDevices)").monospacedDigit()
                         }
@@ -51,16 +51,29 @@ struct BluetoothSettingsSection: View {
 
     private var iconSettings: some View {
         Section(localization.string(.settingsBluetoothTitle)) {
-            Toggle(localization.string(.settingsBluetoothShowInStatusPanel), isOn: showInStatusPanelBinding)
+            Toggle(localization.string(.settingsBluetoothShowInStatusPanel), systemImage: "headphones", isOn: showInStatusPanelBinding)
                 .help(localization.string(.settingsBluetoothShowInStatusPanelDescription))
             HStack {
-                Slider(value: $store.bluetoothSymbolScale, in: SettingsStore.bluetoothSymbolScaleRange, step: 0.05) {
-                    Text(localization.string(.settingsBluetoothSymbolScale))
+                HStack(spacing: 12) {
+                    Text(localization.string(.settingsBluetoothSymbolScale)).accessibilityHidden(true)
+                    Spacer(minLength: 12)
+                    HStack(spacing: 6) {
+                        Slider(value: $store.bluetoothSymbolScale, in: SettingsStore.bluetoothSymbolScaleRange, step: 0.05) {
+                            Text(localization.string(.settingsBluetoothSymbolScale))
+                        }
+                        .labelsHidden()
+                        Text("\(Int(round(store.bluetoothSymbolScale * 100)))%")
+                            .font(.system(.callout, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .fixedSize()
+                    }
+                    .padding(.horizontal, 10)
+                    .frame(width: 190, height: 34)
+                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                 }
-                Text("\(Int(round(store.bluetoothSymbolScale * 100)))%")
-                    .monospacedDigit().frame(width: 44, alignment: .trailing)
+
             }
-            Toggle(localization.string(.settingsBluetoothReplaceNetworkIcon), isOn: $store.replacesNetworkIconWithBluetoothAudio)
+            Toggle(localization.string(.settingsBluetoothReplaceNetworkIcon), systemImage: "headphones", isOn: $store.replacesNetworkIconWithBluetoothAudio)
                 .help(localization.string(.settingsBluetoothReplaceNetworkIconDescription))
             if store.replacesNetworkIconWithBluetoothAudio {
                 Picker(localization.string(.settingsBluetoothNetworkIconSourceGroup), selection: networkIconSourceBinding) {
@@ -88,11 +101,11 @@ struct BluetoothSettingsSection: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
-            Toggle(localization.string(.settingsBluetoothVolumeColor), isOn: $store.usesBluetoothAudioVolumeColor)
+            Toggle(localization.string(.settingsBluetoothVolumeColor), systemImage: "headphones", isOn: $store.usesBluetoothAudioVolumeColor)
                 .help(localization.string(.settingsBluetoothVolumeColorDescription))
-            Toggle(localization.string(.settingsBluetoothNetworkErrorPriority), isOn: $store.prioritizesNetworkErrorsOverBluetoothAudio)
+            Toggle(localization.string(.settingsBluetoothNetworkErrorPriority), systemImage: "headphones", isOn: $store.prioritizesNetworkErrorsOverBluetoothAudio)
                 .help(localization.string(.settingsBluetoothNetworkErrorPriorityDescription))
-            Toggle(localization.string(.settingsBluetoothBatteryLevels), isOn: $store.showsBluetoothBatteryLevels)
+            Toggle(localization.string(.settingsBluetoothBatteryLevels), systemImage: "battery.100", isOn: $store.showsBluetoothBatteryLevels)
                 .help(localization.string(.settingsBluetoothBatteryLevelsDescription))
         }
     }

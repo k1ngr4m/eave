@@ -9,23 +9,31 @@ struct DesktopEmoteSettings: View {
 
     var body: some View {
         Section("Emotes") {
-            Toggle("Enable emotes", isOn: $manager.configuration.emote.enabled)
+            Toggle("Enable emotes", systemImage: "sparkles", isOn: $manager.configuration.emote.enabled)
             Group {
-                Picker("Emote Trigger", selection: $manager.configuration.emote.trigger) {
-                    ForEach(DesktopPingConfiguration.Trigger.allCases, id: \.self) { key in
-                        Text(key.label).tag(key).disabled(key == manager.configuration.trigger)
+                HStack(spacing: 12) {
+                    Label("Emote Trigger", systemImage: "keyboard").accessibilityHidden(true)
+                    Spacer(minLength: 12)
+                    Picker(selection: $manager.configuration.emote.trigger) {
+                        ForEach(DesktopPingConfiguration.Trigger.allCases, id: \.self) { key in
+                            Text(key.label).tag(key).disabled(key == manager.configuration.trigger)
+                        }
+                    } label: {
+                        Label("Emote Trigger", systemImage: "keyboard")
                     }
+                        .labelsHidden()
                 }
                 if manager.configuration.emote.trigger == manager.configuration.trigger {
                     Text("Choose different trigger keys for pings and emotes. Emote input is disabled while they match.")
                         .font(.caption).foregroundStyle(.orange)
                 }
-                Toggle("Send an Emote on Trigger + Click", isOn: $manager.configuration.emote.click)
-                LabeledContent("Emote Size") {
-                    Slider(value: $manager.configuration.emote.size, in: 80...300, step: 1)
-                    Text("\(Int(manager.configuration.emote.size)) pt").monospacedDigit().frame(width: 52)
+                Toggle("Send an Emote on Trigger + Click", systemImage: "keyboard", isOn: $manager.configuration.emote.click)
+                LabeledContent() {
+                    SettingsSlider(value: $manager.configuration.emote.size, in: 80...300, step: 1, valueLabel: Text("\(Int(manager.configuration.emote.size)) pt"))
+                } label: {
+                    Label("Emote Size", systemImage: "arrow.left.and.right")
                 }
-                Toggle("Play emote sounds", isOn: $manager.configuration.emote.sound)
+                Toggle("Play emote sounds", systemImage: "speaker.wave.2", isOn: $manager.configuration.emote.sound)
                     .disabled(manager.configuration.muted)
                 Text("Emote sounds use the desktop sounds switch and volume.")
                     .font(.caption).foregroundStyle(.secondary)

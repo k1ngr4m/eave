@@ -21,7 +21,7 @@ struct DeveloperToolsSettings: View {
     var body: some View {
         Form {
             Section {
-                Toggle("启用开发工具", isOn: $enabled)
+                Toggle("启用开发工具", systemImage: "power", isOn: $enabled)
             } footer: { Text("在刘海中显示开发工具标签页。所有 JSON 操作均在本地完成。") }
             Section("工具") {
                 HStack(spacing: 12) {
@@ -31,22 +31,38 @@ struct DeveloperToolsSettings: View {
                         Text("格式化、校验、转义与结构化浏览").font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Toggle("启用 JSON 美化", isOn: $jsonEnabled).labelsHidden()
+                    Toggle("启用 JSON 美化", isOn: $jsonEnabled)
+                        .toggleStyle(.switch)
+                        .labelsHidden()
                 }
             }.disabled(!enabled)
             Section("JSON 默认设置") {
-                Picker("缩进", selection: $indent) {
-                    Text("2 空格").tag(2)
-                    Text("4 空格").tag(4)
+                HStack(spacing: 12) {
+                    Label("缩进", systemImage: "arrow.left.and.right").accessibilityHidden(true)
+                    Spacer(minLength: 12)
+                    Picker(selection: $indent) {
+                        Text("2 空格").tag(2)
+                        Text("4 空格").tag(4)
+                    } label: {
+                        Label("缩进", systemImage: "arrow.left.and.right")
+                    }
+                        .labelsHidden()
                 }
-                Picker("键名排序", selection: $sort) {
-                    Text("保持原序").tag("original")
-                    Text("升序").tag("ascending")
-                    Text("降序").tag("descending")
+                HStack(spacing: 12) {
+                    Label("键名排序", systemImage: "keyboard").accessibilityHidden(true)
+                    Spacer(minLength: 12)
+                    Picker(selection: $sort) {
+                        Text("保持原序").tag("original")
+                        Text("升序").tag("ascending")
+                        Text("降序").tag("descending")
+                    } label: {
+                        Label("键名排序", systemImage: "keyboard")
+                    }
+                        .labelsHidden()
                 }
-                Toggle("输入时自动校验", isOn: $autoValidate)
+                Toggle("输入时自动校验", systemImage: "arrow.triangle.2.circlepath", isOn: $autoValidate)
             }.disabled(!enabled || !jsonEnabled)
-        }.formStyle(.grouped)
+        }
     }
 }
 

@@ -194,10 +194,6 @@ struct AnimationEditorView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text("\(Int(previewScale))x")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
             }
             HStack(spacing: 10) {
                 Button {
@@ -211,7 +207,7 @@ struct AnimationEditorView: View {
                 .buttonStyle(.bordered)
                 .controlSize(.mini)
                 
-                Slider(value: $previewScale, in: 1...10)
+                SettingsSlider(value: $previewScale, in: 1...10, valueLabel: Text("\(Int(previewScale))x"))
                 
                 Button {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
@@ -570,10 +566,6 @@ private struct ParameterSliderRow: View {
                 Text(LocalizedStringKey(title))
                     .fontWeight(.medium)
                 Spacer()
-                Text(formatter(value))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
             }
             HStack(spacing: 10) {
                 slider
@@ -598,9 +590,9 @@ private struct ParameterSliderRow: View {
         )
         let bounds = Double(range.lowerBound)...Double(range.upperBound)
         if let step {
-            Slider(value: binding, in: bounds, step: Double(step))
+            SettingsSlider(value: binding, in: bounds, step: Double(step), valueLabel: Text(formatter(value)))
         } else {
-            Slider(value: binding, in: bounds)
+            SettingsSlider(value: binding, in: bounds, valueLabel: Text(formatter(value)))
         }
     }
 }

@@ -7,14 +7,14 @@ struct NotchAppearanceSettings: View {
     var body: some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .top) {
-                Text("Notch appearance")
+                Label("Notch appearance", systemImage: "circle.lefthalf.filled")
                     .fixedSize()
                     .padding(.top, 8)
                 Spacer(minLength: 16)
                 options
             }
             VStack(alignment: .leading, spacing: 12) {
-                Text("Notch appearance")
+                Label("Notch appearance", systemImage: "circle.lefthalf.filled")
                 options
             }
         }

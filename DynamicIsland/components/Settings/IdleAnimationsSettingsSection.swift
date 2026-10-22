@@ -115,7 +115,7 @@ struct IdleAnimationsSettingsSection: View {
             .disabled(!showNotHumanFace)
         } header: {
             HStack {
-                Text("Idle Animation Style")
+                Label("Idle Animation Style", systemImage: "sparkles")
                 Spacer()
                 if showNotHumanFace {
                     Text("\(customIdleAnimations.count) animations")

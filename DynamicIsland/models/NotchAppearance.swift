@@ -14,12 +14,16 @@ enum NotchAppearance: String, CaseIterable, Defaults.Serializable, Identifiable 
         }
     }
 
-    func colorScheme(for system: ColorScheme) -> ColorScheme {
+    var preferredColorScheme: ColorScheme? {
         switch self {
         case .light: return .light
         case .dark: return .dark
-        case .system: return system
+        case .system: return nil
         }
+    }
+
+    func colorScheme(for system: ColorScheme) -> ColorScheme {
+        preferredColorScheme ?? system
     }
 
     static func legacyAppearance(lightMode: Bool) -> Self {

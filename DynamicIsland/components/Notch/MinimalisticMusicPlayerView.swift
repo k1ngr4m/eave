@@ -33,7 +33,6 @@ struct MinimalisticMusicPlayerView: View {
     @Default(.musicControlSlots) private var slotConfig
     @Default(.showMediaOutputControl) private var showMediaOutputControl
     @Default(.musicSkipBehavior) private var musicSkipBehavior
-    @Default(.showMinimalisticBatteryIndicator) private var showMinimalisticBatteryIndicator
     @ObservedObject private var reminderManager = ReminderLiveActivityManager.shared
     @ObservedObject private var timerManager = TimerManager.shared
     @ObservedObject private var coordinator = DynamicIslandViewCoordinator.shared
@@ -74,8 +73,8 @@ struct MinimalisticMusicPlayerView: View {
             .animation(.smooth(duration: 0.3), value: dynamicHeightSignature)
         } else {
             VStack(spacing: 0) {
-                if showMinimalisticBatteryIndicator || shouldUseDynamicIslandMode(for: vm.screen) {
-                    // ── Battery ON / DI mode: original flat layout (unchanged) ──
+                if shouldUseDynamicIslandMode(for: vm.screen) {
+                    // Dynamic Island uses the flat layout.
                     GeometryReader { headerGeo in
                         let albumArtWidth: CGFloat = 50
                         let spacing: CGFloat = 10
@@ -125,13 +124,13 @@ struct MinimalisticMusicPlayerView: View {
                     }
                     .frame(height: 50)
                 } else {
-                    // ── Battery OFF (notch mode): U-shaped notch-hugging layout ──
+                    // Notch mode uses the U-shaped layout.
                     notchHuggingHeader
                 }
 
                 // Compact progress bar
                 progressBar
-                    .padding(.top, batteryOffNotchMode ? 4 : 6)
+                    .padding(.top, isNotchMode ? 4 : 6)
                 
                 // Compact playback controls
                 if shouldShowControlHUDRow {
@@ -152,8 +151,8 @@ struct MinimalisticMusicPlayerView: View {
                 reminderList
             }
             .padding(.horizontal, shouldUseDynamicIslandMode(for: vm.screen) ? -4 : 12)
-            .padding(.top, shouldUseDynamicIslandMode(for: vm.screen) ? 14 : (batteryOffNotchMode ? 10 : 6))
-            .padding(.bottom, shouldUseDynamicIslandMode(for: vm.screen) ? 14 : (batteryOffNotchMode ? 10 : ReminderLiveActivityManager.baselineMinimalisticBottomPadding))
+            .padding(.top, isNotchMode ? 10 : 14)
+            .padding(.bottom, isNotchMode ? 10 : 14)
             .frame(maxWidth: .infinity)
             .frame(height: calculateDynamicHeight(), alignment: .top)
             .animation(.smooth(duration: 0.3), value: dynamicHeightSignature)
@@ -263,7 +262,6 @@ struct MinimalisticMusicPlayerView: View {
         var signature = reminderEntries.count * 10
         if shouldReserveLyricsSpace { signature += 1 }
         if shouldShowTimerCountdown { signature += 100 }
-        if showMinimalisticBatteryIndicator { signature += 1000 }
         return signature
     }
 
@@ -274,16 +272,16 @@ struct MinimalisticMusicPlayerView: View {
         enableLyrics && !musicManager.isAdvertisement
     }
 
-    /// True when the battery indicator is hidden and we are in notch mode (not DI).
-    private var batteryOffNotchMode: Bool {
-        !showMinimalisticBatteryIndicator && !shouldUseDynamicIslandMode(for: vm.screen)
+    /// Notch mode uses the compact layout around the camera cutout.
+    private var isNotchMode: Bool {
+        !shouldUseDynamicIslandMode(for: vm.screen)
     }
 
     private func calculateDynamicHeight() -> CGFloat {
         let isDynamicIsland = shouldUseDynamicIslandMode(for: vm.screen)
 
-        if !batteryOffNotchMode {
-            // ── Battery ON / DI: use the exact original height formula ──
+        if !isNotchMode {
+            // Dynamic Island layout height.
             var height: CGFloat = 50 // header
             height += 6 + 4          // progress bar top padding + bar
             height += 54 + 2         // controls + top padding
@@ -303,7 +301,7 @@ struct MinimalisticMusicPlayerView: View {
             return height
         }
 
-        // ── Battery OFF (notch mode): tighter height for U-shaped layout ──
+        // Tighter height for the U-shaped notch layout.
         // The album art is pulled UP into the notch header area, so the
         // visible header in-flow is only the title + artist text (~26pt).
         var height: CGFloat = 26 // reduced header (text only; art overlaps upward)

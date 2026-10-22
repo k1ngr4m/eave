@@ -25,7 +25,6 @@ struct MediaSettingsPreview: View {
     @Default(.enableLyrics) private var lyrics
     @Default(.lyricsPanelWidth) private var lyricsWidth
     @Default(.lyricsPanelOffset) private var lyricsOffset
-    @Default(.showMinimalisticBatteryIndicator) private var batteryIndicator
     @Default(.externalDisplayStyle) private var displayStyle
     @Default(.enableWaveformScrubber) private var waveform
     @Default(.colorExtractionMode) private var colorExtraction

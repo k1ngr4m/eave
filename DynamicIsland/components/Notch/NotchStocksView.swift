@@ -147,7 +147,7 @@ struct StocksSettingsSection: View {
 
     var body: some View {
         Section {
-            Defaults.Toggle(key: .enableStocksFeature) { Text("Enable A-share stocks") }
+            Defaults.Toggle(key: .enableStocksFeature) { Label("Enable A-share stocks", systemImage: "power") }
                 .onChange(of: enabled) { _, value in
                     if !value && DynamicIslandViewCoordinator.shared.currentView == .stocks {
                         DynamicIslandViewCoordinator.shared.currentView = .home
@@ -156,10 +156,17 @@ struct StocksSettingsSection: View {
         }
         Section {
             Group {
-                Defaults.Toggle(key: .stockShowWhenClosed) { Text("Show stock price when closed") }
-                Picker("Pinned stock", selection: $pinnedCode) {
-                    Text("No pinned stock").tag("")
-                    ForEach(watchlist, id: \.self) { Text($0).tag($0) }
+                Defaults.Toggle(key: .stockShowWhenClosed) { Label("Show stock price when closed", systemImage: "power") }
+                HStack(spacing: 12) {
+                    Label("Pinned stock", systemImage: "slider.horizontal.3").accessibilityHidden(true)
+                    Spacer(minLength: 12)
+                    Picker(selection: $pinnedCode) {
+                        Text("No pinned stock").tag("")
+                        ForEach(watchlist, id: \.self) { Text($0).tag($0) }
+                    } label: {
+                        Label("Pinned stock", systemImage: "slider.horizontal.3")
+                    }
+                        .labelsHidden()
                 }
                 .onChange(of: watchlist) { _, codes in
                     if !codes.contains(pinnedCode) { pinnedCode = "" }

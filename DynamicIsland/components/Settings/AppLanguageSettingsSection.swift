@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Uses the same per-app language preference as macOS Language & Region.
 struct AppLanguageSettingsSection: View {
+    var expandsLabel = false
     @State private var selectedLanguage = savedLanguage
 
     private static var savedLanguage: String {
@@ -24,12 +25,29 @@ struct AppLanguageSettingsSection: View {
 
     var body: some View {
         Section {
-            Picker("Language", selection: $selectedLanguage) {
+            HStack(spacing: 16) {
+                if expandsLabel {
+                    Label("Language", systemImage: "globe")
+                    Spacer(minLength: 12)
+                }
+                languagePicker
+            }
+        } header: {
+            Text("Language")
+        } footer: {
+            Text("Quit and reopen Eave to apply language changes.")
+        }
+    }
+
+    private var languagePicker: some View {
+        Picker("Language", selection: $selectedLanguage) {
                 Text("Follow System").tag("")
                 ForEach(languages, id: \.self) { code in
                     Text(verbatim: languageName(code)).tag(code)
                 }
             }
+            .labelsHidden()
+            .fixedSize()
             .onChange(of: selectedLanguage) { _, language in
                 if language.isEmpty {
                     UserDefaults.standard.removeObject(forKey: "AppleLanguages")
@@ -40,10 +58,5 @@ struct AppLanguageSettingsSection: View {
             .onAppear {
                 selectedLanguage = Self.savedLanguage
             }
-        } header: {
-            Text("Language")
-        } footer: {
-            Text("Quit and reopen Eave to apply language changes.")
-        }
     }
 }

@@ -28,20 +28,36 @@ struct AgentPresentationSettings: View {
             .settingsHighlight(id: highlightID("Agent cards"))
             Text("Click to show or hide cards. Drag to reorder. Charts use the full width of the notch.")
                 .font(.caption).foregroundStyle(.secondary)
-            Picker("Display quota as", selection: $limitDisplay) {
+            Picker(selection: $limitDisplay) {
                 ForEach(AgentLimitDisplay.allCases, id: \.self) { Text($0.title).tag($0) }
+            } label: {
+                Label("Display quota as", systemImage: "display")
             }.pickerStyle(.segmented)
-            Picker("Quota beside the camera", selection: $limitFocus) {
-                ForEach(AgentLimitFocus.allCases, id: \.self) { Text($0.title).tag($0) }
+            HStack(spacing: 12) {
+                Label("Quota beside the camera", systemImage: "camera").accessibilityHidden(true)
+                Spacer(minLength: 12)
+                Picker(selection: $limitFocus) {
+                    ForEach(AgentLimitFocus.allCases, id: \.self) { Text($0.title).tag($0) }
+                } label: {
+                    Label("Quota beside the camera", systemImage: "camera")
+                }
+                    .labelsHidden()
             }
         }
         Section {
-            Toggle("Show Codex activity in the closed notch", isOn: $liveActivity)
+            Toggle("Show Codex activity in the closed notch", systemImage: "power", isOn: $liveActivity)
                 .disabled(!codexEnabled)
                 .settingsHighlight(id: highlightID("While agents work"))
             Group {
-                Picker("Beside the camera", selection: $readout) {
-                    ForEach(AgentReadout.allCases, id: \.self) { Text($0.title).tag($0) }
+                HStack(spacing: 12) {
+                    Label("Beside the camera", systemImage: "camera").accessibilityHidden(true)
+                    Spacer(minLength: 12)
+                    Picker(selection: $readout) {
+                        ForEach(AgentReadout.allCases, id: \.self) { Text($0.title).tag($0) }
+                    } label: {
+                        Label("Beside the camera", systemImage: "camera")
+                    }
+                        .labelsHidden()
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     CodexLiveActivity(started: previewStarted, centerWidth: 64, height: 30,
@@ -59,7 +75,7 @@ struct AgentPresentationSettings: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
         } header: {
-            Text("While agents work")
+            Label("While agents work", systemImage: "slider.horizontal.3")
         } footer: {
             Text("Shows running Codex tasks. Click the notch activity to open details. If quota is unavailable, it is marked as unavailable.")
         }
