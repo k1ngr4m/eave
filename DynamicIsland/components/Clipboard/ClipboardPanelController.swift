@@ -45,13 +45,8 @@ final class ClipboardPanelController: NSObject, ObservableObject, NSWindowDelega
     private var outsideMonitor: Any?
 
     var visibleEntries: [ClipboardEntry] {
-        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        return ClipboardHistoryStore.shared.history.entries.filter {
-            (!favoritesOnly || $0.isFavorite) &&
-            (collectionID == nil || $0.collectionIDs.contains(collectionID!)) &&
-            (sourceID.isEmpty || $0.sourceBundleID == sourceID) &&
-            $0.matches(query, includeOCR: ClipboardHistoryStore.shared.ocrEnabled)
-        }
+        ClipboardHistoryStore.shared.filteredEntries(query: query, collectionID: collectionID,
+                                                     favoritesOnly: favoritesOnly, sourceID: sourceID)
     }
 
     func preload() {

@@ -111,7 +111,7 @@ enum ClipboardRetention: Int, CaseIterable, Sendable {
 
 enum ClipboardPasteTarget: String { case activeApplication, clipboard }
 
-struct ClipboardHistory: Codable, Sendable {
+struct ClipboardHistory: Codable, Equatable, Sendable {
     var entries: [ClipboardEntry] = []
     var collections: [ClipboardCollection] = []
 
@@ -342,6 +342,8 @@ actor ClipboardDiskStore {
     let directory: URL
     private let thumbnails = NSCache<NSUUID, NSData>()
     private var thumbnailVersions: [UUID: UUID] = [:]
+    private var savedHistory: ClipboardHistory?
+    private var payloadFileNames: Set<String>?
 
     init(directory: URL) {
         self.directory = directory
@@ -368,9 +370,13 @@ actor ClipboardDiskStore {
             let encoder = PropertyListEncoder()
             encoder.outputFormat = .binary
             try encoder.encode(payload).write(to: payloadURL(id), options: .atomic)
+            payloadFileNames?.insert(id.uuidString + ".plist")
         }
         // Commit metadata before deleting content. Failed saves leave the previous history readable.
-        try JSONEncoder().encode(history).write(to: directory.appendingPathComponent("history.json"), options: .atomic)
+        if savedHistory != history || newPayload != nil {
+            try JSONEncoder().encode(history).write(to: directory.appendingPathComponent("history.json"), options: .atomic)
+            savedHistory = history
+        }
         let retainedIDs = Set(history.entries.map(\.id))
         for id in Array(thumbnailVersions.keys) where !retainedIDs.contains(id) || newPayload?.0 == id {
             thumbnails.removeObject(forKey: id as NSUUID)
@@ -378,9 +384,16 @@ actor ClipboardDiskStore {
         }
         let retained = Set(history.entries.map { $0.id.uuidString + ".plist" })
         do {
-            for url in try fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
-            where url.pathExtension == "plist" && !retained.contains(url.lastPathComponent) {
-                try fm.removeItem(at: url)
+            // This directory is owned by the store. Discover crash leftovers once,
+            // then track payload additions/deletions without rescanning on every reorder.
+            if payloadFileNames == nil {
+                payloadFileNames = Set(try fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+                    .filter { $0.pathExtension == "plist" }.map(\.lastPathComponent))
+            }
+            for name in payloadFileNames!.subtracting(retained) {
+                let url = directory.appendingPathComponent(name)
+                if fm.fileExists(atPath: url.path) { try fm.removeItem(at: url) }
+                payloadFileNames?.remove(name)
             }
         } catch {
             return String(localized: "History was saved, but some old content files could not be removed: \(error.localizedDescription)")

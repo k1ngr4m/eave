@@ -215,7 +215,17 @@ struct ClipboardHistoryChecks {
         let collection = ClipboardCollection(name: "参考")
         first.collectionIDs.insert(collection.id)
         let saved = ClipboardHistory(entries: [first], collections: [collection])
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let orphan = directory.appendingPathComponent("orphan.plist")
+        try Data().write(to: orphan)
         try await disk.save(saved, newPayload: (first.id, payload))
+        assert(!FileManager.default.fileExists(atPath: orphan.path), "First save must clean up crash leftovers")
+        let savedMetadataURL = directory.appendingPathComponent("history.json")
+        let oldModificationDate = Date(timeIntervalSince1970: 1000)
+        try FileManager.default.setAttributes([.modificationDate: oldModificationDate], ofItemAtPath: savedMetadataURL.path)
+        try await disk.save(saved)
+        let unchangedAttributes = try FileManager.default.attributesOfItem(atPath: savedMetadataURL.path)
+        assert(unchangedAttributes[.modificationDate] as? Date == oldModificationDate, "Unchanged history must not rewrite metadata")
         let loaded = try await disk.load()
         assert(loaded.entries == saved.entries && loaded.collections == saved.collections)
         let restored = try await disk.payload(first.id)
@@ -238,6 +248,8 @@ struct ClipboardHistoryChecks {
         let replacedThumbnail = await disk.thumbnail(imageEntry.id)
         assert(replacedThumbnail == nil, "Replacing a payload must invalidate its thumbnail")
         try await disk.save(ClipboardHistory())
+        assert(!FileManager.default.fileExists(atPath: imageURL.path))
+        assert(!FileManager.default.fileExists(atPath: directory.appendingPathComponent(first.id.uuidString + ".plist").path))
         let deletedThumbnail = await disk.thumbnail(imageEntry.id)
         assert(deletedThumbnail == nil, "Deleted entries must not be served from the cache")
         let prepared = try await payload.preparedEntry(sourceID: "app", sourceName: "App")
@@ -399,10 +411,19 @@ struct ClipboardHistoryChecks {
         usageStore.enabled = true
         usageStore.stop()
         let ids = usageHistory.entries.map(\.id)
+        func search(_ query: String = "", collectionID: UUID? = nil, favoritesOnly: Bool = false, sourceID: String = "") -> [ClipboardEntry] {
+            usageStore.filteredEntries(query: query, collectionID: collectionID, favoritesOnly: favoritesOnly, sourceID: sourceID)
+        }
+        assert(search(" FIRST \n").map(\.id) == [ids[0]])
+        assert(search("FIRST").map(\.id) == [ids[0]])
+        assert(search(collectionID: collection.id, favoritesOnly: true, sourceID: "test").count == 3)
+        assert(search(collectionID: UUID()).isEmpty && search(sourceID: "missing").isEmpty)
+        assert(search().map(\.id) == ids)
         let used = await usageStore.copy(ids[2], plain: false, to: pasteboard)
         assert(used && pasteboard.string(forType: .string) == "third")
         while usageStore.busy { try await Task.sleep(for: .milliseconds(10)) }
         assert(usageStore.history.entries.map(\.id) == [ids[2], ids[0], ids[1]])
+        assert(search().map(\.id) == [ids[2], ids[0], ids[1]], "Reordering must invalidate cached search results")
         assert(usageStore.history.entries[0] == usageHistory.entries[2], "Using an item must preserve its metadata")
         let plainUsed = await usageStore.copy(ids[1], plain: true, to: pasteboard)
         let reused = await usageStore.copy(ids[0], plain: false, to: pasteboard)
@@ -419,8 +440,16 @@ struct ClipboardHistoryChecks {
         await usageStore.capture(capturedPayload, sourceID: "test", sourceName: "Test")
         assert(usageStore.history.entries.count == 4 && usageStore.history.entries[0].text == "background capture")
         let capturedID = usageStore.history.entries[0].id
-        usageStore.update(capturedID) { $0.isFavorite = true; $0.name = "Keep me" }
+        assert(search("Keep me").isEmpty)
+        usageStore.update(capturedID) { $0.isFavorite = true; $0.name = "Keep me"; $0.recognizedText = "OCR-only needle" }
         while usageStore.busy { try await Task.sleep(for: .milliseconds(10)) }
+        assert(search("Keep me").map(\.id) == [capturedID], "Renaming must invalidate cached search results")
+        usageStore.ocrEnabled = false
+        assert(search("OCR-only needle").isEmpty)
+        usageStore.ocrEnabled = true
+        assert(search("OCR-only needle").map(\.id) == [capturedID], "OCR preference changes must invalidate the search key")
+        usageStore.ocrEnabled = false
+        assert(search("OCR-only needle").isEmpty)
         await usageStore.capture(capturedPayload, sourceID: "test", sourceName: "Test")
         assert(usageStore.history.entries.count == 4 && usageStore.history.entries[0].id == capturedID)
         assert(usageStore.history.entries[0].isFavorite && usageStore.history.entries[0].name == "Keep me")

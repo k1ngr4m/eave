@@ -5,7 +5,17 @@ import Combine
 @MainActor
 final class ClipboardHistoryStore: ObservableObject {
     static let shared = ClipboardHistoryStore()
-    @Published private(set) var history = ClipboardHistory()
+    @Published private(set) var history = ClipboardHistory() {
+        didSet { searchCache = nil }
+    }
+    private struct SearchFilter: Equatable {
+        let query: String
+        let collectionID: UUID?
+        let favoritesOnly: Bool
+        let sourceID: String
+        let includeOCR: Bool
+    }
+    private var searchCache: (filter: SearchFilter, entries: [ClipboardEntry])?
     @Published private(set) var busy = false
     @Published var message: String?
     @Published var enabled: Bool {
@@ -47,6 +57,21 @@ final class ClipboardHistoryStore: ObservableObject {
 
     func removeIgnoredApplication(_ id: String) {
         excludedApps = excludedApplicationIDs.filter { $0 != id }.joined(separator: "\n")
+    }
+
+    func filteredEntries(query: String, collectionID: UUID?, favoritesOnly: Bool, sourceID: String) -> [ClipboardEntry] {
+        let filter = SearchFilter(query: query.trimmingCharacters(in: .whitespacesAndNewlines),
+                                  collectionID: collectionID, favoritesOnly: favoritesOnly,
+                                  sourceID: sourceID, includeOCR: ocrEnabled)
+        if let searchCache, searchCache.filter == filter { return searchCache.entries }
+        let entries = history.entries.filter { entry in
+            (!filter.favoritesOnly || entry.isFavorite) &&
+            (filter.collectionID.map { entry.collectionIDs.contains($0) } ?? true) &&
+            (filter.sourceID.isEmpty || entry.sourceBundleID == filter.sourceID) &&
+            entry.matches(filter.query, includeOCR: filter.includeOCR)
+        }
+        searchCache = (filter, entries)
+        return entries
     }
 
     private let defaults: UserDefaults
