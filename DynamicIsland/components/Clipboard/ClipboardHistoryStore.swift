@@ -21,6 +21,7 @@ final class ClipboardHistoryStore: ObservableObject {
             if !ocrEnabled { cancelOCR() }
         }
     }
+    private var captureTask: Task<Void, Never>?
     private var ocrTask: Task<Void, Never>?
     private var ocrGeneration = UUID()
     private var ocrEntryID: UUID?
@@ -32,7 +33,7 @@ final class ClipboardHistoryStore: ObservableObject {
     @Published var retention: ClipboardRetention {
         didSet { defaults.set(retention.rawValue, forKey: "clipboardRetention"); applyLimits() }
     }
-    @Published var paused: Bool { didSet { defaults.set(paused, forKey: "clipboardPaused") } }
+    @Published var paused: Bool { didSet { defaults.set(paused, forKey: "clipboardPaused"); if paused { captureTask?.cancel() } } }
     @Published var itemLimit: Int { didSet { defaults.set(itemLimit, forKey: "clipboardItemLimit") } }
     @Published var capacityMB: Int { didSet { defaults.set(capacityMB, forKey: "clipboardCapacityMB") } }
     @Published var excludedApps: String { didSet { defaults.set(excludedApps, forKey: "clipboardExcludedApps") } }
@@ -104,7 +105,7 @@ final class ClipboardHistoryStore: ObservableObject {
                 Task { @MainActor in
                     self?.unavailable = locked
                     self?.lastChange = NSPasteboard.general.changeCount
-                    if locked { ClipboardPanelController.shared.dismiss() }
+                    if locked { self?.captureTask?.cancel(); ClipboardPanelController.shared.dismiss() }
                 }
             })
         }
@@ -113,6 +114,7 @@ final class ClipboardHistoryStore: ObservableObject {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in
                     self?.unavailable = true
+                    self?.captureTask?.cancel()
                     ClipboardPanelController.shared.dismiss()
                 }
             })
@@ -128,6 +130,7 @@ final class ClipboardHistoryStore: ObservableObject {
     }
 
     func stop() {
+        captureTask?.cancel()
         cancelOCR()
         timer?.invalidate()
         timer = nil
@@ -147,7 +150,7 @@ final class ClipboardHistoryStore: ObservableObject {
 
     private func poll() {
         let pasteboard = NSPasteboard.general
-        guard enabled, ready, !busy else { return }
+        guard enabled, ready, !busy, captureTask == nil else { return }
         if Date() >= nextExpiryCheck {
             nextExpiryCheck = Date().addingTimeInterval(60)
             applyLimits()
@@ -169,28 +172,55 @@ final class ClipboardHistoryStore: ObservableObject {
         guard !excludedApplicationIDs.contains(sourceID) else { lastChange = change; return }
         guard let payload = ClipboardPayload.read(from: pasteboard) else { lastChange = change; return }
         guard pasteboard.changeCount == change else { return }
-        lastChange = change
-        var candidate = history
-        var entry = payload.entry(sourceID: sourceID, sourceName: app?.localizedName ?? "")
-        var newPayload: (UUID, ClipboardPayload)? = (entry.id, payload)
-        if let index = candidate.entries.firstIndex(where: { $0.checksum == entry.checksum }) {
-            let previous = candidate.entries.remove(at: index)
-            entry.id = previous.id
-            entry.name = previous.name
-            entry.isFavorite = previous.isFavorite
-            entry.collectionIDs = previous.collectionIDs
-            entry.recognizedText = previous.recognizedText
-            entry.byteCount += previous.recognizedText?.utf8.count ?? 0
-            newPayload = payload.files == nil ? nil : (entry.id, payload)
+        let sourceName = app?.localizedName ?? ""
+        captureTask = Task {
+            guard !busy else { captureTask = nil; return }
+            lastChange = change
+            await capture(payload, sourceID: sourceID, sourceName: sourceName)
+            captureTask = nil
         }
-        candidate.entries.insert(entry, at: 0)
-        candidate.expire(retention: retention)
-        guard candidate.trim(limit: max(1, itemLimit), bytes: max(1, capacityMB) * 1024 * 1024),
-              candidate.entries.contains(where: { $0.id == entry.id }) else {
-            message = String(localized: "Clipboard storage is full. Delete some favorites or increase the storage limit.")
-            return
+    }
+
+    func capture(_ payload: ClipboardPayload, sourceID: String, sourceName: String) async {
+        guard ready, enabled, !paused, !unavailable, !busy, !Task.isCancelled else { return }
+        busy = true
+        defer {
+            busy = false
+            promoteUsedEntries()
+            if limitsPending { applyLimits() }
         }
-        commit(candidate, payload: newPayload, captureSound: true)
+        do {
+            var entry = try await payload.preparedEntry(sourceID: sourceID, sourceName: sourceName)
+            guard enabled, !paused, !unavailable, !Task.isCancelled,
+                  !excludedApplicationIDs.contains(sourceID) else { return }
+            var candidate = history
+            var newPayload: (UUID, ClipboardPayload)? = (entry.id, payload)
+            if let index = candidate.entries.firstIndex(where: { $0.checksum == entry.checksum }) {
+                let previous = candidate.entries.remove(at: index)
+                entry.id = previous.id
+                entry.name = previous.name
+                entry.isFavorite = previous.isFavorite
+                entry.collectionIDs = previous.collectionIDs
+                entry.recognizedText = previous.recognizedText
+                entry.byteCount += previous.recognizedText?.utf8.count ?? 0
+                newPayload = payload.files == nil ? nil : (entry.id, payload)
+            }
+            candidate.entries.insert(entry, at: 0)
+            candidate.expire(retention: retention)
+            guard candidate.trim(limit: max(1, itemLimit), bytes: max(1, capacityMB) * 1024 * 1024),
+                  candidate.entries.contains(where: { $0.id == entry.id }) else {
+                message = String(localized: "Clipboard storage is full. Delete some favorites or increase the storage limit.")
+                return
+            }
+            message = try await disk.save(candidate, newPayload: newPayload)
+            history = candidate
+            if enabled && soundEffects { NSSound(named: "Pop")?.play() }
+        } catch is CancellationError {
+            // Disabling recording or leaving the session cancels uncommitted work.
+        } catch {
+            paused = true
+            message = String(localized: "Saving failed. Recording paused: \(error.localizedDescription)")
+        }
     }
 
     func update(_ id: UUID, _ edit: (inout ClipboardEntry) -> Void) {
@@ -209,10 +239,17 @@ final class ClipboardHistoryStore: ObservableObject {
             message = String(localized: "Text exceeds the 20 MB limit.")
             return nil
         }
+        busy = true
+        defer {
+            busy = false
+            promoteUsedEntries()
+            if limitsPending { applyLimits() }
+        }
         let original = history.entries[index]
         let payload = ClipboardPayload(items: [[NSPasteboard.PasteboardType.string.rawValue: data]])
         // A new payload ID keeps the original readable if writing the metadata fails.
-        var edited = payload.entry(sourceID: original.sourceBundleID, sourceName: original.sourceName)
+        guard var edited = try? await payload.preparedEntry(sourceID: original.sourceBundleID, sourceName: original.sourceName),
+              !Task.isCancelled else { return nil }
         edited.timestamp = original.timestamp
         edited.name = original.name
         edited.isFavorite = original.isFavorite
@@ -222,12 +259,6 @@ final class ClipboardHistoryStore: ObservableObject {
         guard candidate.entries.reduce(0, { $0 + $1.byteCount }) <= max(1, capacityMB) * 1024 * 1024 else {
             message = String(localized: "Clipboard storage is full. Delete some favorites or increase the storage limit.")
             return nil
-        }
-        busy = true
-        defer {
-            busy = false
-            promoteUsedEntries()
-            if limitsPending { applyLimits() }
         }
         do {
             message = try await disk.save(candidate, newPayload: (edited.id, payload))
@@ -302,15 +333,14 @@ final class ClipboardHistoryStore: ObservableObject {
         if candidate.entries != history.entries { commit(candidate) }
     }
 
-    private func commit(_ candidate: ClipboardHistory, payload: (UUID, ClipboardPayload)? = nil, captureSound: Bool = false) {
+    private func commit(_ candidate: ClipboardHistory) {
         guard ready, !busy else { return }
         busy = true
         Task {
             do {
-                let cleanupWarning = try await disk.save(candidate, newPayload: payload)
+                let cleanupWarning = try await disk.save(candidate)
                 history = candidate
                 message = cleanupWarning
-                if captureSound && enabled && soundEffects { NSSound(named: "Pop")?.play() }
             } catch {
                 paused = true
                 message = String(localized: "Saving failed. Recording paused: \(error.localizedDescription)")

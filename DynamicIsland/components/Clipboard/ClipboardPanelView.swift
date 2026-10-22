@@ -361,13 +361,16 @@ private struct ClipboardCard: View {
         .task(id: entry.id) {
             // Launch Services and file icons can be slow on their first lookup.
             // Keep that work off the main actor while the panel slides in.
-            let images = await Task.detached(priority: .userInitiated) { [entry, disk] in
+            let work = Task.detached(priority: .userInitiated) { [entry, disk] in
+                try Task.checkCancellation()
                 let appIcon = NSWorkspace.shared.urlForApplication(withBundleIdentifier: entry.sourceBundleID)
                     .map { NSWorkspace.shared.icon(forFile: $0.path) }
+                try Task.checkCancellation()
                 var thumbnail: NSImage?
                 var files: [(name: String, icon: NSImage, detail: String)] = []
                 if entry.kind == .files, let payload = try? await disk.payload(entry.id) {
                     for file in (payload.files ?? []).prefix(3) {
+                        try Task.checkCancellation()
                         let url = file.url
                         let values = try? url.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey, .localizedTypeDescriptionKey])
                         let type = values?.isDirectory == true || url.pathExtension.isEmpty
@@ -377,12 +380,15 @@ private struct ClipboardCard: View {
                                       [type, size].compactMap { $0 }.joined(separator: " · ")))
                     }
                 }
+                try Task.checkCancellation()
                 if entry.kind == .image, let data = await disk.thumbnail(entry.id) {
                     thumbnail = NSImage(data: data)
                 }
+                try Task.checkCancellation()
                 return (appIcon, thumbnail, files)
-            }.value
-            guard !Task.isCancelled else { return }
+            }
+            guard let images = try? await withTaskCancellationHandler(operation: { try await work.value }, onCancel: { work.cancel() }),
+                  !Task.isCancelled else { return }
             appIcon = images.0
             thumbnail = images.1
             files = images.2

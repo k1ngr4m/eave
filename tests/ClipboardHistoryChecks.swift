@@ -224,7 +224,36 @@ struct ClipboardHistoryChecks {
                             newPayload: (imageEntry.id, imagePayload))
         let thumbnail = await disk.thumbnail(imageEntry.id)
         assert(thumbnail != nil)
+        let imageURL = directory.appendingPathComponent(imageEntry.id.uuidString + ".plist")
+        let heldImageURL = directory.appendingPathComponent("held-image")
+        try FileManager.default.moveItem(at: imageURL, to: heldImageURL)
+        let cachedThumbnail = await disk.thumbnail(imageEntry.id)
+        try FileManager.default.moveItem(at: heldImageURL, to: imageURL)
+        assert(cachedThumbnail == thumbnail, "A cache hit must not reread or regenerate the original image")
+        let cancelledThumbnail = Task { await disk.thumbnail(imageEntry.id) }
+        cancelledThumbnail.cancel()
+        let cancelledImage = await cancelledThumbnail.value
+        assert(cancelledImage == nil, "Cancelled requests must not deliver even cached thumbnails")
+        try await disk.save(ClipboardHistory(entries: [first, imageEntry]), newPayload: (imageEntry.id, payload))
+        let replacedThumbnail = await disk.thumbnail(imageEntry.id)
+        assert(replacedThumbnail == nil, "Replacing a payload must invalidate its thumbnail")
         try await disk.save(ClipboardHistory())
+        let deletedThumbnail = await disk.thumbnail(imageEntry.id)
+        assert(deletedThumbnail == nil, "Deleted entries must not be served from the cache")
+        let prepared = try await payload.preparedEntry(sourceID: "app", sourceName: "App")
+        let synchronous = payload.entry(sourceID: "app", sourceName: "App")
+        assert(prepared.text == synchronous.text && prepared.kind == synchronous.kind && prepared.checksum == synchronous.checksum)
+        var preparedMetadata = prepared
+        preparedMetadata.byteCount = 0
+        let payloadEncoder = PropertyListEncoder()
+        payloadEncoder.outputFormat = .binary
+        let expectedBytes = try payloadEncoder.encode(payload).count + JSONEncoder().encode(preparedMetadata).count + 1024
+        assert(prepared.byteCount == expectedBytes, "Background preparation must preserve the storage accounting")
+        let cancelledPreparation = Task { try await payload.preparedEntry(sourceID: "app", sourceName: "App") }
+        cancelledPreparation.cancel()
+        do { _ = try await cancelledPreparation.value; fatalError("Cancelled preparation must not return an entry") }
+        catch is CancellationError { }
+        print("Preview performance checks passed: cache hit without disk access, invalidation, cancellation and background metadata parity.")
         assert(!FileManager.default.fileExists(atPath: directory.appendingPathComponent(first.id.uuidString + ".plist").path))
         try Data("corrupt".utf8).write(to: directory.appendingPathComponent("history.json"))
         do { _ = try await disk.load(); fatalError("Corruption must be reported, never silently replace history") }
@@ -385,7 +414,25 @@ struct ClipboardHistoryChecks {
         let missingUse = await usageStore.copy(UUID(), plain: false, to: pasteboard)
         assert(!cancelledUse && !missingUse)
         assert(usageStore.history.entries == persistedUsage.entries, "Failed or cancelled copies must not reorder history")
+        usageStore.paused = false
+        let capturedPayload = ClipboardPayload(items: [[NSPasteboard.PasteboardType.string.rawValue: Data("background capture".utf8)]])
+        await usageStore.capture(capturedPayload, sourceID: "test", sourceName: "Test")
+        assert(usageStore.history.entries.count == 4 && usageStore.history.entries[0].text == "background capture")
+        let capturedID = usageStore.history.entries[0].id
+        usageStore.update(capturedID) { $0.isFavorite = true; $0.name = "Keep me" }
+        while usageStore.busy { try await Task.sleep(for: .milliseconds(10)) }
+        await usageStore.capture(capturedPayload, sourceID: "test", sourceName: "Test")
+        assert(usageStore.history.entries.count == 4 && usageStore.history.entries[0].id == capturedID)
+        assert(usageStore.history.entries[0].isFavorite && usageStore.history.entries[0].name == "Keep me")
+        let cancelledCapture = Task { await usageStore.capture(usagePayloads[2], sourceID: "test", sourceName: "Test") }
+        cancelledCapture.cancel()
+        await cancelledCapture.value
+        assert(usageStore.history.entries[0].id == capturedID && !usageStore.busy)
+        usageStore.paused = true
+        await usageStore.capture(usagePayloads[2], sourceID: "test", sourceName: "Test")
+        assert(usageStore.history.entries[0].id == capturedID)
         usageStore.enabled = false
+        print("Background capture checks passed: persistence, deduplication, metadata retention, cancellation and paused recording.")
         print("Recent-use checks passed: normal/plain copies, metadata, successive uses, persistence and failed-copy ordering.")
         print("Collection checks passed: legacy metadata, rename, color persistence, and deletion preserving entries.")
         print("Clipboard settings checks passed: calendar retention, expiry boundary, favorites, permanent history, disabled copy and persisted preferences.")

@@ -290,6 +290,16 @@ struct ClipboardPayload: Codable, Sendable {
         return entry
     }
 
+    func preparedEntry(sourceID: String, sourceName: String) async throws -> ClipboardEntry {
+        let work = Task.detached(priority: .utility) {
+            try Task.checkCancellation()
+            let entry = self.entry(sourceID: sourceID, sourceName: sourceName)
+            try Task.checkCancellation()
+            return entry
+        }
+        return try await withTaskCancellationHandler(operation: { try await work.value }, onCancel: { work.cancel() })
+    }
+
     func resolvedFileURLs() throws -> [URL] {
         try (files ?? []).map { try $0.resolve() }
     }
@@ -330,7 +340,14 @@ struct ClipboardPayload: Codable, Sendable {
 
 actor ClipboardDiskStore {
     let directory: URL
-    init(directory: URL) { self.directory = directory }
+    private let thumbnails = NSCache<NSUUID, NSData>()
+    private var thumbnailVersions: [UUID: UUID] = [:]
+
+    init(directory: URL) {
+        self.directory = directory
+        thumbnails.totalCostLimit = 16 * 1024 * 1024
+        thumbnails.countLimit = 64
+    }
 
     func load() throws -> ClipboardHistory {
         let url = directory.appendingPathComponent("history.json")
@@ -354,6 +371,11 @@ actor ClipboardDiskStore {
         }
         // Commit metadata before deleting content. Failed saves leave the previous history readable.
         try JSONEncoder().encode(history).write(to: directory.appendingPathComponent("history.json"), options: .atomic)
+        let retainedIDs = Set(history.entries.map(\.id))
+        for id in Array(thumbnailVersions.keys) where !retainedIDs.contains(id) || newPayload?.0 == id {
+            thumbnails.removeObject(forKey: id as NSUUID)
+            thumbnailVersions.removeValue(forKey: id)
+        }
         let retained = Set(history.entries.map { $0.id.uuidString + ".plist" })
         do {
             for url in try fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
@@ -366,18 +388,32 @@ actor ClipboardDiskStore {
         return nil
     }
 
-    func thumbnail(_ id: UUID) -> Data? {
-        guard let data = try? payload(id).imageData,
+    func thumbnail(_ id: UUID) async -> Data? {
+        guard !Task.isCancelled else { return nil }
+        if let cached = thumbnails.object(forKey: id as NSUUID) { return cached as Data }
+        guard let data = try? payload(id).imageData, !Task.isCancelled else { return nil }
+        let version = thumbnailVersions[id] ?? UUID()
+        thumbnailVersions[id] = version
+        let work = Task.detached(priority: .utility) { Self.makeThumbnail(data) }
+        let result = await withTaskCancellationHandler(operation: { await work.value }, onCancel: { work.cancel() })
+        guard !Task.isCancelled, thumbnailVersions[id] == version, let result else { return nil }
+        thumbnails.setObject(result as NSData, forKey: id as NSUUID, cost: result.count)
+        return result
+    }
+
+    private nonisolated static func makeThumbnail(_ data: Data) -> Data? {
+        guard !Task.isCancelled,
               let source = CGImageSourceCreateWithData(data as CFData, nil),
               let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
                 kCGImageSourceCreateThumbnailFromImageAlways: true,
                 kCGImageSourceThumbnailMaxPixelSize: 640,
                 kCGImageSourceCreateThumbnailWithTransform: true
               ] as CFDictionary) else { return nil }
+        guard !Task.isCancelled else { return nil }
         let output = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(output, "public.png" as CFString, 1, nil) else { return nil }
         CGImageDestinationAddImage(destination, image, nil)
-        guard CGImageDestinationFinalize(destination) else { return nil }
+        guard CGImageDestinationFinalize(destination), !Task.isCancelled else { return nil }
         return output as Data
     }
 
