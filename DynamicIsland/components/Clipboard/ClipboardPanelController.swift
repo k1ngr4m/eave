@@ -309,11 +309,20 @@ final class ClipboardPanelController: NSObject, ObservableObject, NSWindowDelega
         return (value as! AXUIElement)
     }
 
+    func dismissIfOutside(at point: NSPoint, presentation token: UUID) {
+        guard token == presentation, let panel, panel.isVisible, !isDismissing,
+              panel.attachedSheet == nil, !panel.frame.contains(point) else { return }
+        dismiss(restoreTarget: false)
+    }
+
     private func installMonitors() {
+        let token = presentation
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .leftMouseDown, .rightMouseDown]) { [weak self] event in
             guard let self else { return event }
             if event.type != .keyDown {
-                if let window = event.window, window !== self.panel, self.panel?.attachedSheet == nil { self.dismiss(restoreTarget: false) }
+                if let window = event.window, window !== self.panel {
+                    self.dismissIfOutside(at: window.convertPoint(toScreen: event.locationInWindow), presentation: token)
+                }
                 return event
             }
             guard event.window === self.panel, self.panel?.attachedSheet == nil,
@@ -350,7 +359,8 @@ final class ClipboardPanelController: NSObject, ObservableObject, NSWindowDelega
             }
         }
         outsideMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            Task { @MainActor in self?.dismiss(restoreTarget: false) }
+            let point = NSEvent.mouseLocation
+            Task { @MainActor in self?.dismissIfOutside(at: point, presentation: token) }
         }
     }
 }

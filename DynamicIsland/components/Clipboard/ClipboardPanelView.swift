@@ -308,6 +308,7 @@ private struct ClipboardCard: View {
     let disk: ClipboardDiskStore
     @State private var thumbnail: NSImage?
     @State private var appIcon: NSImage?
+    @State private var files: [(name: String, icon: NSImage, detail: String)] = []
     private var title: String { entry.name ?? (entry.kind == .files ? String(localized: "Files") : entry.kind == .pdf ? "PDF" : entry.kind == .image ? String(localized: "Image") : entry.kind == .link ? String(localized: "Link") : String(localized: "Text")) }
     private var sourceName: String {
         entry.sourceName.isEmpty || ["未知应用", "未知應用", "Unknown App"].contains(entry.sourceName)
@@ -337,11 +338,7 @@ private struct ClipboardCard: View {
                 } else if entry.kind == .pdf {
                     Image(systemName: "doc.richtext").font(.system(size: 64)).foregroundStyle(.secondary).frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if entry.kind == .files {
-                    VStack(alignment: .leading, spacing: 12) {
-                        if let thumbnail { Image(nsImage: thumbnail).resizable().scaledToFit().frame(width: 48, height: 48) }
-                        else { Image(systemName: "doc.on.doc").font(.largeTitle) }
-                        Text(entry.text).font(.system(size: 13)).lineLimit(5)
-                    }.padding(12)
+                    filePreview
                 } else {
                     Text(String(entry.text.prefix(1800))).font(.system(size: 13)).lineSpacing(3)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(12).clipped()
@@ -368,17 +365,64 @@ private struct ClipboardCard: View {
                 let appIcon = NSWorkspace.shared.urlForApplication(withBundleIdentifier: entry.sourceBundleID)
                     .map { NSWorkspace.shared.icon(forFile: $0.path) }
                 var thumbnail: NSImage?
-                if entry.kind == .files, let payload = try? await disk.payload(entry.id), let file = payload.files?.first {
-                    thumbnail = NSWorkspace.shared.icon(forFile: file.url.path)
+                var files: [(name: String, icon: NSImage, detail: String)] = []
+                if entry.kind == .files, let payload = try? await disk.payload(entry.id) {
+                    for file in (payload.files ?? []).prefix(3) {
+                        let url = file.url
+                        let values = try? url.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey, .localizedTypeDescriptionKey])
+                        let type = values?.isDirectory == true || url.pathExtension.isEmpty
+                            ? values?.localizedTypeDescription : url.pathExtension.uppercased()
+                        let size = values?.isDirectory == false ? values?.fileSize.map { ByteCountFormatter.string(fromByteCount: Int64($0), countStyle: .file) } : nil
+                        files.append((url.lastPathComponent, NSWorkspace.shared.icon(forFile: url.path),
+                                      [type, size].compactMap { $0 }.joined(separator: " · ")))
+                    }
                 }
                 if entry.kind == .image, let data = await disk.thumbnail(entry.id) {
                     thumbnail = NSImage(data: data)
                 }
-                return (appIcon, thumbnail)
+                return (appIcon, thumbnail, files)
             }.value
             guard !Task.isCancelled else { return }
             appIcon = images.0
             thumbnail = images.1
+            files = images.2
+        }
+    }
+
+    @ViewBuilder private var filePreview: some View {
+        if (entry.fileCount ?? 1) == 1 {
+            VStack(spacing: 9) {
+                if let file = files.first {
+                    Image(nsImage: file.icon).resizable().scaledToFit().frame(width: 56, height: 56)
+                } else {
+                    Image(systemName: "doc").font(.system(size: 42)).foregroundStyle(.secondary)
+                }
+                Text(files.first?.name ?? entry.text)
+                    .font(.system(size: 13, weight: .medium)).lineLimit(2).truncationMode(.middle)
+                    .multilineTextAlignment(.center).frame(maxWidth: .infinity)
+                if let detail = files.first?.detail, !detail.isEmpty {
+                    Text(detail).font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary).lineLimit(1)
+                }
+            }.padding(14).frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(files.indices, id: \.self) { index in
+                    let file = files[index]
+                    HStack(spacing: 10) {
+                        Image(nsImage: file.icon).resizable().scaledToFit().frame(width: 30, height: 30)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(file.name).font(.system(size: 12, weight: .medium)).lineLimit(1).truncationMode(.middle)
+                            Text(file.detail).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                }
+                if files.isEmpty {
+                    Text(entry.text).font(.system(size: 12)).lineLimit(5)
+                } else if let count = entry.fileCount, count > files.count {
+                    Text("+\(count - files.count)").font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+                }
+            }.padding(12).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
     }
 }

@@ -72,6 +72,12 @@ struct ClipboardPanelPreloadChecks {
         assert(panel.isVisible && controller.isExpanded && !controller.isDismissing,
                "An old close completion must not hide a reopened panel")
         assert(!panel.ignoresMouseEvents, "Reopening must restore interaction")
+        let inside = NSPoint(x: panel.frame.midX, y: panel.frame.midY)
+        let outside = NSPoint(x: panel.frame.midX, y: panel.frame.maxY + 20)
+        controller.dismissIfOutside(at: inside, presentation: controller.presentation)
+        assert(!controller.isDismissing, "A card click must not close the panel even if delivered by another window")
+        controller.dismissIfOutside(at: outside, presentation: dismissal)
+        assert(!controller.isDismissing, "A delayed click from an older presentation must not close the new panel")
         let editor = NSTextView(frame: NSRect(x: 0, y: 0, width: 100, height: 24))
         content!.addSubview(editor)
         assert(panel.canBecomeKey && panel.makeFirstResponder(editor), "An open panel must accept input")
@@ -93,6 +99,12 @@ struct ClipboardPanelPreloadChecks {
         assert(!panel.isKeyWindow, "orderOut must release the actual key window before activation handoff")
         assert(!panel.canBecomeKey && !panel.makeFirstResponder(editor), "A hidden warm panel must also reject focus")
         editor.removeFromSuperview()
+        controller.toggle()
+        panel.alphaValue = 0
+        controller.dismissIfOutside(at: NSPoint(x: panel.frame.midX, y: panel.frame.maxY + 20), presentation: controller.presentation)
+        assert(controller.isDismissing, "A current click outside the panel must still dismiss it")
+        try await Task.sleep(for: .milliseconds(650))
+        assert(!panel.isVisible)
         print("Clipboard preload checks passed: hidden layout, no focus change, idempotence and view reuse.")
     }
 }
