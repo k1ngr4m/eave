@@ -87,3 +87,11 @@ Validation adds `SensorsTests` (fake SMC data, real original controls/renderers,
 missing readings, persistence and stop/restart) and sensor coverage in
 `tests/test_monitoring.py --live --ui` (actual SMC/HID/IOReport, settings, shared
 widget row and simulated workspace sleep/wake notifications).
+
+## Battery popup integration
+
+- `Upstream/Battery{Popup,Readers,Models}.swift` comes from `Modules/Battery/{popup,readers,main}.swift` in exelban/stats (retrieved 2026-10-22; popup blob `71daf0cf94829fb549a346130835f3e857391338`). Original copyright and the package MIT license are retained. Module-local reader and popup names are prefixed; SMC reads use the existing `HardwareAccess` connection.
+- `BatteryMonitor` hosts the original dashboard, battery health/capacity, adapter and power-ranked process list inside Eave's status popover. Sampling starts on detail appearance and stops on dismissal or return. The header settings action opens Eave's existing battery settings destination; the activity-monitor action remains native Stats behavior.
+- EaveStatus replaces its previous battery details view with this AppKit panel and a return button. Summary battery power collection remains unchanged.
+
+Validation: `swift test --package-path Packages/EaveNetworkStats --filter BatteryTests` checks AC/battery/charging layout transitions, displayed telemetry, settings routing and reader shutdown.

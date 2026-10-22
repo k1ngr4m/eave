@@ -40,18 +40,13 @@ struct StatusPopoverView: View {
                 summary
             case .battery:
                 BatteryDetailsView(
-                    state: panel.batteryDetails,
                     onBack: {
                         panel.actions.batteryDetailsClosed()
                         currentPanel = .summary
                     },
-                    onOpenBatterySettings: openBatterySettings,
-                    onCopyValue: { copyValue($0) },
-                    onAppear: { panel.actions.batteryDetailsAppeared() },
-                    lowPowerMode: panel.store.lowPowerMode,
-                    showsLowPowerControl: panel.settings.controlsLowPowerMode
-                        && helper.isReady
+                    onOpenBatterySettings: openBatterySettings
                 )
+                .onAppear { panel.actions.batteryDetailsAppeared() }
             case .wifi(let showDetails):
                 WiFiNetworkListView(
                     state: panel.wifiDetails,
@@ -88,8 +83,13 @@ struct StatusPopoverView: View {
                 )
             }
         }
-        .padding(14)
-        .frame(width: 330)
+        .padding(isBatteryPanel ? 0 : 14)
+        .frame(width: isBatteryPanel ? nil : 330)
+    }
+
+    private var isBatteryPanel: Bool {
+        if case .battery = currentPanel { return true }
+        return false
     }
 
     private var summary: some View {
