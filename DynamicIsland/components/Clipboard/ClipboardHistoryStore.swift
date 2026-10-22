@@ -55,6 +55,7 @@ final class ClipboardHistoryStore: ObservableObject {
     private var ready = false
     private var loading = false
     private var limitsPending = false
+    private var pendingPromotions: [UUID] = []
     private var nextExpiryCheck = Date.distantPast
     private var unavailable = false
     private var observers: [NSObjectProtocol] = []
@@ -225,6 +226,7 @@ final class ClipboardHistoryStore: ObservableObject {
         busy = true
         defer {
             busy = false
+            promoteUsedEntries()
             if limitsPending { applyLimits() }
         }
         do {
@@ -314,8 +316,27 @@ final class ClipboardHistoryStore: ObservableObject {
                 message = String(localized: "Saving failed. Recording paused: \(error.localizedDescription)")
             }
             busy = false
+            promoteUsedEntries()
             if limitsPending { applyLimits() }
         }
+    }
+
+    private func recordUse(_ id: UUID) {
+        pendingPromotions.removeAll { $0 == id }
+        pendingPromotions.append(id)
+        promoteUsedEntries()
+    }
+
+    private func promoteUsedEntries() {
+        guard ready, !busy, !pendingPromotions.isEmpty else { return }
+        var candidate = history
+        for id in pendingPromotions {
+            if let index = candidate.entries.firstIndex(where: { $0.id == id }) {
+                candidate.entries.insert(candidate.entries.remove(at: index), at: 0)
+            }
+        }
+        pendingPromotions.removeAll()
+        if candidate.entries != history.entries { commit(candidate) }
     }
 
     private func cancelOCR() {
@@ -366,7 +387,10 @@ final class ClipboardHistoryStore: ObservableObject {
     func copyRecognizedText(_ id: UUID) {
         guard enabled, let text = history.entries.first(where: { $0.id == id })?.recognizedText, !text.isEmpty else { return }
         let payload = ClipboardPayload(items: [[NSPasteboard.PasteboardType.string.rawValue: Data(text.utf8)]])
-        if payload.write(to: .general, plain: true) { lastChange = NSPasteboard.general.changeCount }
+        if payload.write(to: .general, plain: true) {
+            lastChange = NSPasteboard.general.changeCount
+            recordUse(id)
+        }
     }
 
     func revealFiles(_ id: UUID) async {
@@ -383,22 +407,26 @@ final class ClipboardHistoryStore: ObservableObject {
             let paths = try payload.resolvedFileURLs().map(\.path).joined(separator: "\n")
             guard enabled, !paths.isEmpty else { return }
             let text = ClipboardPayload(items: [[NSPasteboard.PasteboardType.string.rawValue: Data(paths.utf8)]])
-            if text.write(to: .general, plain: true) { lastChange = NSPasteboard.general.changeCount }
+            if text.write(to: .general, plain: true) {
+                lastChange = NSPasteboard.general.changeCount
+                recordUse(id)
+            }
         } catch { message = error.localizedDescription }
     }
 
-    func copy(_ id: UUID, plain: Bool, ifCurrent: () -> Bool = { true }) async -> Bool {
+    func copy(_ id: UUID, plain: Bool, to pasteboard: NSPasteboard = .general, ifCurrent: () -> Bool = { true }) async -> Bool {
         guard enabled else { return false }
         do {
             let payload = try await disk.payload(id)
             if payload.files != nil { _ = try payload.resolvedFileURLs() }
             guard enabled, ifCurrent() else { return false }
-            guard payload.write(to: .general, plain: plain) else {
+            guard payload.write(to: pasteboard, plain: plain) else {
                 message = plain ? String(localized: "This item has no text to paste.") : String(localized: "Could not write to the clipboard.")
                 return false
             }
-            lastChange = NSPasteboard.general.changeCount
+            if pasteboard.name == NSPasteboard.general.name { lastChange = pasteboard.changeCount }
             message = nil
+            recordUse(id)
             if soundEffects { NSSound(named: "Tink")?.play() }
             return true
         } catch {

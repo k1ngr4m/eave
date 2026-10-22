@@ -42,6 +42,7 @@ struct ClipboardPanelPreloadChecks {
         assert(content is NSHostingView<ClipboardPanelView>)
         assert(content!.frame.width > 0 && content!.frame.height > 0)
         assert(!panel.isVisible && !panel.isKeyWindow, "Preload must stay hidden")
+        assert(!panel.canBecomeKey, "A preloaded panel must not acquire keyboard focus")
         assert(!controller.isExpanded, "Preload must leave the reveal animation at its starting state")
         assert(app.keyWindow === keyWindow)
         assert(NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmost)
@@ -71,9 +72,27 @@ struct ClipboardPanelPreloadChecks {
         assert(panel.isVisible && controller.isExpanded && !controller.isDismissing,
                "An old close completion must not hide a reopened panel")
         assert(!panel.ignoresMouseEvents, "Reopening must restore interaction")
+        let editor = NSTextView(frame: NSRect(x: 0, y: 0, width: 100, height: 24))
+        content!.addSubview(editor)
+        assert(panel.canBecomeKey && panel.makeFirstResponder(editor), "An open panel must accept input")
+        var prematureResignations = 0
+        let observer = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: panel, queue: .main) { _ in
+            prematureResignations += 1
+        }
         controller.dismiss()
+        NotificationCenter.default.removeObserver(observer)
+        assert(prematureResignations == 0, "Dismiss must not manually send a key-window resignation notification")
+        assert(!panel.canBecomeKey && !panel.makeFirstResponder(editor),
+               "Late search focus requests must be rejected throughout the close animation")
+        let focusRequest = controller.searchFocusRequest
+        controller.focusSearchIfVisible()
+        try await Task.sleep(for: .milliseconds(25))
+        assert(controller.searchFocusRequest == focusRequest, "Closing must not schedule search refocus")
         try await Task.sleep(for: .milliseconds(650))
         assert(!panel.isVisible)
+        assert(!panel.isKeyWindow, "orderOut must release the actual key window before activation handoff")
+        assert(!panel.canBecomeKey && !panel.makeFirstResponder(editor), "A hidden warm panel must also reject focus")
+        editor.removeFromSuperview()
         print("Clipboard preload checks passed: hidden layout, no focus change, idempotence and view reuse.")
     }
 }

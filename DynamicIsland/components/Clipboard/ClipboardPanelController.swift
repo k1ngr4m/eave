@@ -4,8 +4,15 @@ import ApplicationServices
 import SwiftUI
 
 private final class ClipboardPanel: NSPanel {
-    override var canBecomeKey: Bool { true }
+    var acceptsKeyboardFocus = false
+    override var canBecomeKey: Bool { acceptsKeyboardFocus }
     override var canBecomeMain: Bool { false }
+
+    @discardableResult
+    override func makeFirstResponder(_ responder: NSResponder?) -> Bool {
+        guard acceptsKeyboardFocus || responder == nil else { return false }
+        return super.makeFirstResponder(responder)
+    }
 }
 
 @MainActor
@@ -30,7 +37,7 @@ final class ClipboardPanelController: NSObject, ObservableObject, NSWindowDelega
     @Published private(set) var searchFocusRequest = UUID()
     @Published private(set) var isExpanded = false
     private(set) var isDismissing = false
-    private var panel: NSPanel?
+    private var panel: ClipboardPanel?
     private var targetApplication: NSRunningApplication?
     private var targetWindow: AXUIElement?
     private var targetInput: AXUIElement?
@@ -56,7 +63,7 @@ final class ClipboardPanelController: NSObject, ObservableObject, NSWindowDelega
         panel.contentView?.displayIfNeeded()
     }
 
-    private func preparePanel(frame: NSRect) -> NSPanel {
+    private func preparePanel(frame: NSRect) -> ClipboardPanel {
         if let panel { return panel }
         let panel = ClipboardPanel(contentRect: frame,
             styleMask: [.borderless], backing: .buffered, defer: false)
@@ -104,6 +111,7 @@ final class ClipboardPanelController: NSObject, ObservableObject, NSWindowDelega
         isDismissing = false
         let frame = Self.frame(in: screen.frame)
         let panel = preparePanel(frame: frame)
+        panel.acceptsKeyboardFocus = true
         panel.ignoresMouseEvents = false
         panel.setFrame(frame, display: false)
         panel.alphaValue = 1
@@ -134,7 +142,7 @@ final class ClipboardPanelController: NSObject, ObservableObject, NSWindowDelega
         if !panel.isKeyWindow { panel.makeKey() }
         let token = presentation
         DispatchQueue.main.async { [weak self] in
-            guard let self, self.presentation == token, NSApp.isActive,
+            guard let self, !self.isDismissing, self.presentation == token, NSApp.isActive,
                   panel.isVisible, panel.isKeyWindow, panel.attachedSheet == nil,
                   !self.settingsPresented, !self.collectionPresented,
                   self.itemPresentation == nil else { return }
@@ -150,10 +158,13 @@ final class ClipboardPanelController: NSObject, ObservableObject, NSWindowDelega
     func dismiss(restoreTarget: Bool = true) {
         guard !isDismissing else { return }
         let shouldRestoreTarget = restoreTarget && NSApp.isActive && panel?.isKeyWindow == true
+        let target = targetApplication
         presentation = UUID() // Cancel pending focus restoration/paste when the user dismisses or reopens.
         isDismissing = panel?.isVisible == true
+        // The retained SwiftUI search field can request focus during teardown.
+        // Reject it until the next explicit opening, including throughout the animation.
+        panel?.acceptsKeyboardFocus = false
         panel?.makeFirstResponder(nil)
-        panel?.resignKey()
         panel?.ignoresMouseEvents = true
         isExpanded = false
         if isDismissing {
@@ -163,6 +174,7 @@ final class ClipboardPanelController: NSObject, ObservableObject, NSWindowDelega
                 guard let self, self.presentation == token, self.isDismissing else { return }
                 self.panel?.orderOut(nil)
                 self.isDismissing = false
+                if shouldRestoreTarget, let target { self.activateTarget(target) }
             }
         }
         targetWindow = nil
@@ -174,10 +186,12 @@ final class ClipboardPanelController: NSObject, ObservableObject, NSWindowDelega
         itemPresentation = nil
         settingsPresented = false
         collectionPresented = false
-        if shouldRestoreTarget, let targetApplication, !targetApplication.isTerminated,
-           targetApplication.processIdentifier != ProcessInfo.processInfo.processIdentifier {
-            targetApplication.activate(options: [])
-        }
+    }
+
+    private func activateTarget(_ target: NSRunningApplication) {
+        guard !target.isTerminated, target.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
+        NSApp.yieldActivation(to: target)
+        target.activate(from: .current, options: [])
     }
 
     func selectFirstIfNeeded() {
@@ -232,11 +246,15 @@ final class ClipboardPanelController: NSObject, ObservableObject, NSWindowDelega
                 ClipboardHistoryStore.shared.message = String(localized: "Copied. Switch to the target app and press ⌘V to paste.")
                 return
             }
-            // Finish tearing down the search editor before restoring another app's input.
-            // Nothing may resign panel focus again after the target has regained it.
+            // orderOut must finish before handing activation back: resignKey is only
+            // a notification, and delayed window teardown can disrupt the target's input.
             dismiss(restoreTarget: false)
             let token = presentation
-            target.activate(options: [])
+            while isDismissing && token == presentation {
+                try? await Task.sleep(for: .milliseconds(25))
+            }
+            guard token == presentation, copyOnly || NSPasteboard.general.changeCount == copiedChange else { return }
+            activateTarget(target)
             let app = AXUIElementCreateApplication(target.processIdentifier)
             AXUIElementSetMessagingTimeout(app, 0.2)
             var restoredFocus = false
@@ -247,6 +265,7 @@ final class ClipboardPanelController: NSObject, ObservableObject, NSWindowDelega
                     return
                 }
                 if NSWorkspace.shared.frontmostApplication?.processIdentifier == target.processIdentifier,
+                   !NSApp.isActive,
                    panel?.isKeyWindow != true,
                    NSEvent.modifierFlags.intersection([.command, .shift, .control, .option]).isEmpty {
                     if !restoredFocus {

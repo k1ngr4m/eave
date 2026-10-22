@@ -350,6 +350,43 @@ struct ClipboardHistoryChecks {
         assert(pinnedHistory.entries.count == 1)
         assert(!pinnedHistory.trim(limit: 0, bytes: 1), "Collection pins must survive expiry and capacity cleanup")
         print("Item menu checks passed: rename, editable payloads, pin retention, size limits, and failed-save recovery.")
+        let usageDirectory = directory.appendingPathComponent("recent-use")
+        let usageDisk = ClipboardDiskStore(directory: usageDirectory)
+        let usagePayloads = ["first", "second", "third"].map {
+            ClipboardPayload(items: [[NSPasteboard.PasteboardType.string.rawValue: Data($0.utf8)]])
+        }
+        var usageHistory = ClipboardHistory(collections: [collection])
+        for payload in usagePayloads {
+            var entry = payload.entry(sourceID: "test", sourceName: "Test")
+            entry.isFavorite = true
+            entry.collectionIDs = [collection.id]
+            usageHistory.entries.append(entry)
+            try await usageDisk.save(usageHistory, newPayload: (entry.id, payload))
+        }
+        let usageStore = ClipboardHistoryStore(defaults: preferences, directory: usageDirectory)
+        usageStore.start()
+        for _ in 0..<100 where usageStore.history.entries.count != 3 { try await Task.sleep(for: .milliseconds(10)) }
+        usageStore.paused = true
+        usageStore.enabled = true
+        usageStore.stop()
+        let ids = usageHistory.entries.map(\.id)
+        let used = await usageStore.copy(ids[2], plain: false, to: pasteboard)
+        assert(used && pasteboard.string(forType: .string) == "third")
+        while usageStore.busy { try await Task.sleep(for: .milliseconds(10)) }
+        assert(usageStore.history.entries.map(\.id) == [ids[2], ids[0], ids[1]])
+        assert(usageStore.history.entries[0] == usageHistory.entries[2], "Using an item must preserve its metadata")
+        let plainUsed = await usageStore.copy(ids[1], plain: true, to: pasteboard)
+        let reused = await usageStore.copy(ids[0], plain: false, to: pasteboard)
+        assert(plainUsed && reused)
+        while usageStore.busy { try await Task.sleep(for: .milliseconds(10)) }
+        let persistedUsage = try await usageDisk.load()
+        assert(persistedUsage.entries.map(\.id) == [ids[0], ids[1], ids[2]], "Persist the order of successive uses")
+        let cancelledUse = await usageStore.copy(ids[2], plain: false, to: pasteboard, ifCurrent: { false })
+        let missingUse = await usageStore.copy(UUID(), plain: false, to: pasteboard)
+        assert(!cancelledUse && !missingUse)
+        assert(usageStore.history.entries == persistedUsage.entries, "Failed or cancelled copies must not reorder history")
+        usageStore.enabled = false
+        print("Recent-use checks passed: normal/plain copies, metadata, successive uses, persistence and failed-copy ordering.")
         print("Collection checks passed: legacy metadata, rename, color persistence, and deletion preserving entries.")
         print("Clipboard settings checks passed: calendar retention, expiry boundary, favorites, permanent history, disabled copy and persisted preferences.")
         print("Clipboard checks passed: formats, private types, restore suppression, multi-item, dedup key, retention, persistence and deletion.")

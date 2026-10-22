@@ -88,7 +88,7 @@ struct ClipboardPanelView: View {
                    value: controller.isExpanded)
         .tint(accentColor)
         .defaultFocus($searchFocused, true)
-        .onAppear { searchFocused = true }
+        .onAppear { controller.focusSearchIfVisible() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             controller.focusSearchIfVisible()
         }
@@ -99,9 +99,9 @@ struct ClipboardPanelView: View {
             editingCollectionID = nil
             pinToNewCollection = nil
         }
-        .onChange(of: controller.searchFocusRequest) { _, _ in searchFocused = true }
-        .onChange(of: controller.settingsPresented) { _, presented in if !presented { searchFocused = true } }
-        .onChange(of: controller.collectionPresented) { _, presented in if !presented { searchFocused = true } }
+        .onChange(of: controller.searchFocusRequest) { _, _ in searchFocused = !controller.isDismissing }
+        .onChange(of: controller.settingsPresented) { _, presented in if !presented { controller.focusSearchIfVisible() } }
+        .onChange(of: controller.collectionPresented) { _, presented in if !presented { controller.focusSearchIfVisible() } }
         .onChange(of: controller.query) { _, _ in controller.selectFirstIfNeeded() }
         .onChange(of: controller.sourceID) { _, _ in controller.selectFirstIfNeeded() }
         .onChange(of: store.history.entries) { _, _ in controller.selectFirstIfNeeded() }
@@ -113,7 +113,7 @@ struct ClipboardPanelView: View {
                 }
             }
         }
-        .onChange(of: controller.itemPresentation?.id) { _, id in if id == nil { searchFocused = true } }
+        .onChange(of: controller.itemPresentation?.id) { _, id in if id == nil { controller.focusSearchIfVisible() } }
         .sheet(isPresented: $controller.settingsPresented) { settings }
         .sheet(isPresented: $controller.collectionPresented) { collectionEditor }
         .alert(String(localized: "Clear all clipboard history?"), isPresented: $confirmClear) {
