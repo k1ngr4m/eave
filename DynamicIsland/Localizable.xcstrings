@@ -1,6 +1,380 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Open Focus settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开专注模式设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟專注模式設定"
+          }
+        }
+      }
+    },
+    "The timer sits above the media panel and has its own surface and material settings." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "计时器显示在媒体面板上方，可独立设置外观与材质。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "計時器顯示在媒體面板上方，可獨立設定外觀與材質。"
+          }
+        }
+      }
+    },
+    "Advanced" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高级"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進階"
+          }
+        }
+      }
+    },
+    "After an event starts" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事件开始后"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "行程開始後"
+          }
+        }
+      }
+    },
+    "Keep until the event ends" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保留至事件结束"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保留至行程結束"
+          }
+        }
+      }
+    },
+    "Keep for a while" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保留一段时间"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保留一段時間"
+          }
+        }
+      }
+    },
+    "Switch to the next event" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即切换至下一事件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即切換至下一個行程"
+          }
+        }
+      }
+    },
+    "Lock and fingerprint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "锁与指纹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鎖頭與指紋"
+          }
+        }
+      }
+    },
+    "More settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多設定"
+          }
+        }
+      }
+    },
+    "Choose a glass variant for the media panel below." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在下方选择媒体面板的玻璃样式。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在下方選擇媒體面板的玻璃樣式。"
+          }
+        }
+      }
+    },
+    "Enable media controls in Media settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前往媒体设置启用播放控件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前往媒體設定啟用播放控制項"
+          }
+        }
+      }
+    },
+    "Enable reminders in Calendar settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前往日历设置启用提醒"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前往行事曆設定啟用提醒"
+          }
+        }
+      }
+    },
+    "Open Media settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开媒体设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟媒體設定"
+          }
+        }
+      }
+    },
+    "Sets the text contrast for media, timer, status and reminder widgets. Choose Light for a bright wallpaper." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置媒体、计时器、状态区域和提醒的文字对比度。壁纸较亮时请选择浅色。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定媒體、計時器、狀態區域和提醒的文字對比度。桌布較亮時請選擇淺色。"
+          }
+        }
+      }
+    },
+    "Shared layout for weather, battery, Focus and calendar events." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "天气、电池、专注模式和日历事件共用此布局。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "天氣、電池、專注模式和行事曆行程共用此版面配置。"
+          }
+        }
+      }
+    },
+    "Status area" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "状态区域"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "狀態區域"
+          }
+        }
+      }
+    },
+    "Status area layout" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "状态区域布局"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "狀態區域版面配置"
+          }
+        }
+      }
+    },
+    "Status area · Battery" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "状态区域 · 电池"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "狀態區域 · 電池"
+          }
+        }
+      }
+    },
+    "Status area · Calendar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "状态区域 · 日历"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "狀態區域 · 行事曆"
+          }
+        }
+      }
+    },
+    "Status area · Focus" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "状态区域 · 专注模式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "狀態區域 · 專注模式"
+          }
+        }
+      }
+    },
+    "Status area · Weather" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "状态区域 · 天气"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "狀態區域 · 天氣"
+          }
+        }
+      }
+    },
+    "Weather uses the shared status area layout." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "天气使用状态区域的共用布局。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "天氣使用狀態區域的共用版面配置。"
+          }
+        }
+      }
+    },
     "Configure live activity indicators and system alerts." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23720,13 +24094,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "控制浮动在媒体面板上方的可选计时器小组件，包括其经典、磨砂或液态玻璃表面（独立于全局材质设置）。"
+            "value" : "计时器显示在媒体面板上方，可独立选择经典、磨砂玻璃或液态玻璃外观。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "控制浮動在媒體面板上方的可選計時器小工具，包括其經典、磨砂或液態玻璃表面（獨立於全域材質設定）。"
+            "value" : "計時器顯示在媒體面板上方，可獨立選擇經典、霧面玻璃或液態玻璃外觀。"
           }
         }
       }
@@ -47000,9 +47374,8 @@
       }
     },
     "Layout" : {
-      "comment" : "A label for the segment control that lets the user choose the layout of the weather widget.",
-      "extractionState" : "stale",
-      "isCommentAutoGenerated" : true,
+      "comment" : "Layout tab for lock screen widget positioning and size.",
+      "extractionState" : "manual",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -47040,8 +47413,7 @@
             "value" : "版面配置"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "Layout Preview" : {
       "localizations" : {

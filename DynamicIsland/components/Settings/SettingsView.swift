@@ -361,6 +361,9 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .appearance, title: "App icon", keywords: ["app icon", "custom icon"], highlightID: SettingsTab.appearance.highlightID(for: "App icon")),
 
         // Lock Screen
+        SettingsSearchEntry(tab: .lockScreen, title: "After an event starts", keywords: ["calendar", "日历", "事件开始"], highlightID: SettingsTab.lockScreen.highlightID(for: "After an event starts")),
+        SettingsSearchEntry(tab: .lockScreen, title: "Lock Screen Positioning", keywords: ["layout", "position", "width", "布局", "位置", "宽度"], highlightID: SettingsTab.lockScreen.highlightID(for: "Lock Screen Positioning")),
+        SettingsSearchEntry(tab: .lockScreen, title: "Siri detection speed", keywords: ["Siri", "检测", "速度"], highlightID: SettingsTab.lockScreen.highlightID(for: "Siri detection speed")),
         SettingsSearchEntry(tab: .lockScreen, title: "Preview lock screen widgets", keywords: ["preview", "lock screen", "widgets"], highlightID: SettingsTab.lockScreen.highlightID(for: "Preview lock screen widgets")),
         SettingsSearchEntry(tab: .lockScreen, title: "Widget appearance", keywords: ["appearance", "theme", "dark", "light", "contrast", "wallpaper"], highlightID: SettingsTab.lockScreen.highlightID(for: "Widget appearance")),
         SettingsSearchEntry(tab: .lockScreen, title: "Enable lock screen live activity", keywords: ["lock screen", "live activity"], highlightID: SettingsTab.lockScreen.highlightID(for: "Enable lock screen live activity")),
@@ -669,7 +672,7 @@ struct SettingsView: View {
             // translucent material does not show through the tab-bar row as a
             // lighter band.
             .background(Color(nsColor: .windowBackgroundColor))
-                .modifier(SettingsPageStyle(title: resolvedSelection.title))
+                .modifier(SettingsPageStyle())
                 .navigationTitle(resolvedSelection.title)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -1107,7 +1110,6 @@ private struct FeatureGallery: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Features").font(.largeTitle.bold())
                     Text("Enabled features appear in the sidebar. Turning a feature off keeps its saved settings.")
                         .foregroundStyle(.secondary)
                     VStack(alignment: .leading, spacing: 8) {
@@ -1250,12 +1252,11 @@ private extension SettingsModuleRegistry {
 }
 
 private struct SettingsPageStyle: ViewModifier {
-    let title: String
-
+    var compact = false
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(macOS 15.0, *) {
-            content.formStyle(SettingsCardStyle(title: title))
+            content.formStyle(SettingsCardStyle(compact: compact))
         } else {
             content.formStyle(.grouped)
                 .labelStyle(.titleOnly)
@@ -1265,16 +1266,11 @@ private struct SettingsPageStyle: ViewModifier {
 
 @available(macOS 15.0, *)
 private struct SettingsCardStyle: FormStyle {
-    let title: String
+    var compact = false
     @Environment(\.colorScheme) private var colorScheme
     func makeBody(configuration: Configuration) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                Text(title)
-                    .font(.system(size: 28, weight: .bold))
-                    .padding(.bottom, 4)
-                    .accessibilityAddTraits(.isHeader)
-
                 ForEach(sections: configuration.content) { section in
                     VStack(alignment: .leading, spacing: 10) {
                         section.header
@@ -1290,7 +1286,7 @@ private struct SettingsCardStyle: FormStyle {
                                 row
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal, 20)
-                                    .padding(.vertical, 16)
+                                    .padding(.vertical, compact ? 12 : 16)
                             }
                         }
                         .background(colorScheme == .dark ? Color(white: 0.16) : Color.white,
@@ -1304,8 +1300,9 @@ private struct SettingsCardStyle: FormStyle {
                     }
                 }
             }
+            .frame(maxWidth: compact ? 712 : .infinity, alignment: .leading)
             .padding(24)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .font(.body)
@@ -5707,6 +5704,8 @@ struct SettingsPageTabBar<Item: Hashable>: View {
 }
 
 struct LockScreenSettings: View {
+    @Default(.enableDoNotDisturbDetection) private var focusDetectionEnabled
+    @Default(.showDoNotDisturbIndicator) private var focusIndicatorEnabled
     @Default(.showMediaOutputControl) private var showMediaOutputControl
     @Default(.enableReminderLiveActivity) private var enableReminderLiveActivity
     @Default(.lockScreenLiveActivityIconStyle) private var lockScreenLiveActivityIconStyle
@@ -5755,7 +5754,6 @@ struct LockScreenSettings: View {
     private var isAppleMusicActive: Bool {
         musicManager.bundleIdentifier == "com.apple.Music"
     }
-
 
     private func highlightID(_ title: String) -> String {
         SettingsTab.lockScreen.highlightID(for: title)
@@ -5834,618 +5832,705 @@ struct LockScreenSettings: View {
         )
     }
 
-    private enum SubTab: Hashable, CaseIterable, Identifiable {
-        case general, widgets
-
-        var id: Self { self }
-
+    private enum SubTab: Hashable, CaseIterable {
+        case general, widgets, layout
         var title: String {
             switch self {
             case .general: return String(localized: "General")
             case .widgets: return String(localized: "Widgets")
+            case .layout: return String(localized: "Layout")
             }
         }
-
         var icon: String {
             switch self {
             case .general: return "switch.2"
             case .widgets: return "widget.small"
+            case .layout: return "rectangle.3.group"
             }
         }
     }
 
     @EnvironmentObject private var coordinator: SettingsHighlightCoordinator
     @State private var selectedSubTab: SubTab = .general
+    @State private var advancedExpanded = false
+    @State private var mediaMoreExpanded = false
+    @State private var revealedSection: String?
+    @State private var searchedTitle: String?
 
-    /// Search anchors living in the general tab; every other lock screen
-    /// anchor is a widget row and needs the widgets tab visible before its
-    /// anchor can scroll into view.
-    private let generalHighlightTitles: Set<String> = [
-        "Enable lock screen live activity",
-        "Live activity icon",
-        "Play lock/unlock sounds",
-        "Siri detection speed",
-        "Material",
-        "Glass mode",
-        "Preview lock screen widgets",
-    ]
+    private var calendarBehaviorBinding: Binding<LockScreenCalendarBehavior> {
+        Binding(
+            get: {
+                LockScreenCalendarBehavior(
+                    entireDuration: lockScreenShowCalendarEventEntireDuration,
+                    afterStartEnabled: lockScreenShowCalendarEventAfterStartEnabled)
+            },
+            set: { behavior in
+                lockScreenShowCalendarEventEntireDuration = behavior.entireDuration
+                lockScreenShowCalendarEventAfterStartEnabled = behavior.afterStartEnabled
+            }
+        )
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            SettingsPageTabBar(
-                items: SubTab.allCases,
-                selection: $selectedSubTab,
-                title: { $0.title },
-                icon: { $0.icon },
-                accessibilityTitle: String(localized: "Lock Screen")
-            )
-            .frame(maxWidth: .infinity)
-            .padding(.top, 16)
-            .padding(.bottom, 2)
-
-            if selectedSubTab == .general {
-                generalForm
-            } else {
-                widgetsForm
+            ViewThatFits(in: .horizontal) {
+                HStack {
+                    tabBar
+                    Spacer(minLength: 12)
+                    previewButton
+                }
+                VStack(alignment: .leading, spacing: 12) {
+                    tabBar
+                    previewButton
+                }
             }
+            .frame(maxWidth: 712)
+            .padding(.horizontal, 24)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+
+            Group {
+                switch selectedSubTab {
+                case .general: generalForm
+                case .widgets: widgetsForm
+                case .layout:
+                    Form {
+                        LockScreenPositioningControls().settingsHighlight(id: highlightID("Lock Screen Positioning"))
+                    }
+                }
+            }
+            .modifier(SettingsPageStyle(compact: true))
         }
         .onAppear(perform: enforceLockScreenGlassConsistency)
         .onChange(of: lockScreenGlassStyle) { _, _ in enforceLockScreenGlassConsistency() }
         .onChange(of: lockScreenGlassCustomizationMode) { _, _ in enforceLockScreenGlassConsistency() }
         .navigationTitle("Lock Screen")
-        // Search jumps need the tab owning the anchor to be rendered first.
         .onReceive(coordinator.$pendingScrollRequest) { request in
             guard let request, request.tab == .lockScreen,
-                  request.id.hasPrefix("lockScreen-") else { return }
-            let title = String(request.id.dropFirst("lockScreen-".count))
-            selectedSubTab = generalHighlightTitles.contains(title) ? .general : .widgets
+                request.id.hasPrefix("lockScreen-")
+            else { return }
+            revealSearchResult(String(request.id.dropFirst("lockScreen-".count)))
+        }
+    }
+
+    private var tabBar: some View {
+        SettingsPageTabBar(
+            items: SubTab.allCases,
+            selection: Binding(
+                get: { selectedSubTab },
+                set: {
+                    selectedSubTab = $0
+                    revealedSection = nil
+                    searchedTitle = nil
+                }),
+            title: { $0.title }, icon: { $0.icon },
+            accessibilityTitle: String(localized: "Lock Screen")
+        )
+        .fixedSize()
+    }
+
+    private var previewButton: some View {
+        Button(previewManager.isPreviewVisible ? "Hide lock screen preview" : "Preview lock screen widgets") {
+            previewManager.togglePreview()
+        }
+        .settingsHighlight(id: highlightID("Preview lock screen widgets"))
+    }
+
+    private func dependencyLink(_ label: LocalizedStringKey, tab: SettingsTab, title: String) -> some View {
+        Button {
+            coordinator.focus(
+                on: SettingsSearchEntry(
+                    tab: tab, title: title, keywords: [],
+                    highlightID: tab.highlightID(for: title)))
+        } label: {
+            Label(label, systemImage: "arrow.up.forward.square")
+        }
+        .buttonStyle(.link)
+    }
+
+    private func revealSearchResult(_ title: String) {
+        searchedTitle = title
+        switch title {
+        case "Enable lock screen live activity", "Live activity icon", "Play lock/unlock sounds", "Widget appearance",
+            "Siri detection speed", "Preview lock screen widgets":
+            selectedSubTab = .general
+            advancedExpanded = title == "Siri detection speed"
+        case "Show lock screen media panel", "Enable album art parallax", "Always show volume control",
+            "Show media app icon", "Show merged AirPlay and output devices", "Material", "Glass mode",
+            "Show panel border", "Use enhanced liquid border", "Music panel variant", "Enable media panel blur",
+            "Show fullscreen artwork on right-click", "Use album art layout over fullscreen canvas",
+            "Keep album art visible during fullscreen artwork":
+            selectedSubTab = .widgets
+            revealedSection = "media"
+            mediaMoreExpanded = true
+        case "Show lock screen timer", "Timer surface", "Timer glass material", "Timer liquid mode",
+            "Timer widget variant":
+            selectedSubTab = .widgets
+            revealedSection = "timer"
+        case "Show lock screen weather", "Weather data provider", "Temperature unit", "Show location label",
+            "Show sunrise time", "Show AQI widget", "Air quality scale", "Use colored gauges":
+            selectedSubTab = .widgets
+            revealedSection = "weather"
+        case "Show battery indicator", "Use MacBook icon when on battery", "Show charging status",
+            "Show charging percentage", "Show Bluetooth battery":
+            selectedSubTab = .widgets
+            revealedSection = "battery"
+        case "Show next calendar event", "Show events within the next", "Show events from all calendars",
+            "Show countdown", "Show event for entire duration", "Hide active event and show next upcoming event",
+            "After an event starts", "Show time remaining", "Show start time after event begins":
+            selectedSubTab = .widgets
+            revealedSection = "calendar"
+        case "Show lock screen reminder", "Chip color", "Reminder alignment", "Reminder vertical offset":
+            selectedSubTab = .widgets
+            revealedSection = "reminder"
+        case "Lock Screen Positioning":
+            selectedSubTab = .layout
+        default:
+            selectedSubTab = .widgets
         }
     }
 
     private var generalForm: some View {
         Form {
-            Section {
-                Defaults.Toggle(key: .enableLockScreenLiveActivity) {
-                    Label("Enable lock screen live activity", systemImage: "display")
-                }
-                .settingsHighlight(id: highlightID("Enable lock screen live activity"))
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Label("Live activity icon", systemImage: "slider.horizontal.3")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.primary)
-
-                    HStack(spacing: 16) {
-                        Spacer(minLength: 0)
-                        LockScreenIconStyleCard(
-                            title: "Lock",
-                            systemImage: "lock.fill",
-                            isSelected: lockScreenLiveActivityIconStyle.showsLock
-                        ) {
-                            if lockScreenLiveActivityIconStyle.showsLock {
-                                if lockScreenLiveActivityIconStyle.showsFingerprint {
-                                    lockScreenLiveActivityIconStyle = .fingerprint
-                                }
-                            } else {
-                                lockScreenLiveActivityIconStyle = .both
-                            }
-                        }
-                        LockScreenIconStyleCard(
-                            title: "Fingerprint",
-                            systemImage: "touchid",
-                            isSelected: lockScreenLiveActivityIconStyle.showsFingerprint
-                        ) {
-                            if lockScreenLiveActivityIconStyle.showsFingerprint {
-                                if lockScreenLiveActivityIconStyle.showsLock {
-                                    lockScreenLiveActivityIconStyle = .lock
-                                }
-                            } else {
-                                lockScreenLiveActivityIconStyle = .both
-                            }
-                        }
-                        Spacer(minLength: 0)
-                    }
-                }
-                .settingsHighlight(id: highlightID("Live activity icon"))
-
-                Defaults.Toggle(key: .enableLockSounds) {
-                    Label("Play lock/unlock sounds", systemImage: "speaker.wave.2")
-                }
-                .settingsHighlight(id: highlightID("Play lock/unlock sounds"))
-            } header: {
-                Text("Live Activity & Feedback")
-            } footer: {
-                Text("Select the lock, the fingerprint, or both icons. When the fingerprint is selected, the live activity stays open long enough to complete its unlock animation.")
-            }
-
-            Section {
-                HStack(spacing: 12) {
-                    Label("Siri detection speed", systemImage: "clock").accessibilityHidden(true)
-                    Spacer(minLength: 12)
-                    Picker(selection: $siriResponsivenessMode) {
-                        ForEach(SiriResponsivenessMode.allCases) { mode in
-                            VStack(alignment: .leading) {
-                                Text(mode.displayName)
-                                Text(mode.description)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }.tag(mode)
-                        }
-                    } label: {
-                        Label("Siri detection speed", systemImage: "clock")
-                    }
-                        .labelsHidden()
-                }
-                .settingsHighlight(id: highlightID("Siri detection speed"))
-            } header: {
-                Text("Siri Detection")
-            } footer: {
-                Text("Higher speeds allow widgets to hide almost instantly when Siri is invoked, but may impact battery life when on battery power.")
-            }
-
-            Section {
-                if #available(macOS 26.0, *) {
-                    HStack(spacing: 12) {
-                        Label("Material", systemImage: "circle.lefthalf.filled").accessibilityHidden(true)
-                        Spacer(minLength: 12)
-                        Picker(selection: $lockScreenGlassStyle) {
-                            ForEach(LockScreenGlassStyle.allCases) { style in
-                                Text(style.localizedName).tag(style)
-                            }
-                        } label: {
-                            Label("Material", systemImage: "circle.lefthalf.filled")
-                        }
-                            .labelsHidden()
-                    }
-                    .settingsHighlight(id: highlightID("Material"))
-                } else {
-                    HStack(spacing: 12) {
-                        Label("Material", systemImage: "circle.lefthalf.filled").accessibilityHidden(true)
-                        Spacer(minLength: 12)
-                        Picker(selection: $lockScreenGlassStyle) {
-                            ForEach(LockScreenGlassStyle.allCases) { style in
-                                Text(style.localizedName).tag(style)
-                            }
-                        } label: {
-                            Label("Material", systemImage: "circle.lefthalf.filled")
-                        }
-                            .labelsHidden()
-                    }
-                    .disabled(true)
-                    .settingsHighlight(id: highlightID("Material"))
-                    Text("Liquid Glass requires macOS 26 or later.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                if lockScreenGlassStyle == .liquid {
-                    SettingsSegmentedPicker(
-                        "Glass mode",
-                        selection: $lockScreenGlassCustomizationMode,
-                        items: Array(LockScreenGlassCustomizationMode.allCases)
-                    ) { $0.localizedName }
-                    .settingsHighlight(id: highlightID("Glass mode"))
-
-                    if lockScreenGlassCustomizationMode == .customLiquid {
-                        Text("Use the sliders below to pick unique Apple liquid-glass variants for each widget.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                } else {
-                    Text("Custom Liquid settings require the Liquid Glass material.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            } header: {
-                Text("Lock Screen Glass")
-            } footer: {
-                Text("Choose the global material mode for lock screen widgets. Custom Liquid unlocks per-widget variant sliders while Standard sticks to the classic frosted/liquid options.")
-            }
-
-            Section {
-                Button("Copy Latest Crash Report") {
-                    copyLatestCrashReport()
-                }
-            } header: {
-                Text("Diagnostics")
-            } footer: {
-                Text("Collect the latest crash report to share with the developer when reporting lock screen or overlay issues.")
-            }
-
-            Section {
-                Button(previewManager.isPreviewVisible ? "Hide lock screen preview" : "Preview lock screen widgets") {
-                    previewManager.togglePreview()
-                }
-                .buttonStyle(.borderedProminent)
-                .settingsHighlight(id: highlightID("Preview lock screen widgets"))
-            } header: {
-                Text("Preview")
-            } footer: {
-                Text("Opens a transparent preview window with mock data that mirrors the current lock screen widget configuration.")
-            }
+            activitySection
+            appearanceSection
+            advancedSection
         }
     }
 
     private var widgetsForm: some View {
         Form {
-            Section {
-                SettingsSegmentedPicker(
-                    "Widget appearance",
-                    selection: $lockScreenWidgetAppearance,
-                    items: Array(LockScreenWidgetAppearance.allCases)
-                ) { $0.localizedName }
-                .settingsHighlight(id: highlightID("Widget appearance"))
+            mediaSection
+            timerSection
+            statusLayoutSection
+            weatherSection
+            batterySection
+            focusSection
+            calendarSection
+            reminderSection
+        }
+    }
 
-                SettingsSegmentedPicker(
-                    "Widget layout",
-                    selection: $lockScreenWeatherWidgetStyle,
-                    items: Array(LockScreenWeatherWidgetStyle.allCases)
-                ) { $0.localizedName }
-                .settingsHighlight(id: highlightID("Widget layout"))
-
-                if lockScreenWeatherWidgetStyle == .circular {
-                    Text("The circular layout has no room for the location label or sunrise time, and draws the battery gauge as a ring.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            } header: {
-                Text("Appearance")
-            } footer: {
-                Text("Applies to the whole status widget \u{2014} weather, battery, focus, location and the next-event row are all drawn in the chosen appearance and layout. Use Light when the wallpaper is bright so titles and labels stay readable.")
+    private var activitySection: some View {
+        Section {
+            Defaults.Toggle(key: .enableLockScreenLiveActivity) {
+                Label("Enable lock screen live activity", systemImage: "display")
             }
+            .settingsHighlight(id: highlightID("Enable lock screen live activity"))
 
-            Section {
-                Defaults.Toggle(key: .enableLockScreenMediaWidget) {
-                    Label("Show lock screen media panel", systemImage: "music.note")
+            LockScreenSegmentedPicker(
+                "Live activity icon", selection: $lockScreenLiveActivityIconStyle,
+                items: [LockScreenLiveActivityIconStyle.lock, .fingerprint, .both]
+            ) { style in
+                switch style {
+                case .lock: return String(localized: "Lock")
+                case .fingerprint: return String(localized: "Fingerprint")
+                case .both: return String(localized: "Lock and fingerprint")
                 }
-                .settingsHighlight(id: highlightID("Show lock screen media panel"))
-                Defaults.Toggle(key: .lockScreenMusicAlbumParallaxEnabled) {
-                    Label("Enable album art parallax", systemImage: "power")
-                }
-                .settingsHighlight(id: highlightID("Enable album art parallax"))
-                Text("Applies the notch-style parallax effect to the lock screen media widget album art.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            }
+            .settingsHighlight(id: highlightID("Live activity icon"))
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Defaults.Toggle(key: .alwaysShowLockScreenVolume) {
-                        Label("Always show volume control", systemImage: "speaker.wave.2")
-                    }
-                    .disabled(!showMediaOutputControl)
-                    Text(showMediaOutputControl
-                         ? "Keeps a volume slider under the playback controls on the lock screen, instead of leaving it behind the output button. The volume keys move it while the Mac is locked, where the notch cannot draw."
-                         : "Needs the \"Show Change Media Output control\" setting on the Media tab, which the lock screen panel takes its volume slider from.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .settingsHighlight(id: highlightID("Always show volume control"))
+            Defaults.Toggle(key: .enableLockSounds) {
+                Label("Play lock/unlock sounds", systemImage: "speaker.wave.2")
+            }
+            .settingsHighlight(id: highlightID("Play lock/unlock sounds"))
+        } header: {
+            Text("Live Activity & Feedback")
+        } footer: {
+            Text(
+                "Select the lock, the fingerprint, or both icons. When the fingerprint is selected, the live activity stays open long enough to complete its unlock animation."
+            )
+        }
+    }
 
-                Defaults.Toggle(key: .lockScreenShowAppIcon) {
-                    Label("Show media app icon", systemImage: "music.note")
-                }
-                .disabled(!enableLockScreenMediaWidget)
-                .settingsHighlight(id: highlightID("Show media app icon"))
-                if isAppleMusicActive {
-                    Defaults.Toggle(key: .lockScreenMusicMergedAirPlayOutput) {
-                        Label("Show merged AirPlay and output devices", systemImage: "power")
+    private var appearanceSection: some View {
+        Section {
+            LockScreenSegmentedPicker(
+                "Widget appearance",
+                selection: $lockScreenWidgetAppearance,
+                items: Array(LockScreenWidgetAppearance.allCases)
+            ) { $0.localizedName }
+            .settingsHighlight(id: highlightID("Widget appearance"))
+
+        } header: {
+            Text("Widget appearance")
+        } footer: {
+            Text(
+                "Sets the text contrast for media, timer, status and reminder widgets. Choose Light for a bright wallpaper."
+            )
+        }
+    }
+
+    private var advancedSection: some View {
+        Section {
+            DisclosureGroup("Advanced", isExpanded: $advancedExpanded) {
+                VStack(alignment: .leading, spacing: 16) {
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        LockScreenSettingRow("Siri detection speed") {
+                            Picker(selection: $siriResponsivenessMode) {
+                                ForEach(SiriResponsivenessMode.allCases) { mode in
+                                    Text(mode.displayName).tag(mode)
+                                }
+                            } label: {
+                                Label("Siri detection speed", systemImage: "clock")
+                            }
+                            .labelsHidden()
+                            .pickerStyle(.menu)
+                        }
+                        Text(siriResponsivenessMode.description)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    .disabled(!enableLockScreenMediaWidget)
-                    .settingsHighlight(id: highlightID("Show merged AirPlay and output devices"))
-                }
-                Defaults.Toggle(key: .lockScreenPanelShowsBorder) {
-                    Label("Show panel border", systemImage: "power")
-                }
-                .disabled(!enableLockScreenMediaWidget)
-                .settingsHighlight(id: highlightID("Show panel border"))
-                if lockScreenGlassCustomizationMode == .customLiquid {
-                    Defaults.Toggle(key: .lockScreenMusicUsesEnhancedLiquidBorder) {
-                        Label("Use enhanced liquid border", systemImage: "slider.horizontal.3")
-                    }
-                    .disabled(!enableLockScreenMediaWidget)
-                    .settingsHighlight(id: highlightID("Use enhanced liquid border"))
-                }
-                if lockScreenGlassCustomizationMode == .customLiquid {
-                    variantSlider(
-                        title: "Music panel variant",
-                        value: musicVariantBinding,
-                        currentValue: lockScreenMusicLiquidGlassVariant.rawValue,
-                        isEnabled: enableLockScreenMediaWidget,
-                        highlight: highlightID("Music panel variant"),
-                        preview: AnyView(
-                            LockScreenGlassVariantPreviewCell(variant: $lockScreenMusicLiquidGlassVariant)
-                        )
+                    .help(
+                        "Higher speeds allow widgets to hide almost instantly when Siri is invoked, but may impact battery life when on battery power."
                     )
-                } else if lockScreenGlassStyle == .frosted {
-                    Defaults.Toggle(key: .lockScreenPanelUsesBlur) {
-                        Label("Enable media panel blur", systemImage: "music.note")
-                    }
-                    .disabled(!enableLockScreenMediaWidget)
-                    .settingsHighlight(id: highlightID("Enable media panel blur"))
-                } else {
-                    blurSettingUnavailableRow
+                    .settingsHighlight(id: highlightID("Siri detection speed"))
+                    Divider()
+                    Button("Copy Latest Crash Report") { copyLatestCrashReport() }
+                }
+                .padding(.top, 12)
+            }
+        }
+    }
 
-                        .settingsHighlight(id: highlightID("Enable media panel blur"))
-                }
-                Defaults.Toggle(key: .lockScreenMusicFullscreenArtworkEnabled) {
-                    Label("Show fullscreen artwork on right-click", systemImage: "display")
-                }
-                .disabled(!enableLockScreenMediaWidget)
-                .settingsHighlight(id: highlightID("Show fullscreen artwork on right-click"))
-                Defaults.Toggle(key: .lockScreenUseArtworkLayoutOverFullscreenCanvas) {
-                    Label("Use album art layout over fullscreen canvas", systemImage: "display")
-                }
-                .disabled(!enableLockScreenMediaWidget || !lockScreenMusicFullscreenArtworkEnabled)
-                .settingsHighlight(id: highlightID("Use album art layout over fullscreen canvas"))
-                VStack(alignment: .leading, spacing: 4) {
-                    Defaults.Toggle(key: .lockScreenKeepAlbumArtVisibleDuringFullscreenArtwork) {
-                        Label("Keep album art visible during fullscreen artwork", systemImage: "display")
-                    }
-                    .disabled(!enableLockScreenMediaWidget || !lockScreenMusicFullscreenArtworkEnabled)
-                    .settingsHighlight(id: highlightID("Keep album art visible during fullscreen artwork"))
-                    Text("Right-click the album art on the lock screen to set it as the wallpaper. Right-click again or click the background to restore the original wallpaper. If a canvas is available, Eave can also keep the same album art + player layout on top of the live canvas.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                if !showStandardMediaControls {
-                    Text("Enable Dynamic Island media controls to manage the lock screen panel.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            } header: {
-                Text("Media Panel")
-            } footer: {
-                Text("Enable and style the media controls that appear above the system clock when the screen is locked.")
+    private var mediaSection: some View {
+        Section {
+            Defaults.Toggle(key: .enableLockScreenMediaWidget) {
+                Label("Show lock screen media panel", systemImage: "music.note")
             }
             .disabled(!showStandardMediaControls)
-
-
-            Section {
-                Defaults.Toggle(key: .enableLockScreenTimerWidget) {
-                    Label("Show lock screen timer", systemImage: "clock")
-                }
-                .settingsHighlight(id: highlightID("Show lock screen timer"))
-                SettingsSegmentedPicker(
-                    "Timer surface",
-                    selection: timerSurfaceBinding,
-                    items: Array(LockScreenTimerSurfaceMode.allCases)
-                ) { $0.localizedName }
-                .disabled(!enableLockScreenTimerWidget)
-
-                .settingsHighlight(id: highlightID("Timer surface"))
-
-                if timerGlassModeIsGlass {
-                    HStack(spacing: 12) {
-                        Label("Timer glass material", systemImage: "clock").accessibilityHidden(true)
-                        Spacer(minLength: 12)
-                        Picker(selection: $lockScreenTimerGlassStyle) {
-                            ForEach(LockScreenGlassStyle.allCases) { style in
-                                Text(style.localizedName).tag(style)
-                            }
-                        } label: {
-                            Label("Timer glass material", systemImage: "clock")
-                        }
-                            .labelsHidden()
+            .settingsHighlight(id: highlightID("Show lock screen media panel"))
+            if !showStandardMediaControls {
+                dependencyLink(
+                    "Enable media controls in Media settings", tab: .media,
+                    title: "Show media controls in Dynamic Island")
+            }
+            if enableLockScreenMediaWidget && showStandardMediaControls || revealedSection == "media" {
+                Group {
+                    Defaults.Toggle(key: .lockScreenMusicAlbumParallaxEnabled) {
+                        Label("Enable album art parallax", systemImage: "power")
                     }
+                    .settingsHighlight(id: highlightID("Enable album art parallax"))
+                    .help("Applies the notch-style parallax effect to the lock screen media widget album art.")
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Defaults.Toggle(key: .alwaysShowLockScreenVolume) {
+                            Label("Always show volume control", systemImage: "speaker.wave.2")
+                        }
+                        .disabled(!showMediaOutputControl)
+                        Text(
+                            showMediaOutputControl
+                                ? "Keeps a volume slider under the playback controls on the lock screen, instead of leaving it behind the output button. The volume keys move it while the Mac is locked, where the notch cannot draw."
+                                : "Needs the \"Show Change Media Output control\" setting on the Media tab, which the lock screen panel takes its volume slider from."
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                    .settingsHighlight(id: highlightID("Always show volume control"))
+                    if !showMediaOutputControl {
+                        dependencyLink("Open Media settings", tab: .media, title: "Show Change Media Output control")
+                    }
+
+                    Defaults.Toggle(key: .lockScreenShowAppIcon) {
+                        Label("Show media app icon", systemImage: "music.note")
+                    }
+                    .disabled(!enableLockScreenMediaWidget)
+                    .settingsHighlight(id: highlightID("Show media app icon"))
+                    if isAppleMusicActive {
+                        Defaults.Toggle(key: .lockScreenMusicMergedAirPlayOutput) {
+                            Label("Show merged AirPlay and output devices", systemImage: "power")
+                        }
+                        .disabled(!enableLockScreenMediaWidget)
+                        .settingsHighlight(id: highlightID("Show merged AirPlay and output devices"))
+                    }
+                    DisclosureGroup("More settings", isExpanded: $mediaMoreExpanded) {
+                        mediaAppearanceControls
+                            .padding(.top, 12)
+                    }
+
+                }
+                .disabled(!(enableLockScreenMediaWidget && showStandardMediaControls))
+            }
+        } header: {
+            Text("Media Panel")
+        } footer: {
+            Text("Enable and style the media controls that appear above the system clock when the screen is locked.")
+        }
+    }
+
+    private var mediaAppearanceControls: some View {
+        VStack(alignment: .leading, spacing: 16) {
+
+            if #available(macOS 26.0, *) {
+                LockScreenSettingRow("Material") {
+                    Picker(selection: $lockScreenGlassStyle) {
+                        ForEach(LockScreenGlassStyle.allCases) { style in
+                            Text(style.localizedName).tag(style)
+                        }
+                    } label: {
+                        Label("Material", systemImage: "circle.lefthalf.filled")
+                    }
+                    .labelsHidden()
+                }
+                .settingsHighlight(id: highlightID("Material"))
+            } else {
+                LockScreenSettingRow("Material") {
+                    Picker(selection: $lockScreenGlassStyle) {
+                        ForEach(LockScreenGlassStyle.allCases) { style in
+                            Text(style.localizedName).tag(style)
+                        }
+                    } label: {
+                        Label("Material", systemImage: "circle.lefthalf.filled")
+                    }
+                    .labelsHidden()
+                }
+                .disabled(true)
+                .settingsHighlight(id: highlightID("Material"))
+                Text("Liquid Glass requires macOS 26 or later.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if lockScreenGlassStyle == .liquid || searchedTitle == "Glass mode" {
+                LockScreenSegmentedPicker(
+                    "Glass mode",
+                    selection: $lockScreenGlassCustomizationMode,
+                    items: Array(LockScreenGlassCustomizationMode.allCases)
+                ) { $0.localizedName }
+                .disabled(lockScreenGlassStyle != .liquid)
+                .settingsHighlight(id: highlightID("Glass mode"))
+
+                if lockScreenGlassCustomizationMode == .customLiquid {
+                    Text("Choose a glass variant for the media panel below.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Text("Custom Liquid settings require the Liquid Glass material.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Defaults.Toggle(key: .lockScreenPanelShowsBorder) {
+                Label("Show panel border", systemImage: "power")
+            }
+            .disabled(!enableLockScreenMediaWidget)
+            .settingsHighlight(id: highlightID("Show panel border"))
+            if lockScreenGlassCustomizationMode == .customLiquid {
+                Defaults.Toggle(key: .lockScreenMusicUsesEnhancedLiquidBorder) {
+                    Label("Use enhanced liquid border", systemImage: "slider.horizontal.3")
+                }
+                .disabled(!enableLockScreenMediaWidget)
+                .settingsHighlight(id: highlightID("Use enhanced liquid border"))
+            }
+            if lockScreenGlassCustomizationMode == .customLiquid {
+                variantSlider(
+                    title: "Music panel variant",
+                    value: musicVariantBinding,
+                    currentValue: lockScreenMusicLiquidGlassVariant.rawValue,
+                    isEnabled: enableLockScreenMediaWidget,
+                    highlight: highlightID("Music panel variant"),
+                    preview: AnyView(
+                        LockScreenGlassVariantPreviewCell(variant: $lockScreenMusicLiquidGlassVariant)
+                    )
+                )
+            } else if lockScreenGlassStyle == .frosted {
+                Defaults.Toggle(key: .lockScreenPanelUsesBlur) {
+                    Label("Enable media panel blur", systemImage: "music.note")
+                }
+                .disabled(!enableLockScreenMediaWidget)
+                .settingsHighlight(id: highlightID("Enable media panel blur"))
+            } else {
+                blurSettingUnavailableRow
+
+                    .settingsHighlight(id: highlightID("Enable media panel blur"))
+            }
+            Defaults.Toggle(key: .lockScreenMusicFullscreenArtworkEnabled) {
+                Label("Show fullscreen artwork on right-click", systemImage: "display")
+            }
+            .disabled(!enableLockScreenMediaWidget)
+            .settingsHighlight(id: highlightID("Show fullscreen artwork on right-click"))
+            Defaults.Toggle(key: .lockScreenUseArtworkLayoutOverFullscreenCanvas) {
+                Label("Use album art layout over fullscreen canvas", systemImage: "display")
+            }
+            .disabled(!enableLockScreenMediaWidget || !lockScreenMusicFullscreenArtworkEnabled)
+            .settingsHighlight(id: highlightID("Use album art layout over fullscreen canvas"))
+            VStack(alignment: .leading, spacing: 4) {
+                Defaults.Toggle(key: .lockScreenKeepAlbumArtVisibleDuringFullscreenArtwork) {
+                    Label("Keep album art visible during fullscreen artwork", systemImage: "display")
+                }
+                .disabled(!enableLockScreenMediaWidget || !lockScreenMusicFullscreenArtworkEnabled)
+                .settingsHighlight(id: highlightID("Keep album art visible during fullscreen artwork"))
+                Text(
+                    "Right-click the album art on the lock screen to set it as the wallpaper. Right-click again or click the background to restore the original wallpaper. If a canvas is available, Eave can also keep the same album art + player layout on top of the live canvas."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+
+        }
+    }
+
+    private var timerSection: some View {
+        Section {
+            Defaults.Toggle(key: .enableLockScreenTimerWidget) {
+                Label("Show lock screen timer", systemImage: "clock")
+            }
+            .settingsHighlight(id: highlightID("Show lock screen timer"))
+            if enableLockScreenTimerWidget || revealedSection == "timer" {
+                Group {
+                    LockScreenSegmentedPicker(
+                        "Timer surface",
+                        selection: timerSurfaceBinding,
+                        items: Array(LockScreenTimerSurfaceMode.allCases)
+                    ) { $0.localizedName }
                     .disabled(!enableLockScreenTimerWidget)
 
-                    .settingsHighlight(id: highlightID("Timer glass material"))
+                    .settingsHighlight(id: highlightID("Timer surface"))
 
-                    if lockScreenTimerGlassStyle == .liquid {
-                        SettingsSegmentedPicker(
-                            "Timer liquid mode",
-                            selection: $lockScreenTimerGlassCustomizationMode,
-                            items: Array(LockScreenGlassCustomizationMode.allCases)
-                        ) { $0.localizedName }
+                    if timerGlassModeIsGlass || searchedTitle == "Timer glass material"
+                        || searchedTitle == "Timer liquid mode" || searchedTitle == "Timer widget variant"
+                    {
+                        LockScreenSettingRow("Timer glass material") {
+                            Picker(selection: $lockScreenTimerGlassStyle) {
+                                ForEach(LockScreenGlassStyle.allCases) { style in
+                                    Text(style.localizedName).tag(style)
+                                }
+                            } label: {
+                                Label("Timer glass material", systemImage: "clock")
+                            }
+                            .labelsHidden()
+                        }
                         .disabled(!enableLockScreenTimerWidget)
 
-                        .settingsHighlight(id: highlightID("Timer liquid mode"))
+                        .disabled(!timerGlassModeIsGlass)
+                        .settingsHighlight(id: highlightID("Timer glass material"))
 
-                        if lockScreenTimerGlassCustomizationMode == .customLiquid {
-                            variantSlider(
-                                title: "Timer widget variant",
-                                value: timerVariantBinding,
-                                currentValue: lockScreenTimerLiquidGlassVariant.rawValue,
-                                isEnabled: enableLockScreenTimerWidget,
-                                highlight: highlightID("Timer widget variant")
-                            )
+                        if lockScreenTimerGlassStyle == .liquid || searchedTitle == "Timer liquid mode"
+                            || searchedTitle == "Timer widget variant"
+                        {
+                            LockScreenSegmentedPicker(
+                                "Timer liquid mode",
+                                selection: $lockScreenTimerGlassCustomizationMode,
+                                items: Array(LockScreenGlassCustomizationMode.allCases)
+                            ) { $0.localizedName }
+                            .disabled(!enableLockScreenTimerWidget)
+
+                            .disabled(!timerGlassModeIsGlass || lockScreenTimerGlassStyle != .liquid)
+                            .settingsHighlight(id: highlightID("Timer liquid mode"))
+
+                            if lockScreenTimerGlassCustomizationMode == .customLiquid
+                                || searchedTitle == "Timer widget variant"
+                            {
+                                variantSlider(
+                                    title: "Timer widget variant",
+                                    value: timerVariantBinding,
+                                    currentValue: lockScreenTimerLiquidGlassVariant.rawValue,
+                                    isEnabled: enableLockScreenTimerWidget && timerGlassModeIsGlass
+                                        && lockScreenTimerGlassStyle == .liquid
+                                        && lockScreenTimerGlassCustomizationMode == .customLiquid,
+                                    highlight: highlightID("Timer widget variant")
+                                )
+                            }
+                        } else {
+                            Text("Uses the frosted blur treatment while glass mode is enabled.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     } else {
-                        Text("Uses the frosted blur treatment while glass mode is enabled.")
+                        Text("Classic mode keeps the original translucent black background.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
+
                     }
-                } else {
-                    Text("Classic mode keeps the original translucent black background.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
 
                 }
-            } header: {
-                Text("Timer Widget")
-            } footer: {
-                Text("Controls the optional timer widget that floats above the media panel, including its classic, frosted, or liquid glass surface independent of the global material setting.")
+                .disabled(!(enableLockScreenTimerWidget))
             }
+        } header: {
+            Text("Timer Widget")
+        } footer: {
+            Text("The timer sits above the media panel and has its own surface and material settings.")
+        }
+    }
 
-            Section {
-                LocationSettingsPermissionRow(message: "Optional. Allows weather to use your current location.")
-                Defaults.Toggle(key: .enableLockScreenWeatherWidget) {
-                    Label("Show lock screen weather", systemImage: "display")
-                }
-                .settingsHighlight(id: highlightID("Show lock screen weather"))
+    private var statusLayoutSection: some View {
+        Section {
+            LockScreenSegmentedPicker(
+                "Status area layout",
+                selection: $lockScreenWeatherWidgetStyle,
+                items: Array(LockScreenWeatherWidgetStyle.allCases)
+            ) { $0.localizedName }
+            .settingsHighlight(id: highlightID("Widget layout"))
 
+            if lockScreenWeatherWidgetStyle == .circular {
+                Text(
+                    "The circular layout has no room for the location label or sunrise time, and draws the battery gauge as a ring."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Status area")
+        } footer: {
+            Text("Shared layout for weather, battery, Focus and calendar events.")
+        }
+    }
+
+    private var weatherSection: some View {
+        Section {
+            Defaults.Toggle(key: .enableLockScreenWeatherWidget) {
+                Label("Show lock screen weather", systemImage: "display")
+            }
+            .settingsHighlight(id: highlightID("Show lock screen weather"))
+            if enableLockScreenWeatherWidget || revealedSection == "weather" {
                 Group {
-                    SettingsSegmentedPicker(
-                        "Weather data provider",
-                        selection: $lockScreenWeatherProviderSource,
-                        items: Array(LockScreenWeatherProviderSource.allCases)
-                    ) { $0.displayName }
-                    .settingsHighlight(id: highlightID("Weather data provider"))
-
-                    SettingsSegmentedPicker(
-                        "Temperature unit",
-                        selection: $lockScreenWeatherTemperatureUnit,
-                        items: Array(LockScreenWeatherTemperatureUnit.allCases)
-                    ) { $0.localizedName }
-                    .settingsHighlight(id: highlightID("Temperature unit"))
-
-                    Defaults.Toggle(key: .lockScreenWeatherShowsLocation) {
-                        Label("Show location label", systemImage: "power")
-                    }
-                    .disabled(lockScreenWeatherWidgetStyle == .circular)
-                    .help(lockScreenWeatherWidgetStyle == .circular ? "Available in the inline layout only." : "")
-                    .settingsHighlight(id: highlightID("Show location label"))
-
-                    Defaults.Toggle(key: .lockScreenWeatherShowsSunrise) {
-                        Label("Show sunrise time", systemImage: "clock")
-                    }
-                    .disabled(lockScreenWeatherWidgetStyle != .inline)
-                    .help(lockScreenWeatherWidgetStyle != .inline ? "Available in the inline layout only." : "")
-                    .settingsHighlight(id: highlightID("Show sunrise time"))
-
-                    Defaults.Toggle(key: .lockScreenWeatherShowsAQI) {
-                        Label("Show AQI widget", systemImage: "power")
-                    }
-                    .disabled(!lockScreenWeatherProviderSource.supportsAirQuality)
-                    .settingsHighlight(id: highlightID("Show AQI widget"))
+                    LocationSettingsPermissionRow(message: "Optional. Allows weather to use your current location.")
 
                     Group {
-                        SettingsSegmentedPicker(
-                            "Air quality scale",
-                            selection: $lockScreenWeatherAQIScale,
-                            items: Array(LockScreenWeatherAirQualityScale.allCases)
+                        LockScreenSegmentedPicker(
+                            "Weather data provider",
+                            selection: $lockScreenWeatherProviderSource,
+                            items: Array(LockScreenWeatherProviderSource.allCases)
                         ) { $0.displayName }
-                        .settingsHighlight(id: highlightID("Air quality scale"))
-                    }
-                    .disabled(!(lockScreenWeatherShowsAQI && lockScreenWeatherProviderSource.supportsAirQuality))
+                        .settingsHighlight(id: highlightID("Weather data provider"))
 
-                    if !lockScreenWeatherProviderSource.supportsAirQuality {
-                        Text("Air quality requires the Open Meteo provider.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                        LockScreenSegmentedPicker(
+                            "Temperature unit",
+                            selection: $lockScreenWeatherTemperatureUnit,
+                            items: Array(LockScreenWeatherTemperatureUnit.allCases)
+                        ) { $0.localizedName }
+                        .settingsHighlight(id: highlightID("Temperature unit"))
 
-                    Defaults.Toggle(key: .lockScreenWeatherUsesGaugeTint) {
-                        Label("Use colored gauges", systemImage: "paintpalette")
+                        Defaults.Toggle(key: .lockScreenWeatherShowsLocation) {
+                            Label("Show location label", systemImage: "power")
+                        }
+                        .disabled(lockScreenWeatherWidgetStyle == .circular)
+                        .help(lockScreenWeatherWidgetStyle == .circular ? "Available in the inline layout only." : "")
+                        .settingsHighlight(id: highlightID("Show location label"))
+
+                        Defaults.Toggle(key: .lockScreenWeatherShowsSunrise) {
+                            Label("Show sunrise time", systemImage: "clock")
+                        }
+                        .disabled(lockScreenWeatherWidgetStyle != .inline)
+                        .help(lockScreenWeatherWidgetStyle != .inline ? "Available in the inline layout only." : "")
+                        .settingsHighlight(id: highlightID("Show sunrise time"))
+
+                        Defaults.Toggle(key: .lockScreenWeatherShowsAQI) {
+                            Label("Show AQI widget", systemImage: "power")
+                        }
+                        .disabled(!lockScreenWeatherProviderSource.supportsAirQuality)
+                        .settingsHighlight(id: highlightID("Show AQI widget"))
+
+                        Group {
+                            LockScreenSegmentedPicker(
+                                "Air quality scale",
+                                selection: $lockScreenWeatherAQIScale,
+                                items: Array(LockScreenWeatherAirQualityScale.allCases)
+                            ) { $0.displayName }
+                            .settingsHighlight(id: highlightID("Air quality scale"))
+                        }
+                        .disabled(!(lockScreenWeatherShowsAQI && lockScreenWeatherProviderSource.supportsAirQuality))
+
+                        if !lockScreenWeatherProviderSource.supportsAirQuality {
+                            Text("Air quality requires the Open Meteo provider.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Defaults.Toggle(key: .lockScreenWeatherUsesGaugeTint) {
+                            Label("Use colored gauges", systemImage: "paintpalette")
+                        }
+                        .settingsHighlight(id: highlightID("Use colored gauges"))
                     }
-                    .settingsHighlight(id: highlightID("Use colored gauges"))
+                    .disabled(!enableLockScreenWeatherWidget)
+
                 }
-                .disabled(!enableLockScreenWeatherWidget)
-            } header: {
-                Text("Weather Widget")
-            } footer: {
-                Text("Enable the weather capsule and configure its provider, units, and optional AQI indicator. Its layout is set by \"Widget layout\" under Appearance, which covers the whole status widget.")
+                .disabled(!(enableLockScreenWeatherWidget))
             }
+        } header: {
+            Text("Status area · Weather")
+        } footer: {
+            Text("Weather uses the shared status area layout.")
+        }
+    }
 
+    @ViewBuilder
+    private var batterySection: some View {
+        if BatteryActivityManager.shared.hasBattery() {
             Section {
-                Defaults.Toggle(key: .enableLockScreenReminderWidget) {
-                    Label("Show lock screen reminder", systemImage: "calendar")
+                Defaults.Toggle(key: .lockScreenBatteryShowsBatteryGauge) {
+                    Label("Show battery indicator", systemImage: "battery.100")
                 }
-                .disabled(!enableReminderLiveActivity)
-                .help(enableReminderLiveActivity ? "" : "Requires the reminder live activity, which is off in the section above.")
-                .settingsHighlight(id: highlightID("Show lock screen reminder"))
+                .settingsHighlight(id: highlightID("Show battery indicator"))
 
-                if !enableReminderLiveActivity {
-                    Text("The lock screen reminder is produced by the reminder live activity, which is currently off in Live Activities settings.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                SettingsSegmentedPicker(
-                    "Chip color",
-                    selection: $lockScreenReminderChipStyle,
-                    items: Array(LockScreenReminderChipStyle.allCases)
-                ) { $0.localizedName }
-                .disabled(!enableLockScreenReminderWidget || !enableReminderLiveActivity)
-                .settingsHighlight(id: highlightID("Chip color"))
-
-                SettingsSegmentedPicker(
-                    "Alignment",
-                    selection: $lockScreenReminderWidgetHorizontalAlignment,
-                    items: ReminderAlignmentOption.allCases.map(\.rawValue)
-                ) { ReminderAlignmentOption(rawValue: $0)?.title ?? $0 }
-                .disabled(!enableLockScreenReminderWidget || !enableReminderLiveActivity)
-                .settingsHighlight(id: highlightID("Reminder alignment"))
-
-                HStack {
-                    Text("Vertical offset")
-                    SettingsSlider(
-                        value: $lockScreenReminderWidgetVerticalOffset,
-                        in: -160...160,
-                        step: 2,
-                        valueLabel: Text("\(Int(lockScreenReminderWidgetVerticalOffset)) px")
-                    )
-                    .disabled(!enableLockScreenReminderWidget || !enableReminderLiveActivity)
-                }
-                .settingsHighlight(id: highlightID("Reminder vertical offset"))
-            } header: {
-                Text("Reminder Widget")
-            } footer: {
-                Text("Controls the lock screen reminder chip and its positioning.")
-            }
-
-            if BatteryActivityManager.shared.hasBattery() {
-                Section {
-                    Defaults.Toggle(key: .lockScreenBatteryShowsBatteryGauge) {
-                        Label("Show battery indicator", systemImage: "battery.100")
+                if lockScreenWeatherShowsBatteryGauge || revealedSection == "battery" {
+                    Defaults.Toggle(key: .lockScreenBatteryUsesLaptopSymbol) {
+                        Label("Use MacBook icon when on battery", systemImage: "battery.100")
                     }
-                    .settingsHighlight(id: highlightID("Show battery indicator"))
+                    .disabled(!lockScreenWeatherShowsBatteryGauge)
+                    .settingsHighlight(id: highlightID("Use MacBook icon when on battery"))
 
-                    if lockScreenWeatherShowsBatteryGauge {
-                        Defaults.Toggle(key: .lockScreenBatteryUsesLaptopSymbol) {
-                            Label("Use MacBook icon when on battery", systemImage: "battery.100")
-                        }
-                        .settingsHighlight(id: highlightID("Use MacBook icon when on battery"))
-
-                        Defaults.Toggle(key: .lockScreenBatteryShowsCharging) {
-                            Label("Show charging status", systemImage: "battery.100")
-                        }
-                        .settingsHighlight(id: highlightID("Show charging status"))
-
-                        if lockScreenWeatherShowsCharging {
-                            Defaults.Toggle(key: .lockScreenBatteryShowsChargingPercentage) {
-                                Label("Show charging percentage", systemImage: "battery.100")
-                            }
-                            .settingsHighlight(id: highlightID("Show charging percentage"))
-                        }
-
-                        Defaults.Toggle(key: .lockScreenBatteryShowsBluetooth) {
-                            Label("Show Bluetooth battery", systemImage: "battery.100")
-                        }
-                        .settingsHighlight(id: highlightID("Show Bluetooth battery"))
+                    Defaults.Toggle(key: .lockScreenBatteryShowsCharging) {
+                        Label("Show charging status", systemImage: "battery.100")
                     }
-                } header: {
-                    Text("Battery Widget")
-                } footer: {
-                    Text("Enable the battery capsule and configure its layout.")
-                }
-            }
+                    .disabled(!lockScreenWeatherShowsBatteryGauge)
+                    .settingsHighlight(id: highlightID("Show charging status"))
 
-            Section {
-                Defaults.Toggle(key: .enableLockScreenFocusWidget) {
-                    Label("Show focus widget", systemImage: "power")
+                    if lockScreenWeatherShowsCharging || searchedTitle == "Show charging percentage" {
+                        Defaults.Toggle(key: .lockScreenBatteryShowsChargingPercentage) {
+                            Label("Show charging percentage", systemImage: "battery.100")
+                        }
+                        .disabled(!lockScreenWeatherShowsBatteryGauge || !lockScreenWeatherShowsCharging)
+                        .settingsHighlight(id: highlightID("Show charging percentage"))
+                    }
+
+                    Defaults.Toggle(key: .lockScreenBatteryShowsBluetooth) {
+                        Label("Show Bluetooth battery", systemImage: "battery.100")
+                    }
+                    .disabled(!lockScreenWeatherShowsBatteryGauge)
+                    .settingsHighlight(id: highlightID("Show Bluetooth battery"))
                 }
-                .settingsHighlight(id: highlightID("Show focus widget"))
             } header: {
-                Text("Focus Widget")
+                Text("Status area · Battery")
             } footer: {
-                Text("Displays the current Focus state above the weather capsule whenever Focus detection is enabled.")
+                Text("Enable the battery capsule and configure its layout.")
             }
+        }
+    }
 
-            Section {
-                Defaults.Toggle(key: .lockScreenShowCalendarEvent) {
-                    Label("Show next calendar event", systemImage: "calendar")
-                }
-                .settingsHighlight(id: highlightID("Show next calendar event"))
+    private var focusSection: some View {
+        Section {
+            Defaults.Toggle(key: .enableLockScreenFocusWidget) {
+                Label("Show focus widget", systemImage: "power")
+            }
+            .settingsHighlight(id: highlightID("Show focus widget"))
+            if !focusDetectionEnabled || !focusIndicatorEnabled {
+                dependencyLink(
+                    "Open Focus settings", tab: .liveActivities,
+                    title: focusDetectionEnabled ? "Show Focus indicator" : "Enable Focus detection")
+            }
+        } header: {
+            Text("Status area · Focus")
+        } footer: {
+            Text("Displays the current Focus state above the weather capsule whenever Focus detection is enabled.")
+        }
+    }
 
-                LabeledContent() {
-                    HStack {
-                        Spacer(minLength: 0)
-                        Picker("", selection: $lockScreenCalendarEventLookaheadWindow) {
+    private var calendarSection: some View {
+        Section {
+            Defaults.Toggle(key: .lockScreenShowCalendarEvent) {
+                Label("Show next calendar event", systemImage: "calendar")
+            }
+            .settingsHighlight(id: highlightID("Show next calendar event"))
+            if lockScreenShowCalendarEvent || revealedSection == "calendar" {
+                Group {
+
+                    LockScreenSettingRow("Show events within the next") {
+                        Picker("Show events within the next", selection: $lockScreenCalendarEventLookaheadWindow) {
                             ForEach(CalendarLookaheadOption.allCases) { option in
                                 Text(option.title).tag(option.rawValue)
                             }
@@ -6453,134 +6538,182 @@ struct LockScreenSettings: View {
                         .labelsHidden()
                         .pickerStyle(.menu)
                     }
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                } label: {
-                    Label("Show events within the next", systemImage: "calendar")
-                }
-                .disabled(!lockScreenShowCalendarEvent)
-                .settingsHighlight(id: highlightID("Show events within the next"))
+                    .disabled(!lockScreenShowCalendarEvent)
+                    .settingsHighlight(id: highlightID("Show events within the next"))
 
-                Toggle("Show events from all calendars", systemImage: "calendar", isOn: Binding(
-                    get: { lockScreenCalendarSelectionMode == "all" },
-                    set: { useAll in
-                        if useAll {
-                            lockScreenCalendarSelectionMode = "all"
-                        } else {
-                            lockScreenCalendarSelectionMode = "selected"
-                            lockScreenSelectedCalendarIDs = Set(calendarManager.eventCalendars.map { $0.id })
-                        }
-                    }
-                ))
-                .disabled(!lockScreenShowCalendarEvent)
-                .settingsHighlight(id: highlightID("Show events from all calendars"))
-
-                if lockScreenCalendarSelectionMode != "all" {
-                    HStack {
-                        Spacer()
-                        Button("Deselect All") {
-                            lockScreenSelectedCalendarIDs = []
-                        }
-                        .buttonStyle(.link)
-                    }
-                    .padding(.top, 2)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(calendarManager.eventCalendars, id: \.id) { calendar in
-                            Toggle(isOn: Binding(
-                                get: { lockScreenSelectedCalendarIDs.contains(calendar.id) },
-                                set: { isOn in
-                                    if isOn {
-                                        lockScreenSelectedCalendarIDs.insert(calendar.id)
-                                    } else {
-                                        lockScreenSelectedCalendarIDs.remove(calendar.id)
-                                    }
-                                }
-                            )) {
-                                HStack(spacing: 8) {
-                                    Circle()
-                                        .fill(Color(calendar.color))
-                                        .frame(width: 8, height: 8)
-                                    Text(calendar.title)
+                    Toggle(
+                        "Show events from all calendars", systemImage: "calendar",
+                        isOn: Binding(
+                            get: { lockScreenCalendarSelectionMode == "all" },
+                            set: { useAll in
+                                if useAll {
+                                    lockScreenCalendarSelectionMode = "all"
+                                } else {
+                                    lockScreenCalendarSelectionMode = "selected"
+                                    lockScreenSelectedCalendarIDs = Set(calendarManager.eventCalendars.map { $0.id })
                                 }
                             }
-                            .toggleStyle(.checkbox)
-                        }
-                    }
-                    .padding(.top, 4)
-                    .padding(.leading, 2)
+                        )
+                    )
                     .disabled(!lockScreenShowCalendarEvent)
-                }
+                    .settingsHighlight(id: highlightID("Show events from all calendars"))
 
-                Defaults.Toggle(key: .lockScreenShowCalendarCountdown) {
-                    Label("Show countdown", systemImage: "power")
-                }
-                .disabled(!lockScreenShowCalendarEvent)
-                .settingsHighlight(id: highlightID("Show countdown"))
+                    if lockScreenCalendarSelectionMode != "all" {
+                        HStack {
+                            Spacer()
+                            Button("Deselect All") {
+                                lockScreenSelectedCalendarIDs = []
+                            }
+                            .buttonStyle(.link)
+                        }
+                        .padding(.top, 2)
 
-                Defaults.Toggle(key: .lockScreenShowCalendarEventEntireDuration) {
-                    Label("Show event for entire duration", systemImage: "clock")
-                }
-                .disabled(!lockScreenShowCalendarEvent)
-                .settingsHighlight(id: highlightID("Show event for entire duration"))
-                .onChange(of: Defaults[.lockScreenShowCalendarEventEntireDuration]) { _, newValue in
-                    if newValue {
-                        Defaults[.lockScreenShowCalendarEventAfterStartEnabled] = false
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(calendarManager.eventCalendars, id: \.id) { calendar in
+                                Toggle(
+                                    isOn: Binding(
+                                        get: { lockScreenSelectedCalendarIDs.contains(calendar.id) },
+                                        set: { isOn in
+                                            if isOn {
+                                                lockScreenSelectedCalendarIDs.insert(calendar.id)
+                                            } else {
+                                                lockScreenSelectedCalendarIDs.remove(calendar.id)
+                                            }
+                                        }
+                                    )
+                                ) {
+                                    HStack(spacing: 8) {
+                                        Circle()
+                                            .fill(Color(calendar.color))
+                                            .frame(width: 8, height: 8)
+                                        Text(calendar.title)
+                                    }
+                                }
+                                .toggleStyle(.checkbox)
+                            }
+                        }
+                        .padding(.top, 4)
+                        .padding(.leading, 2)
+                        .disabled(!lockScreenShowCalendarEvent)
                     }
-                }
 
-                Defaults.Toggle(
-                    "Hide active event and show next upcoming event",
-                    key: .lockScreenShowCalendarEventAfterStartEnabled
-                )
-                .disabled(!lockScreenShowCalendarEvent || lockScreenShowCalendarEventEntireDuration)
-                .settingsHighlight(id: highlightID("Hide active event and show next upcoming event"))
+                    Defaults.Toggle(key: .lockScreenShowCalendarCountdown) {
+                        Label("Show countdown", systemImage: "power")
+                    }
+                    .disabled(!lockScreenShowCalendarEvent)
+                    .settingsHighlight(id: highlightID("Show countdown"))
 
-                LabeledContent() {
-                    HStack {
-                        Spacer(minLength: 0)
-                        Picker("", selection: $lockScreenShowCalendarEventAfterStartWindow) {
-                            Text("1 min").tag("1m")
-                            Text("5 mins").tag("5m")
-                            Text("10 mins").tag("10m")
-                            Text("15 mins").tag("15m")
-                            Text("30 mins").tag("30m")
-                            Text("45 mins").tag("45m")
-                            Text("1 hour").tag("1h")
-                            Text("2 hours").tag("2h")
+                    LockScreenSettingRow("After an event starts") {
+                        Picker("After an event starts", selection: calendarBehaviorBinding) {
+                            ForEach(LockScreenCalendarBehavior.allCases, id: \.self) { behavior in
+                                Text(LocalizedStringKey(behavior.rawValue)).tag(behavior)
+                            }
                         }
                         .labelsHidden()
-                        .pickerStyle(.menu)
                     }
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                } label: {
-                    Label("Show event after it starts", systemImage: "calendar")
-                }
-                .disabled(!lockScreenShowCalendarEvent || lockScreenShowCalendarEventEntireDuration || !lockScreenShowCalendarEventAfterStartEnabled)
+                    .settingsHighlight(id: highlightID("Show event for entire duration"))
+                    .settingsHighlight(id: highlightID("Hide active event and show next upcoming event"))
+                    .settingsHighlight(id: highlightID("After an event starts"))
 
-                Text("Turn off 'Show event for entire duration' to use the post-start duration option.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    if calendarBehaviorBinding.wrappedValue == .briefly {
+                        LockScreenSettingRow("Show event after it starts") {
+                            Picker(
+                                "Show event after it starts", selection: $lockScreenShowCalendarEventAfterStartWindow
+                            ) {
+                                Text("1 min").tag("1m")
+                                Text("5 mins").tag("5m")
+                                Text("10 mins").tag("10m")
+                                Text("15 mins").tag("15m")
+                                Text("30 mins").tag("30m")
+                                Text("45 mins").tag("45m")
+                                Text("1 hour").tag("1h")
+                                Text("2 hours").tag("2h")
+                            }
+                            .labelsHidden()
+                            .pickerStyle(.menu)
+                        }
+                        .disabled(
+                            !lockScreenShowCalendarEvent || lockScreenShowCalendarEventEntireDuration
+                                || !lockScreenShowCalendarEventAfterStartEnabled)
 
-                Defaults.Toggle(key: .lockScreenShowCalendarTimeRemaining) {
-                    Label("Show time remaining", systemImage: "clock")
-                }
-                .disabled(!lockScreenShowCalendarEvent)
-                .settingsHighlight(id: highlightID("Show time remaining"))
+                    }
 
-                Defaults.Toggle(key: .lockScreenShowCalendarStartTimeAfterBegins) {
-                    Label("Show start time after event begins", systemImage: "clock")
+                    Defaults.Toggle(key: .lockScreenShowCalendarTimeRemaining) {
+                        Label("Show time remaining", systemImage: "clock")
+                    }
+                    .disabled(!lockScreenShowCalendarEvent)
+                    .settingsHighlight(id: highlightID("Show time remaining"))
+
+                    Defaults.Toggle(key: .lockScreenShowCalendarStartTimeAfterBegins) {
+                        Label("Show start time after event begins", systemImage: "clock")
+                    }
+                    .disabled(!lockScreenShowCalendarEvent)
+                    .settingsHighlight(id: highlightID("Show start time after event begins"))
+
                 }
-                .disabled(!lockScreenShowCalendarEvent)
-                .settingsHighlight(id: highlightID("Show start time after event begins"))
-            } header: {
-                Text("Calendar Widget")
-            } footer: {
-                Text("Displays your next upcoming calendar event above or below the weather capsule. Calendar selection here is independent from the Dynamic Island calendar filter.")
+                .disabled(!(lockScreenShowCalendarEvent))
             }
-
-            LockScreenPositioningControls()
+        } header: {
+            Text("Status area · Calendar")
+        } footer: {
+            Text(
+                "Displays your next upcoming calendar event above or below the weather capsule. Calendar selection here is independent from the Dynamic Island calendar filter."
+            )
         }
     }
+
+    private var reminderSection: some View {
+        Section {
+            Defaults.Toggle(key: .enableLockScreenReminderWidget) {
+                Label("Show lock screen reminder", systemImage: "calendar")
+            }
+            .disabled(!enableReminderLiveActivity)
+
+            .settingsHighlight(id: highlightID("Show lock screen reminder"))
+            if !enableReminderLiveActivity {
+                dependencyLink(
+                    "Enable reminders in Calendar settings", tab: .calendar, title: "Enable reminder live activity")
+            }
+            if enableLockScreenReminderWidget && enableReminderLiveActivity || revealedSection == "reminder" {
+                Group {
+
+                    LockScreenSegmentedPicker(
+                        "Chip color",
+                        selection: $lockScreenReminderChipStyle,
+                        items: Array(LockScreenReminderChipStyle.allCases)
+                    ) { $0.localizedName }
+                    .disabled(!enableLockScreenReminderWidget || !enableReminderLiveActivity)
+                    .settingsHighlight(id: highlightID("Chip color"))
+
+                    LockScreenSegmentedPicker(
+                        "Alignment",
+                        selection: $lockScreenReminderWidgetHorizontalAlignment,
+                        items: ReminderAlignmentOption.allCases.map(\.rawValue)
+                    ) { ReminderAlignmentOption(rawValue: $0)?.title ?? $0 }
+                    .disabled(!enableLockScreenReminderWidget || !enableReminderLiveActivity)
+                    .settingsHighlight(id: highlightID("Reminder alignment"))
+
+                    LockScreenSettingRow("Vertical offset") {
+                        SettingsSlider(
+                            value: $lockScreenReminderWidgetVerticalOffset,
+                            in: -160...160,
+                            step: 2,
+                            valueLabel: Text("\(Int(lockScreenReminderWidgetVerticalOffset)) px")
+                        )
+                        .disabled(!enableLockScreenReminderWidget || !enableReminderLiveActivity)
+                    }
+                    .settingsHighlight(id: highlightID("Reminder vertical offset"))
+
+                }
+                .disabled(!(enableLockScreenReminderWidget && enableReminderLiveActivity))
+            }
+        } header: {
+            Text("Reminder Widget")
+        } footer: {
+            Text("Controls the lock screen reminder chip and its positioning.")
+        }
+    }
+
 }
 
 extension LockScreenSettings {
@@ -6614,14 +6747,15 @@ extension LockScreenSettings {
         preview: AnyView? = nil
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(LocalizedStringKey(title))
-                Spacer()
+            LockScreenSettingRow(LocalizedStringKey(title)) {
+                SettingsSlider(value: value, in: liquidVariantRange, step: 1, valueLabel: Text("v\(currentValue)"))
+                    .accessibilityLabel(Text(LocalizedStringKey(title)))
             }
-            SettingsSlider(value: value, in: liquidVariantRange, step: 1, valueLabel: Text("v\(currentValue)"))
 
             if let preview {
                 preview
+                    .frame(maxWidth: 360)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                     .padding(.top, 6)
             }
         }
@@ -6631,57 +6765,50 @@ extension LockScreenSettings {
     }
 }
 
-private struct LockScreenIconStyleCard: View {
-    let title: String
-    let systemImage: String
-    let isSelected: Bool
-    let action: () -> Void
+private struct LockScreenSettingRow<Control: View>: View {
+    let title: LocalizedStringKey
+    @ViewBuilder var control: () -> Control
 
-    @State private var isHovering = false
+    init(_ title: LocalizedStringKey, @ViewBuilder control: @escaping () -> Control) {
+        self.title = title
+        self.control = control
+    }
 
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(backgroundColor)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 12)
-                                .strokeBorder(borderColor, lineWidth: isSelected ? 2 : 1)
-                        }
-
-                    Image(systemName: systemImage)
-                        .font(.system(size: 13, weight: .semibold))
-                        .symbolRenderingMode(.hierarchical)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 16) {
+                Text(title).fixedSize()
+                Spacer(minLength: 12)
+                control().fixedSize()
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text(title)
+                HStack {
+                    Spacer(minLength: 0)
+                    control()
                 }
-                .frame(width: 72, height: 50)
-
-                Text(LocalizedStringKey(title))
-                    .font(.caption)
-                    .fontWeight(.medium)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isHovering = hovering
             }
         }
-        .accessibilityLabel(Text(LocalizedStringKey(title)))
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+private struct LockScreenSegmentedPicker<Item: Hashable>: View {
+    let title: LocalizedStringKey
+    @Binding var selection: Item
+    let items: [Item]
+    let label: (Item) -> String
+
+    init(_ title: LocalizedStringKey, selection: Binding<Item>, items: [Item], label: @escaping (Item) -> String) {
+        self.title = title
+        self._selection = selection
+        self.items = items
+        self.label = label
     }
 
-    private var backgroundColor: Color {
-        if isSelected { return Color.accentColor.opacity(0.12) }
-        if isHovering { return Color.primary.opacity(0.05) }
-        return Color(nsColor: .controlBackgroundColor)
-    }
-
-    private var borderColor: Color {
-        if isSelected { return Color.accentColor }
-        if isHovering { return Color.primary.opacity(0.1) }
-        return Color.clear
+    var body: some View {
+        LockScreenSettingRow(title) {
+            SettingsSegmentedControl(items: items, selection: $selection, label: label)
+        }
     }
 }
 
@@ -6813,60 +6940,52 @@ private struct LockScreenPositioningControls: View {
             .frame(height: 260)
             .padding(.vertical, 8)
 
-            HStack(alignment: .top, spacing: 24) {
-                offsetColumn(
-                    title: String(localized: "Weather"),
-                    value: weatherOffset,
-                    resetTitle: String(localized: "Reset Weather"),
-                    resetAction: resetWeatherOffset
-                )
+            adjustmentRow(
+                title: Text("\(String(localized: "Weather")) Offset"),
+                value: weatherBinding,
+                range: offsetRange,
+                valueLabel: Text("\(formattedPoints(weatherOffset)) pt"),
+                resetTitle: String(localized: "Reset Weather"),
+                resetAction: resetWeatherOffset
+            )
 
-                Divider()
-                    .frame(height: 64)
+            adjustmentRow(
+                title: Text("\(String(localized: "Timer")) Offset"),
+                value: timerBinding,
+                range: offsetRange,
+                valueLabel: Text("\(formattedPoints(timerOffset)) pt"),
+                resetTitle: String(localized: "Reset Timer"),
+                resetAction: resetTimerOffset
+            )
 
-                offsetColumn(
-                    title: String(localized: "Timer"),
-                    value: timerOffset,
-                    resetTitle: String(localized: "Reset Timer"),
-                    resetAction: resetTimerOffset
-                )
+            adjustmentRow(
+                title: Text("\(String(localized: "Music")) Offset"),
+                value: musicBinding,
+                range: offsetRange,
+                valueLabel: Text("\(formattedPoints(musicOffset)) pt"),
+                resetTitle: String(localized: "Reset Music"),
+                resetAction: resetMusicOffset
+            )
 
-                Divider()
-                    .frame(height: 64)
+            adjustmentRow(
+                title: Text("Media Panel Width"),
+                value: musicWidthBinding,
+                range: musicWidthRange,
+                valueLabel: Text(formattedWidth(musicWidth)),
+                resetTitle: String(localized: "Reset Media Width"),
+                resetAction: resetMusicWidth
+            )
+            .help("Shrinks the lock screen media panel while keeping the expanded view full width.")
 
-                offsetColumn(
-                    title: String(localized: "Music"),
-                    value: musicOffset,
-                    resetTitle: String(localized: "Reset Music"),
-                    resetAction: resetMusicOffset
-                )
-
-                Spacer()
-            }
-
-            // No Divider here: a Section lays each child out as its own row,
-            // and a Divider in a row draws across the row's axis -- a short
-            // vertical tick with an empty row's worth of space around it,
-            // sitting just above the separator the Form already draws.
-            VStack(alignment: .leading, spacing: 16) {
-                widthSlider(
-                    title: String(localized: "Media Panel Width"),
-                    value: musicWidthBinding,
-                    range: musicWidthRange,
-                    resetTitle: String(localized: "Reset Media Width"),
-                    resetAction: resetMusicWidth,
-                    helpText: String(localized: "Shrinks the lock screen media panel while keeping the expanded view full width.")
-                )
-
-                widthSlider(
-                    title: String(localized: "Timer Widget Width"),
-                    value: timerWidthBinding,
-                    range: timerWidthRange,
-                    resetTitle: String(localized: "Reset Timer Width"),
-                    resetAction: resetTimerWidth,
-                    helpText: String(localized: "Adjusts the lock screen timer widget width without affecting button sizing.")
-                )
-            }
+            adjustmentRow(
+                title: Text("Timer Widget Width"),
+                value: timerWidthBinding,
+                range: timerWidthRange,
+                valueLabel: Text(formattedWidth(timerWidth)),
+                resetTitle: String(localized: "Reset Timer Width"),
+                resetAction: resetTimerWidth
+            )
+            .help("Adjusts the lock screen timer widget width without affecting button sizing.")
         } header: {
             Text("Lock Screen Positioning")
         } footer: {
@@ -6938,52 +7057,33 @@ private struct LockScreenPositioningControls: View {
         }
     }
 
-    @ViewBuilder
-    private func offsetColumn(title: String, value: Double, resetTitle: String, resetAction: @escaping () -> Void) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("\(title) Offset")
-                .font(.subheadline.weight(.semibold))
-
-            Text("\(formattedPoints(value)) pt")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Button(resetTitle) {
-                resetAction()
-            }
-            .buttonStyle(.bordered)
-        }
-    }
-
-    @ViewBuilder
-    private func widthSlider(
-        title: String,
+    private func adjustmentRow(
+        title: Text,
         value: Binding<Double>,
         range: ClosedRange<Double>,
+        valueLabel: Text,
         resetTitle: String,
-        resetAction: @escaping () -> Void,
-        helpText: String
+        resetAction: @escaping () -> Void
     ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(title)
-                Spacer()
-            }
-
-            SettingsSlider(value: value, in: range, valueLabel: Text(formattedWidth(value.wrappedValue)))
-
-            HStack(alignment: .top) {
-                Button(resetTitle) {
-                    resetAction()
-                }
+        let controls = HStack(spacing: 12) {
+            SettingsSlider(value: value, in: range, valueLabel: valueLabel)
+                .accessibilityLabel(title)
+            Button("Reset", action: resetAction)
                 .buttonStyle(.bordered)
+                .help(resetTitle)
+                .accessibilityLabel(Text(resetTitle))
+        }
+        .fixedSize(horizontal: true, vertical: false)
 
-                Spacer()
-
-                Text(helpText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.trailing)
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: 16) {
+                title.fixedSize()
+                Spacer(minLength: 0)
+                controls
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                title
+                controls.frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
     }
