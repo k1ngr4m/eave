@@ -1065,6 +1065,7 @@ private struct SettingsPageStyle: ViewModifier {
             content.formStyle(SettingsCardStyle(title: title))
         } else {
             content.formStyle(.grouped)
+                .labelStyle(.titleOnly)
         }
     }
 }
@@ -1137,16 +1138,8 @@ private struct SettingsCardToggleStyle: ToggleStyle {
 
 private struct SettingsCardLabelStyle: LabelStyle {
     func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 12) {
-            configuration.icon
-                .font(.system(size: 18))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.blue)
-                .frame(width: 24)
-                .accessibilityHidden(true)
-            configuration.title
-                .fixedSize(horizontal: false, vertical: true)
-        }
+        configuration.title
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 
