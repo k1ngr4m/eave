@@ -191,8 +191,7 @@ struct AppearanceSettingsPreview: View {
         VStack(spacing: 10) {
             if expanded {
                 demoHeader.frame(height: max(24, closedSize.height))
-                demoPlayer.padding(.horizontal, 24)
-                Spacer(minLength: 0)
+                idleContent.padding(.horizontal, 24).padding(.bottom, 12)
             }
         }
         .frame(width: size.width, height: size.height, alignment: .top)
@@ -251,24 +250,21 @@ struct AppearanceSettingsPreview: View {
         .fixedSize(horizontal: true, vertical: false)
     }
 
-    private var demoPlayer: some View {
-        HStack(spacing: 18) {
-            RoundedRectangle(cornerRadius: 13)
-                .fill(Color.accentColor.gradient)
-                .frame(width: minimalistic ? 64 : 90, height: minimalistic ? 64 : 90)
-                .overlay { Image(systemName: "music.note").font(.system(size: 30)).foregroundStyle(.white) }
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Your favorite music").font(.headline).lineLimit(1)
-                Text("Live appearance preview").font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                HStack(spacing: 22) {
-                    Image(systemName: "backward.fill")
-                    Image(systemName: "play.fill")
-                    Image(systemName: "forward.fill")
-                }
-                .font(.system(size: 16))
-                Capsule().fill(.secondary.opacity(0.25)).frame(height: 3)
+    @ViewBuilder
+    private var idleContent: some View {
+        if minimalistic {
+            VStack(spacing: 8) {
+                Image(systemName: "music.note.slash")
+                    .font(.system(size: 24, weight: .light))
+                Text("Nothing Playing")
+                    .font(.system(size: 12, weight: .medium))
             }
-            Spacer(minLength: 0)
+            .foregroundStyle(.gray)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            TimelineView(.periodic(from: Calendar.current.startOfDay(for: .now), by: 60)) { context in
+                HomeIdleView(date: context.date)
+            }
         }
     }
 }

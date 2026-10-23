@@ -1061,7 +1061,7 @@ struct NotchHomeView: View {
 
 }
 
-private struct HomeIdleView: View {
+struct HomeIdleView: View {
     let date: Date
 
     var body: some View {
