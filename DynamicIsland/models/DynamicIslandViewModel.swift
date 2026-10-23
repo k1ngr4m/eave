@@ -455,7 +455,7 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
     }
 
     private func calculateDynamicNotchSize() -> CGSize {
-        let baseSize = coordinator.currentView == .calendar ? calendarOpenNotchSize() : (Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize(isDynamicIslandMode: shouldUseDynamicIslandMode(for: screen)) : openNotchSize)
+        let baseSize = coordinator.currentView == .calendar ? calendarOpenNotchSize() : (Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize(isDynamicIslandMode: shouldUseDynamicIslandMode(for: screen)) : getOpenNotchSize(screen: screen))
         var adjustedSize = baseSize
 
         if coordinator.currentView == .llmUsage && coordinator.codexDetailPresented {

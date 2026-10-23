@@ -133,7 +133,7 @@ struct ContentView: View {
     
     // Dynamic sizing based on view type and graph count with smooth transitions
     var dynamicNotchSize: CGSize {
-        let baseSize = coordinator.currentView == .calendar ? calendarOpenNotchSize() : (Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize(isDynamicIslandMode: isDynamicIslandMode) : openNotchSize)
+        let baseSize = coordinator.currentView == .calendar ? calendarOpenNotchSize() : (Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize(isDynamicIslandMode: isDynamicIslandMode) : getOpenNotchSize(screen: vm.screen))
 
         if isConnectivityHUDVisible,
            let connectivitySize = NetworkConnectivityHUDMetrics.size(

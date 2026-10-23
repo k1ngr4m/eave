@@ -76,10 +76,12 @@ func sideLyricsRequiredNotchWidth() -> CGFloat {
         + SideLyricsLayout.combinedInset
 }
 
-var openNotchSize: CGSize {
+var openNotchSize: CGSize { getOpenNotchSize(screen: nil) }
+
+func getOpenNotchSize(screen screenName: String?) -> CGSize {
     let storedWidth = Defaults[.openNotchWidth]
     let minWidth = currentRecommendedMinimumNotchWidth()
-    let maxWidth = maxAllowedNotchWidth()
+    let maxWidth = maxAllowedNotchWidth(for: screenName)
     let width = min(max(storedWidth, minWidth, sideLyricsRequiredNotchWidth()), maxWidth)
     return .init(width: width, height: 200)
 }
@@ -138,7 +140,6 @@ func enforceMinimumNotchWidth() {
         Defaults[.openNotchWidth] = width
     }
 }
-private let minimalisticBaseOpenNotchSize: CGSize = .init(width: 420, height: 180)
 // 10pt top padding + 40pt lyrics content; keep in sync with MinimalisticMusicPlayerView.calculateDynamicHeight
 private let minimalisticLyricsExtraHeight: CGFloat = 50
 let minimalisticTimerCountdownTopPadding: CGFloat = 12
@@ -149,19 +150,26 @@ let statsGridSpacingHeight: CGFloat = 12
 let notchShadowPaddingStandard: CGFloat = 18
 let notchShadowPaddingMinimalistic: CGFloat = 12
 
-@MainActor
-func minimalisticOpenNotchSize(isDynamicIslandMode: Bool) -> CGSize {
-    var size = minimalisticBaseOpenNotchSize
+func minimalisticBaseOpenNotchSize(isDynamicIslandMode: Bool, includesLyrics: Bool) -> CGSize {
+    var size = CGSize(width: 420, height: 180)
 
     if isDynamicIslandMode {
         size.width = 340 // Reduced from 420 for a narrower pill
         size.height = 144 // Exact height of the minimalistic music player view
     }
 
-    if Defaults[.enableLyrics] && !MusicManager.shared.isAdvertisement {
+    if includesLyrics {
         size.height += minimalisticLyricsExtraHeight
     }
-    
+    return size
+}
+
+@MainActor
+func minimalisticOpenNotchSize(isDynamicIslandMode: Bool) -> CGSize {
+    var size = minimalisticBaseOpenNotchSize(
+        isDynamicIslandMode: isDynamicIslandMode,
+        includesLyrics: Defaults[.enableLyrics] && !MusicManager.shared.isAdvertisement
+    )
     let reminderCount = ReminderLiveActivityManager.shared.activeWindowReminders.count
     if reminderCount > 0 {
         let reminderHeight = ReminderLiveActivityManager.additionalHeight(forRowCount: reminderCount)

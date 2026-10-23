@@ -215,13 +215,13 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .interaction, title: "Enable close gesture", keywords: ["pinch", "swipe"], highlightID: SettingsTab.interaction.highlightID(for: "Enable close gesture")),
         SettingsSearchEntry(tab: .interaction, title: "Reverse swipe gestures", keywords: ["reverse", "swipe", "media"], highlightID: SettingsTab.interaction.highlightID(for: "Reverse swipe gestures")),
         SettingsSearchEntry(tab: .interaction, title: "Reverse scroll gestures", keywords: ["reverse", "scroll", "open", "close"], highlightID: SettingsTab.interaction.highlightID(for: "Reverse scroll gestures")),
-        SettingsSearchEntry(tab: .appearance, title: "Extend hover area", keywords: ["hover", "cursor"], highlightID: SettingsTab.appearance.highlightID(for: "Extend hover area")),
-        SettingsSearchEntry(tab: .appearance, title: "Enable haptics", keywords: ["haptic", "feedback"], highlightID: SettingsTab.appearance.highlightID(for: "Enable haptics")),
-        SettingsSearchEntry(tab: .appearance, title: "When reopening", keywords: ["reopen", "last tab", "default tab", "重新打开", "上次的页面"], highlightID: SettingsTab.appearance.highlightID(for: "When reopening")),
-        SettingsSearchEntry(tab: .appearance, title: "Keep expanded", keywords: ["keep open", "pin", "保持展开", "常驻"], highlightID: SettingsTab.appearance.highlightID(for: "Keep expanded")),
-        SettingsSearchEntry(tab: .appearance, title: "Open notch on hover", keywords: ["hover to open", "auto open"], highlightID: SettingsTab.appearance.highlightID(for: "Open notch on hover")),
-        SettingsSearchEntry(tab: .appearance, title: "External display style", keywords: ["dynamic island", "pill", "external display", "non-notch", "floating", "capsule"], highlightID: SettingsTab.appearance.highlightID(for: "External display style")),
-        SettingsSearchEntry(tab: .appearance, title: "Hide until hovered", keywords: ["hide", "hover", "external", "non-notch", "auto hide", "slide"], highlightID: SettingsTab.appearance.highlightID(for: "Hide until hovered")),
+        SettingsSearchEntry(tab: .interaction, title: "Extend hover area", keywords: ["hover", "cursor"], highlightID: SettingsTab.interaction.highlightID(for: "Extend hover area")),
+        SettingsSearchEntry(tab: .interaction, title: "Enable haptics", keywords: ["haptic", "feedback"], highlightID: SettingsTab.interaction.highlightID(for: "Enable haptics")),
+        SettingsSearchEntry(tab: .interaction, title: "When reopening", keywords: ["reopen", "last tab", "default tab", "重新打开", "上次的页面"], highlightID: SettingsTab.interaction.highlightID(for: "When reopening")),
+        SettingsSearchEntry(tab: .interaction, title: "Keep expanded", keywords: ["keep open", "pin", "保持展开", "常驻"], highlightID: SettingsTab.interaction.highlightID(for: "Keep expanded")),
+        SettingsSearchEntry(tab: .interaction, title: "Open notch on hover", keywords: ["hover to open", "auto open"], highlightID: SettingsTab.interaction.highlightID(for: "Open notch on hover")),
+        SettingsSearchEntry(tab: .interaction, title: "External display style", keywords: ["dynamic island", "pill", "external display", "non-notch", "floating", "capsule"], highlightID: SettingsTab.interaction.highlightID(for: "External display style")),
+        SettingsSearchEntry(tab: .interaction, title: "Hide until hovered", keywords: ["hide", "hover", "external", "non-notch", "auto hide", "slide"], highlightID: SettingsTab.interaction.highlightID(for: "Hide until hovered")),
         SettingsSearchEntry(tab: .appearance, title: "Notch display height", keywords: ["display height", "menu bar size"], highlightID: SettingsTab.appearance.highlightID(for: "Notch display height")),
 
         // Live Activities
@@ -343,9 +343,11 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .shelf, title: "Quick Share Service", keywords: ["shelf", "share", "airdrop", "localsend"], highlightID: SettingsTab.shelf.highlightID(for: "Quick Share Service")),
         SettingsSearchEntry(tab: .shelf, title: "LocalSend Device Picker Style", keywords: ["localsend", "glass", "picker", "material"], highlightID: SettingsTab.shelf.highlightID(for: "Device Picker Style")),
 
+        SettingsSearchEntry(tab: .interaction, title: "Minimum hover duration", keywords: [], highlightID: SettingsTab.interaction.highlightID(for: "Minimum hover duration")),
+        SettingsSearchEntry(tab: .appearance, title: "Non-notch display height", keywords: [], highlightID: SettingsTab.appearance.highlightID(for: "Non-notch display height")),
         // Appearance
         SettingsSearchEntry(tab: .appearance, title: "Notch appearance", keywords: ["light", "dark", "system", "theme", "浅色", "深色", "跟随系统", "淺色", "跟隨系統", "刘海", "瀏海"], highlightID: SettingsTab.appearance.highlightID(for: "Notch appearance")),
-        SettingsSearchEntry(tab: .appearance, title: "Main screen style", keywords: ["dynamic island", "pill", "non-notch", "display style", "notch style"], highlightID: SettingsTab.appearance.highlightID(for: "Main screen style")),
+        SettingsSearchEntry(tab: .interaction, title: "Main screen style", keywords: ["dynamic island", "pill", "non-notch", "display style", "notch style"], highlightID: SettingsTab.interaction.highlightID(for: "Main screen style")),
         SettingsSearchEntry(tab: .appearance, title: "Show settings icon in the notch", keywords: ["settings button", "toolbar"], highlightID: SettingsTab.appearance.highlightID(for: "Show settings icon in the notch")),
         SettingsSearchEntry(tab: .appearance, title: "Top tab spacing", keywords: ["tabs", "icons", "spacing", "刘海", "间距", "图标"], highlightID: SettingsTab.appearance.highlightID(for: "Top tab spacing")),
         SettingsSearchEntry(tab: .appearance, title: "Enable window shadow", keywords: ["shadow", "appearance"], highlightID: SettingsTab.appearance.highlightID(for: "Enable window shadow")),
@@ -1334,6 +1336,9 @@ private struct SettingsCardLabelStyle: LabelStyle {
 }
 
 private struct GeneralSettings: View {
+    @Default(.minimumHoverDuration) private var minimumHoverDuration
+    @Default(.reopenTab) private var reopenTab
+    @Default(.externalDisplayStyle) private var externalDisplayStyle
     var page: SettingsTab = .general
     @State private var screens: [String] = NSScreen.screens.compactMap { $0.localizedName }
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
@@ -1359,6 +1364,7 @@ private struct GeneralSettings: View {
 
     var body: some View {
         settingsForm
+            .modifier(SettingsPageStyle(compact: page == .interaction))
             .navigationTitle(page.title)
     }
 
@@ -1367,7 +1373,7 @@ private struct GeneralSettings: View {
             switch page {
             case .general:
                 AppLanguageSettingsSection(expandsLabel: true)
-                .settingsHighlight(id: highlightID("Language"))
+                    .settingsHighlight(id: highlightID("Language"))
 
                 Section {
                     LaunchAtLogin.Toggle {
@@ -1389,8 +1395,12 @@ private struct GeneralSettings: View {
                         Label("Show dynamic status icon in Dock", systemImage: "dock.rectangle")
                     }
                     .settingsHighlight(id: highlightID("Show dynamic status icon in Dock"))
-                } header: { Text("Menu Bar & Dock") }
+                } header: {
+                    Text("Menu Bar & Dock")
+                }
             case .interaction:
+                notchBehaviorControls()
+                gestureControls()
                 Section {
                     Defaults.Toggle(key: .showOnAllDisplays) {
                         Label("Show on all displays", systemImage: "display.2")
@@ -1399,9 +1409,7 @@ private struct GeneralSettings: View {
                         NotificationCenter.default.post(name: Notification.Name.showOnAllDisplaysChanged, object: nil)
                     }
                     .settingsHighlight(id: highlightID("Show on all displays"))
-                    HStack(spacing: 16) {
-                        Label("Show on a specific display", systemImage: "display")
-                        Spacer(minLength: 12)
+                    SettingsAdaptiveRow("Show on a specific display") {
                         Picker("Show on a specific display", selection: $coordinator.preferredScreen) {
                             ForEach(screens, id: \.self) { screen in
                                 Text(screen)
@@ -1411,7 +1419,7 @@ private struct GeneralSettings: View {
                         .fixedSize()
                     }
                     .onChange(of: NSScreen.screens) {
-                        screens =  NSScreen.screens.compactMap({$0.localizedName})
+                        screens = NSScreen.screens.compactMap({ $0.localizedName })
                     }
                     .disabled(showOnAllDisplays)
                     .settingsHighlight(id: highlightID("Show on a specific display"))
@@ -1419,7 +1427,8 @@ private struct GeneralSettings: View {
                         Label("Automatically switch displays", systemImage: "arrow.triangle.2.circlepath")
                     }
                     .onChange(of: automaticallySwitchDisplay) {
-                        NotificationCenter.default.post(name: Notification.Name.automaticallySwitchDisplayChanged, object: nil)
+                        NotificationCenter.default.post(
+                            name: Notification.Name.automaticallySwitchDisplayChanged, object: nil)
                     }
                     .disabled(showOnAllDisplays)
                     .settingsHighlight(id: highlightID("Automatically switch displays"))
@@ -1427,11 +1436,33 @@ private struct GeneralSettings: View {
                         Label("Hide Dynamic Island during screenshots & recordings", systemImage: "eye.slash")
                     }
                     .settingsHighlight(id: highlightID("Hide Dynamic Island during screenshots & recordings"))
+                    SettingsAdaptiveRow("External display style") {
+                        Picker(selection: $externalDisplayStyle) {
+                            ForEach(ExternalDisplayStyle.allCases) { style in
+                                Text(style.localizedName)
+                                    .tag(style)
+                            }
+                        } label: {
+                            Label("External display style", systemImage: "display")
+                        }
+                        .labelsHidden()
+                    }
+                    .onChange(of: externalDisplayStyle) {
+                        NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
+                    }
+                    .settingsHighlight(id: highlightID("External display style"))
+                    .settingsHighlight(id: highlightID("Main screen style"))
+                    .help(externalDisplayStyle.description)
+                    Defaults.Toggle(key: .hideNonNotchUntilHover) {
+                        Label("Hide until hovered on non-notch displays", systemImage: "display")
+                    }
+                    .settingsHighlight(id: highlightID("Hide until hovered"))
+                    .help(
+                        "When enabled, the notch slides up and hides on external (non-notch) displays until you hover over it."
+                    )
                 } header: {
-                    Text("System features")
+                    Text("Displays")
                 }
-
-                gestureControls()
             case .keepAwake:
                 Section {
                     Defaults.Toggle(key: .enableCaffeinate) {
@@ -1445,9 +1476,7 @@ private struct GeneralSettings: View {
                     .disabled(!enableCaffeinate)
                     .settingsHighlight(id: highlightID("Show Keep Awake icon in the notch"))
 
-                    HStack(spacing: 16) {
-                        Label("Default duration", systemImage: "clock")
-                        Spacer(minLength: 12)
+                    SettingsAdaptiveRow("Default duration") {
                         Picker("Default duration", selection: $caffeinateDefaultDuration) {
                             ForEach(CaffeinateDuration.allCases) { duration in
                                 Text(duration.displayName).tag(duration)
@@ -1467,11 +1496,80 @@ private struct GeneralSettings: View {
                 } header: {
                     Text("Keep Awake")
                 } footer: {
-                    Text("Holds a power assertion so the Mac will not sleep, the way the caffeinate command does. Turning this off also ends a session that is already running. With the display option off, the screen can still sleep while the system stays up.")
+                    Text(
+                        "Holds a power assertion so the Mac will not sleep, the way the caffeinate command does. Turning this off also ends a session that is already running. With the display option off, the screen can still sleep while the system stays up."
+                    )
                 }
 
             default: EmptyView()
             }
+        }
+    }
+
+    @ViewBuilder
+    private func notchBehaviorControls() -> some View {
+        Section {
+            Defaults.Toggle(key: .extendHoverArea) {
+                Label("Extend hover area", systemImage: "hand.draw")
+            }
+            .settingsHighlight(id: highlightID("Extend hover area"))
+            Defaults.Toggle(key: .enableHaptics) {
+                Label("Enable haptics", systemImage: "power")
+            }
+            .settingsHighlight(id: highlightID("Enable haptics"))
+            Defaults.Toggle(key: .openNotchOnHover) {
+                Label("Open notch on hover", systemImage: "hand.draw")
+            }
+            .onChange(of: openNotchOnHover) {
+                if !openNotchOnHover {
+                    Defaults[.enableGestures] = true
+                }
+            }
+            .settingsHighlight(id: highlightID("Open notch on hover"))
+            Defaults.Toggle(key: .keepNotchExpanded) {
+                Label("Keep expanded", systemImage: "slider.horizontal.3")
+            }
+            .settingsHighlight(id: highlightID("Keep expanded"))
+            .help(
+                "Keeps the panel expanded after opening, even when the pointer leaves. You can still close it manually."
+            )
+            SettingsAdaptiveRow("When reopening") {
+                Picker(
+                    selection: Binding(
+                        get: {
+                            coordinator.availableTabs.contains { $0.id == reopenTab }
+                                ? reopenTab : ReopenTabSelection.lastPage
+                        },
+                        set: { reopenTab = $0 }
+                    )
+                ) {
+                    Text("Last page").tag(ReopenTabSelection.lastPage)
+                    ForEach(coordinator.availableTabs) { tab in
+                        Text(LocalizedStringKey(tab.label))
+                            .tag(tab.id)
+                    }
+                } label: {
+                    Label("When reopening", systemImage: "slider.horizontal.3")
+                }
+                .labelsHidden()
+            }
+            .pickerStyle(.menu)
+            .settingsHighlight(id: highlightID("When reopening"))
+            if openNotchOnHover {
+                SettingsAdaptiveRow("Minimum hover duration") {
+                    SettingsSlider(
+                        value: $minimumHoverDuration, in: 0...1, step: 0.1,
+                        valueLabel: Text("\(minimumHoverDuration, specifier: "%.1f")s")
+                    )
+                    .accessibilityLabel(Text("Minimum hover duration"))
+                }
+                .settingsHighlight(id: highlightID("Minimum hover duration"))
+                .onChange(of: minimumHoverDuration) {
+                    NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
+                }
+            }
+        } header: {
+            Text("Opening and closing")
         }
     }
 
@@ -1490,9 +1588,7 @@ private struct GeneralSettings: View {
                 .settingsHighlight(id: highlightID("Horizontal media gestures"))
 
                 Group {
-                    HStack(spacing: 12) {
-                        Label("Gesture skip behavior", systemImage: "forward.end")
-                        Spacer(minLength: 8)
+                    SettingsAdaptiveRow("Gesture skip behavior") {
                         SettingsSegmentedControl(
                             items: Array(MusicSkipBehavior.allCases),
                             selection: $musicGestureBehavior,
@@ -1501,9 +1597,7 @@ private struct GeneralSettings: View {
                     }
                     .settingsHighlight(id: highlightID("Gesture skip behavior"))
 
-                    Text(musicGestureBehavior.description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    .help(musicGestureBehavior.description)
 
                     Defaults.Toggle(key: .reverseSwipeGestures) {
                         Label("Reverse swipe gestures", systemImage: "arrow.uturn.backward")
@@ -1516,9 +1610,7 @@ private struct GeneralSettings: View {
                     Label("Enable close gesture", systemImage: "arrow.up")
                 }
                 .settingsHighlight(id: highlightID("Enable close gesture"))
-                HStack(spacing: 16) {
-                    Label("Gesture sensitivity", systemImage: "slider.horizontal.3")
-                    Spacer(minLength: 12)
+                SettingsAdaptiveRow("Gesture sensitivity") {
                     DottedSettingsSlider(
                         value: Binding(
                             // A smaller gesture threshold means higher sensitivity.
@@ -1528,7 +1620,9 @@ private struct GeneralSettings: View {
                         range: 100...300,
                         step: 100,
                         label: "Gesture sensitivity",
-                        valueText: String(localized: gestureSensitivity == 100 ? "High" : gestureSensitivity == 200 ? "Medium" : "Low")
+                        valueText: String(
+                            localized: gestureSensitivity == 100 ? "High" : gestureSensitivity == 200 ? "Medium" : "Low"
+                        )
                     )
                 }
 
@@ -1544,10 +1638,12 @@ private struct GeneralSettings: View {
                 customBadge(text: "Beta")
             }
         } footer: {
-            Text("Two-finger swipe up on notch to close, two-finger swipe down on notch to open when **Open notch on hover** option is disabled")
-                .multilineTextAlignment(.trailing)
-                .foregroundStyle(.secondary)
-                .font(.caption)
+            Text(
+                "Two-finger swipe up on notch to close, two-finger swipe down on notch to open when **Open notch on hover** option is disabled"
+            )
+            .multilineTextAlignment(.trailing)
+            .foregroundStyle(.secondary)
+            .font(.caption)
         }
     }
 
@@ -4648,13 +4744,10 @@ struct LiveActivitiesSettings: View {
 
 struct Appearance: View {
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
-    @Default(.openNotchOnHover) var openNotchOnHover
-    @Default(.minimumHoverDuration) var minimumHoverDuration
     @Default(.nonNotchHeight) var nonNotchHeight
     @Default(.nonNotchHeightMode) var nonNotchHeightMode
     @Default(.notchHeight) var notchHeight
     @Default(.notchHeightMode) var notchHeightMode
-    @Default(.reopenTab) private var reopenTab
     @ObservedObject var webcamManager = WebcamManager.shared
     @Default(.headerTabSpacing) private var headerTabSpacing
     @Default(.mirrorShape) var mirrorShape
@@ -4685,15 +4778,9 @@ struct Appearance: View {
     @State private var url: String = ""
     @State private var speed: CGFloat = 1.0
 
-    /// Whether the main screen has a physical notch.
-    private var mainScreenHasPhysicalNotch: Bool {
-        guard let screen = NSScreen.main else { return false }
-        return screen.safeAreaInsets.top > 0
-    }
-
-    private var notchWidthRange: ClosedRange<Double> {
-        let minW = Double(currentRecommendedMinimumNotchWidth())
-        let maxW = min(900, Double(maxAllowedNotchWidth()))
+    private var notchWidthRange: ClosedRange<CGFloat> {
+        let minW = currentRecommendedMinimumNotchWidth()
+        let maxW = min(900, maxAllowedNotchWidth(for: previewScreenName))
         return minW...max(minW, maxW)
     }
     private var defaultOpenNotchWidth: CGFloat {
@@ -4704,8 +4791,6 @@ struct Appearance: View {
         SettingsTab.appearance.highlightID(for: title)
     }
 
-
-
     private var timerSurfaceBinding: Binding<LockScreenTimerSurfaceMode> {
         Binding(
             get: { timerGlassModeIsGlass ? .glass : .classic },
@@ -4713,379 +4798,411 @@ struct Appearance: View {
         )
     }
 
+    @EnvironmentObject private var searchCoordinator: SettingsHighlightCoordinator
+    @State private var previewExpanded = true
+    @State private var previewScreenName = DynamicIslandViewCoordinator.shared.selectedScreen
+    @State private var musicCustomizationExpanded = false
+    @State private var mirrorCustomizationExpanded = false
+    @State private var appIconsExpanded = false
+    @Default(.notchAppearance) private var notchAppearance
+
+    private var previewScreenHasNotch: Bool {
+        let screen = NSScreen.screens.first { $0.localizedName == previewScreenName } ?? NSScreen.main
+        return (screen?.safeAreaInsets.top ?? 0) > 0
+    }
+
     var body: some View {
+        VStack(spacing: 0) {
+            AppearanceSettingsPreview(expanded: $previewExpanded, screenName: $previewScreenName)
+                .frame(maxWidth: 712)
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+            settingsForm
+                .modifier(SettingsPageStyle(compact: true))
+        }
+        .onChange(of: openNotchWidth) { previewExpanded = true }
+        .onChange(of: headerTabSpacing) { previewExpanded = true }
+        .onChange(of: closedNotchWidth) { previewExpanded = false }
+        .onChange(of: customizePhysicalNotchWidth) { previewExpanded = false }
+        .onChange(of: notchHeight) { previewHeight(hasNotch: true) }
+        .onChange(of: notchHeightMode) { previewHeight(hasNotch: true) }
+        .onChange(of: nonNotchHeight) { previewHeight(hasNotch: false) }
+        .onChange(of: nonNotchHeightMode) { previewHeight(hasNotch: false) }
+        .onReceive(searchCoordinator.$pendingScrollRequest) { request in
+            guard let request, request.tab == .appearance else { return }
+            let title = String(request.id.dropFirst("appearance-".count))
+            if ["Enable dynamic mirror", "Mirror shape", "Mirror Camera", "Enable idle animation"].contains(title) {
+                mirrorCustomizationExpanded = true
+            }
+            if title == "App icon" { appIconsExpanded = true }
+            if title == "Customize physical notch width" {
+                previewHeight(hasNotch: true)
+            }
+            if [
+                "Closed notch / pill width", "Customize physical notch width", "Notch display height",
+                "Non-notch display height",
+            ].contains(title) {
+                previewExpanded = false
+            } else {
+                previewExpanded = true
+            }
+        }
+    }
+
+    private func previewHeight(hasNotch: Bool) {
+        previewExpanded = false
+        if let screen = NSScreen.screens.first(where: { ($0.safeAreaInsets.top > 0) == hasNotch }) {
+            previewScreenName = screen.localizedName
+        }
+    }
+
+    private var settingsForm: some View {
         Form {
-            Section {
-                NotchAppearanceSettings()
-                .settingsHighlight(id: highlightID("Notch appearance"))
-                Defaults.Toggle(key: .settingsIconInNotch) {
-                    Label("Show settings icon in the notch", systemImage: "power")
-                }
-                .settingsHighlight(id: highlightID("Show settings icon in the notch"))
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("Top tab spacing", systemImage: "arrow.left.and.right")
-                    SettingsSlider(value: $headerTabSpacing, in: 4...32, step: 1, valueLabel: Text(verbatim: "\(Int(headerTabSpacing)) pt"))
-                        .accessibilityLabel(Text("Top tab spacing"))
-                    Button("Reset") { Defaults.reset(.headerTabSpacing) }
-                        .disabled(headerTabSpacing == 24)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                    Text("Spacing automatically tightens when needed to keep tabs clear of the notch.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .settingsHighlight(id: highlightID("Top tab spacing"))
-                Defaults.Toggle(key: .enableShadow) {
-                    Label("Enable window shadow", systemImage: "power")
-                }
-                .settingsHighlight(id: highlightID("Enable window shadow"))
-                Defaults.Toggle(key: .cornerRadiusScaling) {
-                    Label("Scale corner radius with notch size", systemImage: "arrow.left.and.right")
-                }
-                .settingsHighlight(id: highlightID("Scale corner radius with notch size"))
-                Defaults.Toggle(key: .useModernCloseAnimation) {
-                    Label("Use simpler close animation", systemImage: "sparkles")
-                }
-                .settingsHighlight(id: highlightID("Use simpler close animation"))
-            } header: {
-                Text("General")
-            }
-
-            // Show display style picker only on non-notch Macs (main screen has no physical notch)
-            if !mainScreenHasPhysicalNotch {
-                Section {
-                    HStack(spacing: 12) {
-                        Label("Main screen style", systemImage: "display").accessibilityHidden(true)
-                        Spacer(minLength: 12)
-                        Picker(selection: $externalDisplayStyle) {
-                            ForEach(ExternalDisplayStyle.allCases) { style in
-                                Text(style.localizedName)
-                                    .tag(style)
-                            }
-                        } label: {
-                            Label("Main screen style", systemImage: "display")
-                        }
-                            .labelsHidden()
-                    }
-                    .onChange(of: externalDisplayStyle) {
-                        NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
-                    }
-                    .settingsHighlight(id: highlightID("Main screen style"))
-                    Text(externalDisplayStyle.description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } header: {
-                    Text("Display Style")
-                }
-            }
-
             notchWidthControls()
             notchHeightControls()
-            notchBehaviorControls()
-
 
             Section {
-                Toggle(
-                    "Use music visualizer spectrogram",
-                    isOn: $useMusicVisualizer.animation()
-                )
-                .disabled(true)
-                if !useMusicVisualizer {
-                    if customVisualizers.count > 0 {
-                        Picker(
-                            "Selected animation",
-                            selection: $selectedVisualizer
-                        ) {
-                            ForEach(
-                                customVisualizers,
-                                id: \.self
-                            ) { visualizer in
-                                Text(visualizer.name)
-                                    .tag(visualizer)
-                            }
-                        }
-                    } else {
-                        HStack {
-                            Text("Selected animation")
-                            Spacer()
-                            Text("No custom animation available")
-                                .foregroundStyle(.secondary)
-                        }
+                SettingsAdaptiveRow("Notch appearance") {
+                    SettingsSegmentedControl(items: NotchAppearance.allCases, selection: $notchAppearance) {
+                        $0.localizedName
                     }
                 }
+                .settingsHighlight(id: highlightID("Notch appearance"))
+                Defaults.Toggle(key: .enableShadow) { Text("Enable window shadow") }
+                    .settingsHighlight(id: highlightID("Enable window shadow"))
+                Defaults.Toggle(key: .cornerRadiusScaling) { Text("Scale corner radius with notch size") }
+                    .settingsHighlight(id: highlightID("Scale corner radius with notch size"))
+                Defaults.Toggle(key: .useModernCloseAnimation) { Text("Use simpler close animation") }
+                    .settingsHighlight(id: highlightID("Use simpler close animation"))
             } header: {
-                HStack {
-                    Text("Custom music live activity animation")
-                    customBadge(text: "Coming soon")
-                }
+                Text("Surface and animation")
             }
 
             Section {
-                List {
-                    ForEach(customVisualizers, id: \.self) { visualizer in
-                        HStack {
-                            LottieView(state: LUStateData(type: .loadedFrom(visualizer.url), speed: visualizer.speed, loopMode: .loop))
-                                .frame(width: 30, height: 30, alignment: .center)
-                            Text(visualizer.name)
-                            Spacer(minLength: 0)
-                            if selectedVisualizer == visualizer {
-                                Text("selected")
-                                    .font(.caption)
-                                    .fontWeight(.medium)
+                Defaults.Toggle(key: .settingsIconInNotch) { Text("Show settings icon in the notch") }
+                    .settingsHighlight(id: highlightID("Show settings icon in the notch"))
+                appearanceSlider(
+                    "Top tab spacing", value: $headerTabSpacing, range: 4...32, step: 1,
+                    expanded: true, reset: { Defaults.reset(.headerTabSpacing) }
+                )
+                .settingsHighlight(id: highlightID("Top tab spacing"))
+            } header: {
+                Text("Header layout")
+            } footer: {
+                Text("Spacing automatically tightens when needed to keep tabs clear of the notch.")
+            }
+
+            Section {
+                if musicCustomizationExpanded {
+                    Toggle(
+                        "Use music visualizer spectrogram",
+                        isOn: $useMusicVisualizer.animation()
+                    )
+                    .disabled(true)
+                    if !useMusicVisualizer {
+                        if customVisualizers.count > 0 {
+                            Picker(
+                                "Selected animation",
+                                selection: $selectedVisualizer
+                            ) {
+                                ForEach(
+                                    customVisualizers,
+                                    id: \.self
+                                ) { visualizer in
+                                    Text(visualizer.name)
+                                        .tag(visualizer)
+                                }
+                            }
+                        } else {
+                            HStack {
+                                Text("Selected animation")
+                                Spacer()
+                                Text("No custom animation available")
                                     .foregroundStyle(.secondary)
-                                    .padding(.trailing, 8)
                             }
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .padding(.vertical, 2)
-                        .background(
-                            selectedListVisualizer != nil ? selectedListVisualizer == visualizer ? Color.accentColor : Color.clear : Color.clear,
-                            in: RoundedRectangle(cornerRadius: 5)
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            if selectedListVisualizer == visualizer {
-                                selectedListVisualizer = nil
-                                return
-                            }
-                            selectedListVisualizer = visualizer
                         }
                     }
-                }
-                .safeAreaPadding(
-                    EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0)
-                )
-                .frame(minHeight: 120)
-                .actionBar {
-                    HStack(spacing: 5) {
-                        Button {
-                            name = ""
-                            url = ""
-                            speed = 1.0
-                            isPresented.toggle()
-                        } label: {
-                            Image(systemName: "plus")
-                                .foregroundStyle(.secondary)
-                                .contentShape(Rectangle())
-                        }
-                        Divider()
-                        Button {
-                            if selectedListVisualizer != nil {
-                                let visualizer = selectedListVisualizer!
-                                selectedListVisualizer = nil
-                                customVisualizers.remove(at: customVisualizers.firstIndex(of: visualizer)!)
-                                if visualizer == selectedVisualizer && customVisualizers.count > 0 {
-                                    selectedVisualizer = customVisualizers[0]
-                                }
-                            }
-                        } label: {
-                            Image(systemName: "minus")
-                                .foregroundStyle(.secondary)
-                                .contentShape(Rectangle())
-                        }
-                    }
-                }
-                .controlSize(.small)
-                .buttonStyle(PlainButtonStyle())
-                .overlay {
-                    if customVisualizers.isEmpty {
-                        Text("No custom visualizer")
-                            .foregroundStyle(Color(.secondaryLabelColor))
-                            .padding(.bottom, 22)
-                    }
-                }
-                .sheet(isPresented: $isPresented) {
-                    VStack(alignment: .leading) {
-                        Text("Add new visualizer")
-                            .font(.largeTitle.bold())
-                            .padding(.vertical)
-                        TextField("Name", text: $name)
-                        TextField("Lottie JSON URL", text: $url)
-                        HStack {
-                            Text("Speed")
-                            Spacer(minLength: 80)
-                            SettingsSlider(value: $speed, in: 0...2, step: 0.1, valueLabel: Text("\(speed, specifier: "%.1f")s"))
-                        }
-                        .padding(.vertical)
-                        HStack {
-                            Button {
-                                isPresented.toggle()
-                            } label: {
-                                Text("Cancel")
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                            }
-
-                            Button {
-                                let visualizer: CustomVisualizer = .init(
-                                    UUID: UUID(),
-                                    name: name,
-                                    url: URL(string: url)!,
-                                    speed: speed
-                                )
-
-                                if !customVisualizers.contains(visualizer) {
-                                    customVisualizers.append(visualizer)
-                                }
-
-                                isPresented.toggle()
-                            } label: {
-                                Text("Add")
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                            }
-                            .buttonStyle(BorderedProminentButtonStyle())
-                        }
-                    }
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .controlSize(.extraLarge)
-                    .padding()
                 }
             } header: {
-                HStack(spacing: 0) {
-                    Text("Custom vizualizers (Lottie)")
-                    if !Defaults[.customVisualizers].isEmpty {
-                        Text(" – \(Defaults[.customVisualizers].count)")
-                            .foregroundStyle(.secondary)
+                customizationHeader("Music animations", expanded: $musicCustomizationExpanded)
+            }
+
+            if musicCustomizationExpanded {
+                Section {
+                    List {
+                        ForEach(customVisualizers, id: \.self) { visualizer in
+                            HStack {
+                                LottieView(
+                                    state: LUStateData(
+                                        type: .loadedFrom(visualizer.url), speed: visualizer.speed, loopMode: .loop)
+                                )
+                                .frame(width: 30, height: 30, alignment: .center)
+                                Text(visualizer.name)
+                                Spacer(minLength: 0)
+                                if selectedVisualizer == visualizer {
+                                    Text("selected")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(.secondary)
+                                        .padding(.trailing, 8)
+                                }
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .padding(.vertical, 2)
+                            .background(
+                                selectedListVisualizer != nil
+                                    ? selectedListVisualizer == visualizer ? Color.accentColor : Color.clear
+                                    : Color.clear,
+                                in: RoundedRectangle(cornerRadius: 5)
+                            )
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                if selectedListVisualizer == visualizer {
+                                    selectedListVisualizer = nil
+                                    return
+                                }
+                                selectedListVisualizer = visualizer
+                            }
+                        }
+                    }
+                    .safeAreaPadding(
+                        EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0)
+                    )
+                    .frame(minHeight: 120)
+                    .actionBar {
+                        HStack(spacing: 5) {
+                            Button {
+                                name = ""
+                                url = ""
+                                speed = 1.0
+                                isPresented.toggle()
+                            } label: {
+                                Image(systemName: "plus")
+                                    .foregroundStyle(.secondary)
+                                    .contentShape(Rectangle())
+                            }
+                            Divider()
+                            Button {
+                                if selectedListVisualizer != nil {
+                                    let visualizer = selectedListVisualizer!
+                                    selectedListVisualizer = nil
+                                    customVisualizers.remove(at: customVisualizers.firstIndex(of: visualizer)!)
+                                    if visualizer == selectedVisualizer && customVisualizers.count > 0 {
+                                        selectedVisualizer = customVisualizers[0]
+                                    }
+                                }
+                            } label: {
+                                Image(systemName: "minus")
+                                    .foregroundStyle(.secondary)
+                                    .contentShape(Rectangle())
+                            }
+                        }
+                    }
+                    .controlSize(.small)
+                    .buttonStyle(PlainButtonStyle())
+                    .overlay {
+                        if customVisualizers.isEmpty {
+                            Text("No custom visualizer")
+                                .foregroundStyle(Color(.secondaryLabelColor))
+                                .padding(.bottom, 22)
+                        }
+                    }
+                    .sheet(isPresented: $isPresented) {
+                        VStack(alignment: .leading) {
+                            Text("Add new visualizer")
+                                .font(.largeTitle.bold())
+                                .padding(.vertical)
+                            TextField("Name", text: $name)
+                            TextField("Lottie JSON URL", text: $url)
+                            HStack {
+                                Text("Speed")
+                                Spacer(minLength: 80)
+                                SettingsSlider(
+                                    value: $speed, in: 0...2, step: 0.1,
+                                    valueLabel: Text("\(speed, specifier: "%.1f")s"))
+                            }
+                            .padding(.vertical)
+                            HStack {
+                                Button {
+                                    isPresented.toggle()
+                                } label: {
+                                    Text("Cancel")
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                }
+
+                                Button {
+                                    let visualizer: CustomVisualizer = .init(
+                                        UUID: UUID(),
+                                        name: name,
+                                        url: URL(string: url)!,
+                                        speed: speed
+                                    )
+
+                                    if !customVisualizers.contains(visualizer) {
+                                        customVisualizers.append(visualizer)
+                                    }
+
+                                    isPresented.toggle()
+                                } label: {
+                                    Text("Add")
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                }
+                                .buttonStyle(BorderedProminentButtonStyle())
+                            }
+                        }
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .controlSize(.extraLarge)
+                        .padding()
+                    }
+                } header: {
+                    HStack(spacing: 0) {
+                        Text("Custom vizualizers (Lottie)")
+                        if !Defaults[.customVisualizers].isEmpty {
+                            Text(" – \(Defaults[.customVisualizers].count)")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
+
             }
 
             Section {
-                CameraSettingsPermissionRow()
-                Defaults.Toggle(key: .showMirror) {
-                    Label("Enable dynamic mirror", systemImage: "camera")
-                }
-                .disabled(!checkVideoInput())
-                .settingsHighlight(id: highlightID("Enable dynamic mirror"))
-                HStack(spacing: 12) {
-                    Label("Mirror shape", systemImage: "camera").accessibilityHidden(true)
-                    Spacer(minLength: 12)
-                    Picker(selection: $mirrorShape) {
-                        Text("Circle")
-                            .tag(MirrorShapeEnum.circle)
-                        Text("Square")
-                            .tag(MirrorShapeEnum.rectangle)
-                    } label: {
-                        Label("Mirror shape", systemImage: "camera")
+                if mirrorCustomizationExpanded {
+                    CameraSettingsPermissionRow()
+                    Defaults.Toggle(key: .showMirror) {
+                        Label("Enable dynamic mirror", systemImage: "camera")
                     }
-                        .labelsHidden()
-                }
-                .settingsHighlight(id: highlightID("Mirror shape"))
-                
-                if webcamManager.cameraAvailable {
-                    HStack(spacing: 12) {
-                        Label("Mirror Camera", systemImage: "camera").accessibilityHidden(true)
-                        Spacer(minLength: 12)
-                        Picker(selection: Binding(
-                            get: {
-                                webcamManager.availableCameras.contains { $0.uniqueID == selectedCameraID }
-                                    ? selectedCameraID : ""
-                            },
-                            set: { selectedCameraID = $0 }
-                        )) {
-                            Text("Auto Select").tag("")
-                            ForEach(webcamManager.availableCameras, id: \.uniqueID) { device in
-                                Text(device.localizedName)
-                                    .tag(device.uniqueID)
-                            }
+                    .disabled(!checkVideoInput())
+                    .settingsHighlight(id: highlightID("Enable dynamic mirror"))
+                    SettingsAdaptiveRow("Mirror shape") {
+                        Picker(selection: $mirrorShape) {
+                            Text("Circle")
+                                .tag(MirrorShapeEnum.circle)
+                            Text("Square")
+                                .tag(MirrorShapeEnum.rectangle)
                         } label: {
-                            Label("Mirror Camera", systemImage: "camera")
+                            Label("Mirror shape", systemImage: "camera")
                         }
+                        .labelsHidden()
+                    }
+                    .settingsHighlight(id: highlightID("Mirror shape"))
+
+                    if webcamManager.cameraAvailable {
+                        SettingsAdaptiveRow("Mirror Camera") {
+                            Picker(
+                                selection: Binding(
+                                    get: {
+                                        webcamManager.availableCameras.contains { $0.uniqueID == selectedCameraID }
+                                            ? selectedCameraID : ""
+                                    },
+                                    set: { selectedCameraID = $0 }
+                                )
+                            ) {
+                                Text("Auto Select").tag("")
+                                ForEach(webcamManager.availableCameras, id: \.uniqueID) { device in
+                                    Text(device.localizedName)
+                                        .tag(device.uniqueID)
+                                }
+                            } label: {
+                                Label("Mirror Camera", systemImage: "camera")
+                            }
                             .labelsHidden()
-                    }
-                    .onChange(of: selectedCameraID) { _, _ in
-                        if Defaults[.showMirror] {
-                            webcamManager.stopSession()
-                            webcamManager.startSession()
                         }
+                        .onChange(of: selectedCameraID) { _, _ in
+                            if Defaults[.showMirror] {
+                                webcamManager.stopSession()
+                                webcamManager.startSession()
+                            }
+                        }
+                        .settingsHighlight(id: highlightID("Mirror Camera"))
                     }
-                    .settingsHighlight(id: highlightID("Mirror Camera"))
+                    Defaults.Toggle(key: .showNotHumanFace) {
+                        Label("Enable idle animation", systemImage: "sparkles")
+                    }
+                    .settingsHighlight(id: highlightID("Enable idle animation"))
                 }
-                Defaults.Toggle(key: .showNotHumanFace) {
-                    Label("Enable idle animation", systemImage: "sparkles")
-                }
-                .settingsHighlight(id: highlightID("Enable idle animation"))
             } header: {
-                HStack {
-                    Text("Additional features")
-                }
+                customizationHeader("Mirror and idle animations", expanded: $mirrorCustomizationExpanded)
             }
 
             // MARK: - Custom Idle Animations Section
-            IdleAnimationsSettingsSection()
+            if mirrorCustomizationExpanded { IdleAnimationsSettingsSection() }
 
             Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    let columns = [GridItem(.adaptive(minimum: 90), spacing: 12)]
-                    LazyVGrid(columns: columns, spacing: 12) {
-                        appIconCard(
-                            title: "Default",
-                            image: defaultAppIconImage(),
-                            isSelected: selectedAppIconID == nil
-                        ) {
-                            selectedAppIconID = nil
-                            applySelectedAppIcon()
-                        }
-
-                        ForEach(customAppIcons) { icon in
+                if appIconsExpanded {
+                    VStack(alignment: .leading, spacing: 12) {
+                        let columns = [GridItem(.adaptive(minimum: 90), spacing: 12)]
+                        LazyVGrid(columns: columns, spacing: 12) {
                             appIconCard(
-                                title: icon.name,
-                                image: customIconImage(for: icon),
-                                isSelected: selectedAppIconID == icon.id.uuidString
+                                title: "Default",
+                                image: defaultAppIconImage(),
+                                isSelected: selectedAppIconID == nil
                             ) {
-                                selectedAppIconID = icon.id.uuidString
+                                selectedAppIconID = nil
                                 applySelectedAppIcon()
                             }
-                            .contextMenu {
-                                Button("Remove") {
-                                    removeCustomIcon(icon)
+
+                            ForEach(customAppIcons) { icon in
+                                appIconCard(
+                                    title: icon.name,
+                                    image: customIconImage(for: icon),
+                                    isSelected: selectedAppIconID == icon.id.uuidString
+                                ) {
+                                    selectedAppIconID = icon.id.uuidString
+                                    applySelectedAppIcon()
+                                }
+                                .contextMenu {
+                                    Button("Remove") {
+                                        removeCustomIcon(icon)
+                                    }
                                 }
                             }
                         }
-                    }
-                    .padding(8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color.secondary.opacity(isIconDropTarget ? 0.18 : 0.1))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(Color.accentColor.opacity(isIconDropTarget ? 0.8 : 0), lineWidth: 2)
-                    )
-                    .onDrop(of: [UTType.fileURL], isTargeted: $isIconDropTarget) { providers in
-                        handleIconDrop(providers)
-                    }
-
-                    HStack(spacing: 8) {
-                        Button("Add icon") {
-                            iconImportError = nil
-                            isIconImporterPresented = true
+                        .padding(8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color.secondary.opacity(isIconDropTarget ? 0.18 : 0.1))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(Color.accentColor.opacity(isIconDropTarget ? 0.8 : 0), lineWidth: 2)
+                        )
+                        .onDrop(of: [UTType.fileURL], isTargeted: $isIconDropTarget) { providers in
+                            handleIconDrop(providers)
                         }
-                        .buttonStyle(.borderedProminent)
 
-                        Button("Remove selected") {
-                            if let id = selectedAppIconID,
-                               let icon = customAppIcons.first(where: { $0.id.uuidString == id }) {
-                                removeCustomIcon(icon)
+                        HStack(spacing: 8) {
+                            Button("Add icon") {
+                                iconImportError = nil
+                                isIconImporterPresented = true
                             }
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(selectedAppIconID == nil)
-                    }
+                            .buttonStyle(.borderedProminent)
 
-                    if let iconImportError {
-                        Text(iconImportError)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("Drop a PNG, JPEG, TIFF, or ICNS file to add it to your icon library.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            Button("Remove selected") {
+                                if let id = selectedAppIconID,
+                                    let icon = customAppIcons.first(where: { $0.id.uuidString == id })
+                                {
+                                    removeCustomIcon(icon)
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(selectedAppIconID == nil)
+                        }
+
+                        if let iconImportError {
+                            Text(iconImportError)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("Drop a PNG, JPEG, TIFF, or ICNS file to add it to your icon library.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
+                    .settingsHighlight(id: highlightID("App icon"))
                 }
-                .settingsHighlight(id: highlightID("App icon"))
             } header: {
-                HStack {
-                    Label("App icon", systemImage: "slider.horizontal.3")
-                }
+                customizationHeader("App icon", expanded: $appIconsExpanded)
             }
         }
         .onAppear(perform: enforceLockScreenGlassConsistency)
@@ -5114,7 +5231,9 @@ struct Appearance: View {
         NSImage(contentsOf: icon.fileURL)
     }
 
-    private func appIconCard(title: String, image: NSImage?, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    private func appIconCard(title: String, image: NSImage?, isSelected: Bool, action: @escaping () -> Void)
+        -> some View
+    {
         Button(action: action) {
             VStack(spacing: 6) {
                 Group {
@@ -5213,7 +5332,7 @@ struct Appearance: View {
     }
 
     func checkVideoInput() -> Bool {
-        if let _ = AVCaptureDevice.default(for: .video) {
+        if AVCaptureDevice.default(for: .video) != nil {
             return true
         }
 
@@ -5223,10 +5342,7 @@ struct Appearance: View {
     @ViewBuilder
     private func notchHeightControls() -> some View {
         Section {
-            HStack(spacing: 12) {
-                Label("Notch display height", systemImage: "arrow.left.and.right")
-                    .accessibilityHidden(true)
-                Spacer(minLength: 12)
+            SettingsAdaptiveRow("Notch display height") {
                 Picker(selection: $notchHeightMode) {
                     Text("Match real notch size")
                         .tag(WindowHeightMode.matchRealNotchSize)
@@ -5252,16 +5368,15 @@ struct Appearance: View {
             }
             .settingsHighlight(id: highlightID("Notch display height"))
             if notchHeightMode == .custom {
-                SettingsSlider(value: $notchHeight, in: 15...45, step: 1, valueLabel: Text("\(Int(notchHeight))")) {
-                    Text("Custom notch size")
-                }
+                appearanceSlider(
+                    "Closed height on notched displays", value: $notchHeight, range: 15...45,
+                    step: 1, expanded: false, reset: { Defaults.reset(.notchHeight) }
+                )
                 .onChange(of: notchHeight) {
                     NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
                 }
             }
-            HStack(spacing: 12) {
-                Label("Non-notch display height", systemImage: "arrow.left.and.right").accessibilityHidden(true)
-                Spacer(minLength: 12)
+            SettingsAdaptiveRow("Non-notch display height") {
                 Picker(selection: $nonNotchHeightMode) {
                     Text("Match menubar height")
                         .tag(WindowHeightMode.matchMenuBar)
@@ -5272,7 +5387,7 @@ struct Appearance: View {
                 } label: {
                     Label("Non-notch display height", systemImage: "arrow.left.and.right")
                 }
-                    .labelsHidden()
+                .labelsHidden()
             }
             .onChange(of: nonNotchHeightMode) {
                 switch nonNotchHeightMode {
@@ -5285,208 +5400,97 @@ struct Appearance: View {
                 }
                 NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
             }
+            .settingsHighlight(id: highlightID("Non-notch display height"))
             if nonNotchHeightMode == .custom {
-                SettingsSlider(value: $nonNotchHeight, in: 0...40, step: 1, valueLabel: Text("\(Int(nonNotchHeight))")) {
-                    Text("Custom notch size")
-                }
+                appearanceSlider(
+                    "Closed height on other displays", value: $nonNotchHeight, range: 0...40,
+                    step: 1, expanded: false, reset: { Defaults.reset(.nonNotchHeight) }
+                )
                 .onChange(of: nonNotchHeight) {
                     NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
                 }
             }
         } header: {
-            Text("Notch Height")
-        }
-    }
-
-    @ViewBuilder
-    private func notchBehaviorControls() -> some View {
-        Section {
-            Defaults.Toggle(key: .extendHoverArea) {
-                Label("Extend hover area", systemImage: "hand.draw")
-            }
-            .settingsHighlight(id: highlightID("Extend hover area"))
-            Defaults.Toggle(key: .enableHaptics) {
-                Label("Enable haptics", systemImage: "power")
-            }
-            .settingsHighlight(id: highlightID("Enable haptics"))
-            Defaults.Toggle(key: .openNotchOnHover) {
-                Label("Open notch on hover", systemImage: "hand.draw")
-            }
-            .onChange(of: openNotchOnHover) {
-                if !openNotchOnHover {
-                    Defaults[.enableGestures] = true
-                }
-            }
-            .settingsHighlight(id: highlightID("Open notch on hover"))
-            Defaults.Toggle(key: .keepNotchExpanded) {
-                Label("Keep expanded", systemImage: "slider.horizontal.3")
-            }
-            .settingsHighlight(id: highlightID("Keep expanded"))
-            Text("Keeps the panel expanded after opening, even when the pointer leaves. You can still close it manually.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            HStack(spacing: 12) {
-                Label("When reopening", systemImage: "slider.horizontal.3").accessibilityHidden(true)
-                Spacer(minLength: 12)
-                Picker(selection: Binding(
-                    get: { coordinator.availableTabs.contains { $0.id == reopenTab } ? reopenTab : ReopenTabSelection.lastPage },
-                    set: { reopenTab = $0 }
-                )) {
-                    Text("Last page").tag(ReopenTabSelection.lastPage)
-                    ForEach(coordinator.availableTabs) { tab in
-                        Text(LocalizedStringKey(tab.label))
-                            .tag(tab.id)
-                    }
-                } label: {
-                    Label("When reopening", systemImage: "slider.horizontal.3")
-                }
-                    .labelsHidden()
-            }
-            .pickerStyle(.menu)
-            .settingsHighlight(id: highlightID("When reopening"))
-            if openNotchOnHover {
-                SettingsSlider(value: $minimumHoverDuration, in: 0...1, step: 0.1, valueLabel: Text("\(minimumHoverDuration, specifier: "%.1f")s")) {
-                    HStack {
-                        Text("Minimum hover duration")
-                        Spacer()
-                    }
-                }
-                .onChange(of: minimumHoverDuration) {
-                    NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
-                }
-            }
-            HStack(spacing: 12) {
-                Label("External display style", systemImage: "display").accessibilityHidden(true)
-                Spacer(minLength: 12)
-                Picker(selection: $externalDisplayStyle) {
-                    ForEach(ExternalDisplayStyle.allCases) { style in
-                        Text(style.localizedName)
-                            .tag(style)
-                    }
-                } label: {
-                    Label("External display style", systemImage: "display")
-                }
-                    .labelsHidden()
-            }
-            .onChange(of: externalDisplayStyle) {
-                NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
-            }
-            .settingsHighlight(id: highlightID("External display style"))
-            Text(externalDisplayStyle.description)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Defaults.Toggle(key: .hideNonNotchUntilHover) {
-                Label("Hide until hovered on non-notch displays", systemImage: "display")
-            }
-            .settingsHighlight(id: highlightID("Hide until hovered"))
-            Text("When enabled, the notch slides up and hides on external (non-notch) displays until you hover over it.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        } header: {
-            Text("Notch behavior")
+            Text("Closed height")
         }
     }
 
     @ViewBuilder
     private func notchWidthControls() -> some View {
         Section {
-            let recommendedMin = currentRecommendedMinimumNotchWidth()
-            let tabCount = enabledStandardTabCount()
-            let dynamicRange = Double(recommendedMin)...900
-            
-            let closedRange = Double(80)...400
-            let minimalisticRange = Double(250)...600
-
-            let widthBinding = Binding<Double>(
-                get: { Double(openNotchWidth) },
-                set: { newValue in
-                    let clamped = min(max(newValue, dynamicRange.lowerBound), dynamicRange.upperBound)
-                    let value = CGFloat(clamped)
-                    if openNotchWidth != value {
-                        openNotchWidth = value
-                    }
-                }
-            )
-            
-            let closedWidthBinding = Binding<Double>(
-                get: { Double(closedNotchWidth) },
-                set: { newValue in
-                    let clamped = min(max(newValue, closedRange.lowerBound), closedRange.upperBound)
-                    let value = CGFloat(clamped)
-                    if closedNotchWidth != value {
-                        closedNotchWidth = value
+            if previewScreenHasNotch {
+                Defaults.Toggle(key: .customizePhysicalNotchWidth) { Text("Customize physical notch width") }
+                    .onChange(of: customizePhysicalNotchWidth) {
                         NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
                     }
-                }
+                    .settingsHighlight(id: highlightID("Customize physical notch width"))
+            }
+            appearanceSlider(
+                "Closed notch / pill width", value: $closedNotchWidth,
+                range: 80...400, step: 5, expanded: false,
+                reset: { Defaults.reset(.closedNotchWidth) }
             )
-
-            VStack(alignment: .leading, spacing: 10) {
-                Defaults.Toggle(key: .customizePhysicalNotchWidth) {
-                    Label("Customize physical notch width", systemImage: "arrow.left.and.right")
-                }
-                .onChange(of: customizePhysicalNotchWidth) {
-                    NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
-                }
-                .settingsHighlight(id: highlightID("Customize physical notch width"))
-                
-                SettingsSlider(
-                    value: closedWidthBinding,
-                    in: closedRange,
-                    step: 5,
-                    valueLabel: Text("\(Int(closedNotchWidth)) px")
-                ) {
-                    HStack {
-                        Label("Closed notch / pill width", systemImage: "arrow.left.and.right")
-                        Spacer()
-                    }
-                }
-                .settingsHighlight(id: highlightID("Closed notch / pill width"))
-
-                Divider().padding(.vertical, 4)
-
-                SettingsSlider(
-                    value: widthBinding,
-                    in: dynamicRange,
-                    step: 10,
-                    valueLabel: Text("\(Int(openNotchWidth)) px")
-                ) {
-                    HStack {
-                        Label("Expanded notch width", systemImage: "arrow.left.and.right")
-                        Spacer()
-                    }
-                }
-                .disabled(enableMinimalisticUI)
-                .settingsHighlight(id: highlightID("Expanded notch width"))
-
-                HStack {
-                    Text("\(tabCount) tab\(tabCount == 1 ? "" : "s") enabled · min \(Int(recommendedMin)) px")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Button("Reset Width") {
-                        openNotchWidth = recommendedMin
-                    }
-                    .disabled(abs(openNotchWidth - recommendedMin) < 0.5)
-                    .buttonStyle(.bordered)
-                }
-
-                let description = enableMinimalisticUI
-                ? String(localized: "Expanded width adjustments apply only to the standard notch layout. Disable Minimalistic UI to edit this value.")
-                : String(localized: "Recommended minimum width adjusts automatically based on the number of enabled tabs.")
-
-                Text(description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            .disabled(previewScreenHasNotch && !customizePhysicalNotchWidth)
+            .onChange(of: closedNotchWidth) {
+                NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
             }
-            .onAppear {
-                enforceMinimumNotchWidth()
+            .settingsHighlight(id: highlightID("Closed notch / pill width"))
+            if previewScreenHasNotch && !customizePhysicalNotchWidth {
+                Text("Closed width follows the physical notch on the preview display.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
+            appearanceSlider(
+                "Expanded notch width", value: $openNotchWidth,
+                range: notchWidthRange, step: 10, expanded: true,
+                reset: { openNotchWidth = defaultOpenNotchWidth }
+            )
+            .disabled(enableMinimalisticUI)
+            .settingsHighlight(id: highlightID("Expanded notch width"))
         } header: {
-            HStack {
-                Text("Notch Width")
-                customBadge(text: "Beta")
+            Text("Notch Width")
+        } footer: {
+            if enableMinimalisticUI {
+                Text(
+                    "Expanded width adjustments apply only to the standard notch layout. Disable Minimalistic UI to edit this value."
+                )
+            } else {
+                Text(
+                    "Recommended minimum: \(Int(currentRecommendedMinimumNotchWidth())) pt · \(enabledStandardTabCount()) tabs"
+                )
             }
         }
+        .onAppear { enforceMinimumNotchWidth() }
+    }
+
+    private func appearanceSlider<Value: BinaryFloatingPoint>(
+        _ title: LocalizedStringKey, value: Binding<Value>, range: ClosedRange<Value>, step: Value,
+        expanded: Bool, reset: @escaping () -> Void
+    ) -> some View {
+        SettingsAdaptiveRow(title) {
+            HStack(spacing: 8) {
+                SettingsSlider(
+                    value: value, in: range, step: step,
+                    valueLabel: Text(verbatim: "\(Int(value.wrappedValue)) pt"),
+                    onEditingChanged: { if $0 { previewExpanded = expanded } }
+                )
+                .accessibilityLabel(Text(title))
+                Button("Reset") {
+                    previewExpanded = expanded
+                    reset()
+                }
+                .accessibilityLabel(Text("Reset") + Text(" ") + Text(title))
+            }
+        }
+    }
+
+    private func customizationHeader(_ title: LocalizedStringKey, expanded: Binding<Bool>) -> some View {
+        Button {
+            expanded.wrappedValue.toggle()
+        } label: {
+            Label(title, systemImage: expanded.wrappedValue ? "chevron.down" : "chevron.right")
+        }
+        .buttonStyle(.plain)
+        .accessibilityValue(expanded.wrappedValue ? Text("Expanded") : Text("Collapsed"))
     }
 
     private func enforceLockScreenGlassConsistency() {
@@ -5499,8 +5503,8 @@ struct Appearance: View {
     }
 }
 
-
 /// A segmented control with a soft track and an animated rounded selection.
+
 struct SettingsSegmentedControl<Item: Hashable>: View {
     let items: [Item]
     @Binding var selection: Item
@@ -6067,7 +6071,7 @@ struct LockScreenSettings: View {
                 VStack(alignment: .leading, spacing: 16) {
 
                     VStack(alignment: .leading, spacing: 6) {
-                        LockScreenSettingRow("Siri detection speed") {
+                        SettingsAdaptiveRow("Siri detection speed") {
                             Picker(selection: $siriResponsivenessMode) {
                                 ForEach(SiriResponsivenessMode.allCases) { mode in
                                     Text(mode.displayName).tag(mode)
@@ -6163,7 +6167,7 @@ struct LockScreenSettings: View {
         VStack(alignment: .leading, spacing: 16) {
 
             if #available(macOS 26.0, *) {
-                LockScreenSettingRow("Material") {
+                SettingsAdaptiveRow("Material") {
                     Picker(selection: $lockScreenGlassStyle) {
                         ForEach(LockScreenGlassStyle.allCases) { style in
                             Text(style.localizedName).tag(style)
@@ -6175,7 +6179,7 @@ struct LockScreenSettings: View {
                 }
                 .settingsHighlight(id: highlightID("Material"))
             } else {
-                LockScreenSettingRow("Material") {
+                SettingsAdaptiveRow("Material") {
                     Picker(selection: $lockScreenGlassStyle) {
                         ForEach(LockScreenGlassStyle.allCases) { style in
                             Text(style.localizedName).tag(style)
@@ -6292,7 +6296,7 @@ struct LockScreenSettings: View {
                     if timerGlassModeIsGlass || searchedTitle == "Timer glass material"
                         || searchedTitle == "Timer liquid mode" || searchedTitle == "Timer widget variant"
                     {
-                        LockScreenSettingRow("Timer glass material") {
+                        SettingsAdaptiveRow("Timer glass material") {
                             Picker(selection: $lockScreenTimerGlassStyle) {
                                 ForEach(LockScreenGlassStyle.allCases) { style in
                                     Text(style.localizedName).tag(style)
@@ -6529,7 +6533,7 @@ struct LockScreenSettings: View {
             if lockScreenShowCalendarEvent || revealedSection == "calendar" {
                 Group {
 
-                    LockScreenSettingRow("Show events within the next") {
+                    SettingsAdaptiveRow("Show events within the next") {
                         Picker("Show events within the next", selection: $lockScreenCalendarEventLookaheadWindow) {
                             ForEach(CalendarLookaheadOption.allCases) { option in
                                 Text(option.title).tag(option.rawValue)
@@ -6603,7 +6607,7 @@ struct LockScreenSettings: View {
                     .disabled(!lockScreenShowCalendarEvent)
                     .settingsHighlight(id: highlightID("Show countdown"))
 
-                    LockScreenSettingRow("After an event starts") {
+                    SettingsAdaptiveRow("After an event starts") {
                         Picker("After an event starts", selection: calendarBehaviorBinding) {
                             ForEach(LockScreenCalendarBehavior.allCases, id: \.self) { behavior in
                                 Text(LocalizedStringKey(behavior.rawValue)).tag(behavior)
@@ -6616,7 +6620,7 @@ struct LockScreenSettings: View {
                     .settingsHighlight(id: highlightID("After an event starts"))
 
                     if calendarBehaviorBinding.wrappedValue == .briefly {
-                        LockScreenSettingRow("Show event after it starts") {
+                        SettingsAdaptiveRow("Show event after it starts") {
                             Picker(
                                 "Show event after it starts", selection: $lockScreenShowCalendarEventAfterStartWindow
                             ) {
@@ -6693,7 +6697,7 @@ struct LockScreenSettings: View {
                     .disabled(!enableLockScreenReminderWidget || !enableReminderLiveActivity)
                     .settingsHighlight(id: highlightID("Reminder alignment"))
 
-                    LockScreenSettingRow("Vertical offset") {
+                    SettingsAdaptiveRow("Vertical offset") {
                         SettingsSlider(
                             value: $lockScreenReminderWidgetVerticalOffset,
                             in: -160...160,
@@ -6747,7 +6751,7 @@ extension LockScreenSettings {
         preview: AnyView? = nil
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            LockScreenSettingRow(LocalizedStringKey(title)) {
+            SettingsAdaptiveRow(LocalizedStringKey(title)) {
                 SettingsSlider(value: value, in: liquidVariantRange, step: 1, valueLabel: Text("v\(currentValue)"))
                     .accessibilityLabel(Text(LocalizedStringKey(title)))
             }
@@ -6765,7 +6769,7 @@ extension LockScreenSettings {
     }
 }
 
-private struct LockScreenSettingRow<Control: View>: View {
+private struct SettingsAdaptiveRow<Control: View>: View {
     let title: LocalizedStringKey
     @ViewBuilder var control: () -> Control
 
@@ -6806,7 +6810,7 @@ private struct LockScreenSegmentedPicker<Item: Hashable>: View {
     }
 
     var body: some View {
-        LockScreenSettingRow(title) {
+        SettingsAdaptiveRow(title) {
             SettingsSegmentedControl(items: items, selection: $selection, label: label)
         }
     }
