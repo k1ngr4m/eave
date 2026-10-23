@@ -985,6 +985,12 @@ class MusicManager: ObservableObject {
             self.album = state.album
         }
 
+        recordLastPlayedTrack(
+            title: state.title,
+            artist: state.artist,
+            bundleIdentifier: state.bundleIdentifier
+        )
+
         let durationChanged = state.duration != self.songDuration
         if durationChanged {
             self.songDuration = state.duration
@@ -1727,6 +1733,25 @@ class MusicManager: ObservableObject {
             direction: direction,
             behavior: behavior
         )
+    }
+
+    /// Persists the newest real track metadata so the notch's idle states can
+    /// offer "resume" after the source app quits. Placeholder metadata is ignored.
+    private func recordLastPlayedTrack(title: String, artist: String, bundleIdentifier: String?) {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedArtist = artist.trimmingCharacters(in: .whitespacesAndNewlines)
+        let titleIsReal = !trimmedTitle.isEmpty && !Self.placeholderTitles.contains(trimmedTitle.lowercased())
+        let artistIsReal = !trimmedArtist.isEmpty && !Self.placeholderArtists.contains(trimmedArtist.lowercased())
+        guard titleIsReal || artistIsReal else { return }
+
+        let track = LastPlayedTrack(
+            title: trimmedTitle,
+            artist: trimmedArtist,
+            bundleIdentifier: bundleIdentifier,
+            recordedAt: Date()
+        )
+        guard track != Defaults[.lastPlayedTrack] else { return }
+        Defaults[.lastPlayedTrack] = track
     }
 
     func openMusicApp() {

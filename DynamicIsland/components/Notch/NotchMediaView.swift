@@ -1004,12 +1004,7 @@ struct NotchMediaView: View {
                             }
                         }
                     } else {
-                        VStack(spacing: 8) {
-                            Image(systemName: "music.note.slash").font(.title2)
-                            Text("Nothing Playing").font(.callout)
-                        }
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        MediaIdleStateView()
                     }
                 }
                 .blur(radius: vm.notchState == .closed ? 30 : 0)
@@ -1017,6 +1012,113 @@ struct NotchMediaView: View {
             }
         }
         .transition(.opacity)
+    }
+}
+
+/// The Media tab's resting state: an album-art-shaped placeholder that breathes
+/// softly, plus a one-tap way back into the last played source.
+struct MediaIdleStateView: View {
+    @ObservedObject private var musicManager = MusicManager.shared
+    @Default(.lastPlayedTrack) private var lastPlayedTrack
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isBreathing = false
+
+    var body: some View {
+        VStack(spacing: 14) {
+            artworkPlaceholder
+
+            VStack(spacing: 4) {
+                Text("Nothing Playing")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.75))
+                Text("Quiet for now")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.primary.opacity(0.45))
+            }
+
+            if let track = lastPlayedTrack {
+                resumeRow(for: track)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Same shape family as the real artwork, so playback starting can hand
+    /// this container over to the cover without a visual jump.
+    private var artworkPlaceholder: some View {
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [Color.primary.opacity(0.09), Color.primary.opacity(0.03)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+            }
+            .overlay {
+                Image(systemName: "music.note")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.35))
+            }
+            .frame(width: 72, height: 72)
+            .scaleEffect(isBreathing ? 1.04 : 1)
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.easeInOut(duration: 3.6).repeatForever(autoreverses: true)) {
+                    isBreathing = true
+                }
+            }
+    }
+
+    private func resumeRow(for track: LastPlayedTrack) -> some View {
+        Button(action: resumeLastPlayed) {
+            HStack(spacing: 10) {
+                Image(systemName: "play.fill")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.7))
+                    .frame(width: 22, height: 22)
+                    .background(Circle().fill(Color.primary.opacity(0.08)))
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Last played")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(0.4))
+                    Text(verbatim: "\(track.title) — \(track.artist)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.3))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                Capsule().fill(Color.primary.opacity(0.04))
+            )
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: 240)
+        .help("Resume")
+    }
+
+    private func resumeLastPlayed() {
+        if musicManager.hasActiveSession && !musicManager.isPlaying {
+            musicManager.play()
+            return
+        }
+
+        let bundleID = lastPlayedTrack?.bundleIdentifier ?? "com.apple.Music"
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+            NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+        }
     }
 }
 

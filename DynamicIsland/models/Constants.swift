@@ -40,6 +40,15 @@ let temporaryDirectory: URL = {
 }()
 let spacing: CGFloat = 16
 
+/// The most recent real track metadata, persisted so the notch's idle states
+/// can offer a one-tap way back into the player after the source app quits.
+struct LastPlayedTrack: Codable, Hashable, Defaults.Serializable {
+    var title: String
+    var artist: String
+    var bundleIdentifier: String?
+    var recordedAt: Date
+}
+
 struct CustomVisualizer: Codable, Hashable, Equatable, Defaults.Serializable {
     let UUID: UUID
     var name: String
@@ -1289,6 +1298,9 @@ extension Defaults.Keys {
     static let lyricsPanelWidth = Key<CGFloat>("lyricsPanelWidth", default: 280)
     static let lyricsPanelOffset = Key<CGFloat>("lyricsPanelOffset", default: 0)
     static let showLiveCanvasInDynamicIsland = Key<Bool>("showLiveCanvasInDynamicIsland", default: false)
+
+    // MARK: Idle States
+    static let lastPlayedTrack = Key<LastPlayedTrack?>("lastPlayedTrack", default: nil)
     
     // MARK: Notes Feature
     static let enableNotes = Key<Bool>("enableNotes", default: false)

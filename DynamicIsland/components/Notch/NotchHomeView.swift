@@ -41,6 +41,11 @@ struct NotchHomeView: View {
                         }
                         .frame(maxWidth: .infinity)
 
+                        if !minimalistic {
+                            HomeGlanceColumn()
+                                .fixedSize()
+                        }
+
                         if showMirror && webcamManager.cameraAvailable && vm.notchState == .open {
                             CameraPreviewView(webcamManager: webcamManager)
                                 .frame(width: minimalistic ? 80 : 128, height: minimalistic ? 80 : 128)
@@ -66,20 +71,202 @@ struct HomeClockView: View {
     let date: Date
     let compact: Bool
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appeared = false
+    @State private var isBreathing = false
+
+    private var clockText: String {
+        date.formatted(.dateTime.hour().minute())
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(date, format: .dateTime.hour().minute())
+            Text(clockText)
                 .font(.system(size: compact ? 36 : 48, weight: .ultraLight, design: .rounded))
                 .monospacedDigit()
                 .tracking(-1.5)
-                .foregroundStyle(Color.primary.opacity(0.95))
-            Text(date, format: .dateTime.month().day().weekday(.wide))
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Color.primary.opacity(0.55))
+                .foregroundStyle(clockFill)
+                .contentTransition(.numericText())
+                .animation(reduceMotion ? nil : .smooth(duration: 0.35), value: clockText)
+            HStack(spacing: 5) {
+                Text(date, format: .dateTime.weekday(.wide))
+                Text(verbatim: "·")
+                    .foregroundStyle(Color.primary.opacity(0.3))
+                Text(date, format: .dateTime.month().day())
+            }
+            .font(.system(size: 13, weight: .medium, design: .rounded))
+            .tracking(0.3)
+            .foregroundStyle(Color.primary.opacity(0.65))
+            .padding(.leading, 2)
         }
         .lineLimit(1)
         .minimumScaleFactor(0.65)
+        .background(alignment: .leading) { ambientGlow }
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 6)
+        .onAppear {
+            withAnimation(reduceMotion ? nil : .smooth(duration: 0.45)) {
+                appeared = true
+            }
+        }
         .accessibilityElement(children: .combine)
+    }
+
+    /// Top-lit digits keep the ultraLight weight from looking flat against
+    /// the black notch surface.
+    private var clockFill: some ShapeStyle {
+        LinearGradient(
+            colors: [Color.primary.opacity(0.98), Color.primary.opacity(0.66)],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
+    private var ambientGlow: some View {
+        Circle()
+            .fill(
+                RadialGradient(
+                    colors: [Color.primary.opacity(0.07), .clear],
+                    center: .center,
+                    startRadius: 12,
+                    endRadius: 130
+                )
+            )
+            .frame(width: 260, height: 260)
+            .offset(x: -14, y: -6)
+            .scaleEffect(isBreathing ? 1.07 : 1)
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.easeInOut(duration: 4.5).repeatForever(autoreverses: true)) {
+                    isBreathing = true
+                }
+            }
+    }
+}
+
+/// The Home tab's right-hand glance column: weather, the next calendar event,
+/// and the battery — one quiet row each, hidden when the data is unavailable.
+private struct HomeGlanceColumn: View {
+    @ObservedObject private var calendarManager = CalendarManager.shared
+    @Default(.enableLockScreenWeatherWidget) private var showsWeather
+
+    var body: some View {
+        TimelineView(.periodic(from: Calendar.current.startOfDay(for: .now), by: 60)) { context in
+            VStack(alignment: .trailing, spacing: 10) {
+                if showsWeather {
+                    WeatherGlanceRow()
+                }
+                if let event = nextEvent(at: context.date) {
+                    EventGlanceRow(event: event)
+                }
+                BatteryGlanceRow(referenceDate: context.date)
+            }
+        }
+    }
+
+    private func nextEvent(at date: Date) -> EventModel? {
+        calendarManager.lockScreenEvents
+            .filter { $0.type.isEvent && !$0.isAllDay && $0.end > date }
+            .min { $0.start < $1.start }
+    }
+}
+
+private struct WeatherGlanceRow: View {
+    // Only constructed while the user enabled weather, so reaching the shared
+    // manager here cannot trigger its location prompt for anyone else.
+    @ObservedObject private var manager = LockScreenWeatherManager.shared
+
+    var body: some View {
+        if let snapshot = manager.snapshot {
+            HStack(spacing: 5) {
+                Image(systemName: snapshot.symbolName)
+                    .symbolRenderingMode(.multicolor)
+                Text(verbatim: temperatureLabel(for: snapshot))
+            }
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(Color.primary.opacity(0.6))
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    private func temperatureLabel(for snapshot: LockScreenWeatherSnapshot) -> String {
+        let base = snapshot.temperatureInfo?.displayCurrent ?? snapshot.temperatureText
+        return base.hasSuffix("°") ? base : base + "°"
+    }
+}
+
+private struct EventGlanceRow: View {
+    let event: EventModel
+
+    @ObservedObject private var coordinator = DynamicIslandViewCoordinator.shared
+
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
+    var body: some View {
+        Button {
+            coordinator.currentView = .calendar
+        } label: {
+            HStack(spacing: 6) {
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(eventColor)
+                    .frame(width: 3, height: 12)
+                Text(verbatim: Self.timeFormatter.string(from: event.start))
+                    .monospacedDigit()
+                Text(event.title)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(Color.primary.opacity(0.6))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: 180, alignment: .trailing)
+        .help(event.title)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var eventColor: Color {
+        Color(nsColor: event.calendar.color).ensureMinimumBrightness(factor: 0.7).notchReadableTint()
+    }
+}
+
+private struct BatteryGlanceRow: View {
+    let referenceDate: Date
+
+    @State private var status: MacBatteryManager.BatteryStatus?
+
+    var body: some View {
+        if let status, let percentage = status.percentage {
+            HStack(spacing: 5) {
+                Text("\(percentage)%")
+                    .monospacedDigit()
+                Image(systemName: status.isCharging ? "bolt.fill" : batterySymbol(for: percentage))
+            }
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(Color.primary.opacity(0.6))
+            .onAppear(perform: refresh)
+            .onChange(of: referenceDate) { _, _ in refresh() }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    private func refresh() {
+        status = MacBatteryManager.shared.currentStatus()
+    }
+
+    private func batterySymbol(for percentage: Int) -> String {
+        switch percentage {
+        case ..<25: return "battery.25percent"
+        case ..<50: return "battery.50percent"
+        case ..<75: return "battery.75percent"
+        default: return "battery.100percent"
+        }
     }
 }
 
