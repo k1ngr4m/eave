@@ -24,7 +24,7 @@ final class MenuBarStatusManager {
     )
 
     private lazy var dockIcon = StatusDockIconController(status: controller) {
-        applySelectedAppIcon(force: true)
+        NSApp.applicationIconImage = nil
     }
 
     private init() {}
