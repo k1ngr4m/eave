@@ -2,34 +2,26 @@ import SwiftUI
 @preconcurrency import EaveNetworkStats
 
 struct BatteryDetailsView: View {
-    @EnvironmentObject private var localization: Localization
     @StateObject private var monitor = BatteryMonitor()
-    let onBack: () -> Void
     let onOpenBatterySettings: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            BatteryPanel(monitor: monitor)
-                .frame(width: monitor.panelSize.width, height: monitor.panelSize.height)
-            Button(action: onBack) {
-                Label(localization.string(.commonBack), systemImage: "chevron.left")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+        BatteryPanel(monitor: monitor)
+            .frame(width: monitor.panelSize.width, height: monitor.panelSize.height)
+            .onAppear {
+                monitor.openSettings = onOpenBatterySettings
+                monitor.setVisible(true)
             }
-            .buttonStyle(.plain)
-        }
-        .frame(width: monitor.panelSize.width)
-        .onAppear {
-            monitor.openSettings = onOpenBatterySettings
-            monitor.setVisible(true)
-        }
-        .onDisappear { monitor.setVisible(false) }
+            .onDisappear { monitor.setVisible(false) }
     }
 }
 
-private struct BatteryPanel: NSViewRepresentable {
+struct BatteryPanel: NSViewRepresentable {
+    @Environment(\.colorScheme) private var colorScheme
     let monitor: BatteryMonitor
     func makeNSView(context: Context) -> NSView { monitor.panel }
-    func updateNSView(_ nsView: NSView, context: Context) {}
+    func updateNSView(_ nsView: NSView, context: Context) {
+        // Stats draws ordinary AppKit labels, which must not inherit vibrant label colors.
+        nsView.appearance = NSAppearance(named: colorScheme == .dark ? .darkAqua : .aqua)
+    }
 }

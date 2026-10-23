@@ -4,7 +4,6 @@ import SwiftUI
 
 private enum PopoverPanel {
     case summary
-    case battery
     case wifi(showDetails: Bool)
     case ethernet
     case inputSource
@@ -32,21 +31,13 @@ struct StatusPopoverView: View {
     let openKeyboardSettings: () -> Void
     let quit: () -> Void
     @State private var currentPanel: PopoverPanel = .summary
+    @State private var showsBatteryDetails = false
 
     var body: some View {
         Group {
             switch currentPanel {
             case .summary:
                 summary
-            case .battery:
-                BatteryDetailsView(
-                    onBack: {
-                        panel.actions.batteryDetailsClosed()
-                        currentPanel = .summary
-                    },
-                    onOpenBatterySettings: openBatterySettings
-                )
-                .onAppear { panel.actions.batteryDetailsAppeared() }
             case .wifi(let showDetails):
                 WiFiNetworkListView(
                     state: panel.wifiDetails,
@@ -83,13 +74,8 @@ struct StatusPopoverView: View {
                 )
             }
         }
-        .padding(isBatteryPanel ? 0 : 14)
-        .frame(width: isBatteryPanel ? nil : 330)
-    }
-
-    private var isBatteryPanel: Bool {
-        if case .battery = currentPanel { return true }
-        return false
+        .padding(14)
+        .frame(width: 330)
     }
 
     private var summary: some View {
@@ -120,13 +106,18 @@ struct StatusPopoverView: View {
                 state: panel.battery,
                 cautionColor: .yellow,
                 onOpenBatteryDetails: {
-                    currentPanel = .battery
+                    showsBatteryDetails = true
                 },
                 onOpenBatterySettings: openBatterySettings,
                 lowPowerMode: panel.store.lowPowerMode,
                 showsLowPowerToggle: panel.settings.controlsLowPowerMode
                     && helper.isReady
             )
+            .popover(isPresented: $showsBatteryDetails, arrowEdge: .trailing) {
+                BatteryDetailsView(onOpenBatterySettings: openBatterySettings)
+                    .onAppear { panel.actions.batteryDetailsAppeared() }
+                    .onDisappear { panel.actions.batteryDetailsClosed() }
+            }
         case .network:
             NetworkStatusView(
                 state: panel.network,
