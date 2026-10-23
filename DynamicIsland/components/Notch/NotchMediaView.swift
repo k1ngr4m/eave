@@ -1004,7 +1004,7 @@ struct NotchMediaView: View {
                             }
                         }
                     } else {
-                        MediaIdleStateView()
+                        MediaIdleStateView(controlsHidden: !showStandardMediaControls)
                     }
                 }
                 .blur(radius: vm.notchState == .closed ? 30 : 0)
@@ -1015,110 +1015,133 @@ struct NotchMediaView: View {
     }
 }
 
-/// The Media tab's resting state: an album-art-shaped placeholder that breathes
-/// softly, plus a one-tap way back into the last played source.
+/// Compact enough to fit below the header without pushing the surface's corners outside its window.
 struct MediaIdleStateView: View {
-    @ObservedObject private var musicManager = MusicManager.shared
+    var controlsHidden = false
+    @Default(.showStandardMediaControls) private var showStandardMediaControls
     @Default(.lastPlayedTrack) private var lastPlayedTrack
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isBreathing = false
+    @State private var openError: String?
+    @State private var sourceHovered = false
+
+    private var sourceURL: URL? {
+        guard let bundleID = lastPlayedTrack?.bundleIdentifier else { return nil }
+        return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
+    }
 
     var body: some View {
-        VStack(spacing: 14) {
-            artworkPlaceholder
-
-            VStack(spacing: 4) {
-                Text("Nothing Playing")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(0.75))
-                Text("Quiet for now")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 24) {
+                statusView.frame(width: 200, alignment: .leading)
+                if controlsHidden || lastPlayedTrack != nil {
+                    Rectangle()
+                        .fill(Color.primary.opacity(0.1))
+                        .frame(width: 1, height: 52)
+                    actionView.frame(width: 240)
+                }
             }
-
-            if let track = lastPlayedTrack {
-                resumeRow(for: track)
+            VStack(alignment: .leading, spacing: 14) {
+                statusView
+                actionView
             }
+            .frame(maxWidth: 300)
         }
+        .padding(.horizontal, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .alert("Could not open media app", isPresented: Binding(
+            get: { openError != nil },
+            set: { if !$0 { openError = nil } }
+        )) {
+            Button("OK") { openError = nil }
+        } message: {
+            Text(openError ?? "")
+        }
     }
 
-    /// Same shape family as the real artwork, so playback starting can hand
-    /// this container over to the cover without a visual jump.
-    private var artworkPlaceholder: some View {
-        RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: [Color.primary.opacity(0.09), Color.primary.opacity(0.03)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+    private var statusView: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 8) {
+                Image(systemName: controlsHidden ? "slider.horizontal.3" : "music.note")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                Text(controlsHidden ? "Media controls hidden" : "Nothing Playing")
+                    .font(.system(size: 17, weight: .medium, design: .rounded))
+                    .tracking(-0.3)
             }
-            .overlay {
-                Image(systemName: "music.note")
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(0.35))
-            }
-            .frame(width: 72, height: 72)
-            .scaleEffect(isBreathing ? 1.04 : 1)
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.easeInOut(duration: 3.6).repeatForever(autoreverses: true)) {
-                    isBreathing = true
+            Text(controlsHidden
+                 ? "Show controls to manage playback here."
+                 : "Play in a media app to control it here.")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    @ViewBuilder
+    private var actionView: some View {
+        if controlsHidden {
+            Button("Show media controls") { showStandardMediaControls = true }
+        } else if let track = lastPlayedTrack {
+            sourceRow(for: track)
+        }
+    }
+
+    private func sourceRow(for track: LastPlayedTrack) -> some View {
+        let url = sourceURL
+        let appName = url.map { FileManager.default.displayName(atPath: $0.path) } ?? ""
+        return Button {
+            guard let url else { return }
+            NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) { _, error in
+                if let error {
+                    DispatchQueue.main.async { openError = error.localizedDescription }
                 }
             }
-    }
-
-    private func resumeRow(for track: LastPlayedTrack) -> some View {
-        Button(action: resumeLastPlayed) {
-            HStack(spacing: 10) {
-                Image(systemName: "play.fill")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(Color.primary.opacity(0.7))
-                    .frame(width: 22, height: 22)
-                    .background(Circle().fill(Color.primary.opacity(0.08)))
-
-                VStack(alignment: .leading, spacing: 1) {
+        } label: {
+            HStack(spacing: 12) {
+                if let url {
+                    Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+                        .resizable()
+                        .interpolation(.high)
+                        .frame(width: 40, height: 40)
+                        .accessibilityHidden(true)
+                } else {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 24, weight: .light))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 40, height: 40)
+                        .accessibilityHidden(true)
+                }
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Last played")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(Color.primary.opacity(0.4))
-                    Text(verbatim: "\(track.title) — \(track.artist)")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    Text(verbatim: [track.title, track.artist].filter { !$0.isEmpty }.joined(separator: " · "))
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(Color.primary.opacity(0.7))
                         .lineLimit(1)
-                        .truncationMode(.tail)
+                    HStack(spacing: 4) {
+                        if url != nil {
+                            Text("Open \(appName)")
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(size: 8, weight: .semibold))
+                        } else {
+                            Text("Source app unavailable")
+                        }
+                    }
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
                 }
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(Color.primary.opacity(0.3))
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                Capsule().fill(Color.primary.opacity(0.04))
-            )
-            .contentShape(Capsule())
+            .padding(12)
+            .background(Color.primary.opacity(sourceHovered ? 0.07 : 0.025),
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
-        .frame(maxWidth: 240)
-        .help("Resume")
-    }
-
-    private func resumeLastPlayed() {
-        if musicManager.hasActiveSession && !musicManager.isPlaying {
-            musicManager.play()
-            return
-        }
-
-        let bundleID = lastPlayedTrack?.bundleIdentifier ?? "com.apple.Music"
-        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
-            NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
-        }
+        .onHover { sourceHovered = $0 }
+        .animation(.easeOut(duration: 0.16), value: sourceHovered)
+        .disabled(url == nil)
+        .help("Last played")
     }
 }
 

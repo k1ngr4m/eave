@@ -1,6 +1,125 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+  "Source app unavailable": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Source app unavailable"
+        }
+      },
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "来源应用不可用"
+        }
+      }
+    }
+  },
+  "Open %@": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Open %@"
+        }
+      },
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "打开 %@"
+        }
+      }
+    }
+  },
+  "Could not open media app": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Could not open media app"
+        }
+      },
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "无法打开媒体应用"
+        }
+      }
+    }
+  },
+  "Show media controls": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Show media controls"
+        }
+      },
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "显示媒体控件"
+        }
+      }
+    }
+  },
+  "Play in a media app to control it here.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Play in a media app to control it here."
+        }
+      },
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "在媒体应用中播放，即可在此控制。"
+        }
+      }
+    }
+  },
+  "Show controls to manage playback here.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Show controls to manage playback here."
+        }
+      },
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "显示控件，即可在此控制播放。"
+        }
+      }
+    }
+  },
+  "Media controls hidden": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Media controls hidden"
+        }
+      },
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "媒体控件已隐藏"
+        }
+      }
+    }
+  },
     "Enter an animation name." : {
       "extractionState" : "manual",
       "localizations" : {

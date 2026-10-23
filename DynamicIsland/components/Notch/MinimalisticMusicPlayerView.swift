@@ -43,21 +43,7 @@ struct MinimalisticMusicPlayerView: View {
 
     var body: some View {
         if !musicManager.hasActiveSession {
-            // Nothing playing state
-            VStack(spacing: 0) {
-                Spacer(minLength: 0)
-
-                VStack(spacing: 8) {
-                    Image(systemName: "music.note.slash")
-                        .font(.system(size: 24, weight: .light))
-                        .foregroundColor(.gray)
-                    Text("Nothing Playing")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.gray)
-                }
-
-                Spacer(minLength: 0)
-            }
+            MediaIdleStateView()
             .padding(.horizontal, shouldUseDynamicIslandMode(for: vm.screen) ? -4 : 12)
             .padding(.vertical, shouldUseDynamicIslandMode(for: vm.screen) ? 14 : 0)
             .frame(maxWidth: .infinity)

@@ -1744,13 +1744,19 @@ class MusicManager: ObservableObject {
         let artistIsReal = !trimmedArtist.isEmpty && !Self.placeholderArtists.contains(trimmedArtist.lowercased())
         guard titleIsReal || artistIsReal else { return }
 
+        if let previous = Defaults[.lastPlayedTrack],
+           previous.title == trimmedTitle,
+           previous.artist == trimmedArtist,
+           previous.bundleIdentifier == bundleIdentifier {
+            return
+        }
+
         let track = LastPlayedTrack(
             title: trimmedTitle,
             artist: trimmedArtist,
             bundleIdentifier: bundleIdentifier,
             recordedAt: Date()
         )
-        guard track != Defaults[.lastPlayedTrack] else { return }
         Defaults[.lastPlayedTrack] = track
     }
 
