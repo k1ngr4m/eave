@@ -652,16 +652,23 @@ struct SettingsView: View {
         } detail: {
             VStack(spacing: 0) {
                 if resolvedSelection.sidebarTab == .appearance {
-                    Picker("Appearance & Interaction", selection: $selectedTab) {
-                        ForEach(registry.appearancePages) { module in
-                            Text(module.title).tag(module.id)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding()
+                    SettingsPageTabBar(
+                        items: registry.appearancePages.map(\.id),
+                        selection: $selectedTab,
+                        title: { registry.module($0)?.title ?? "" },
+                        icon: { registry.module($0)?.icon ?? "" },
+                        accessibilityTitle: String(localized: "Appearance & Interaction")
+                    )
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 16)
+                    .padding(.bottom, 2)
                 }
                 detailView(for: resolvedSelection)
             }
+            // Same opaque background the form uses below, so the window's
+            // translucent material does not show through the tab-bar row as a
+            // lighter band.
+            .background(Color(nsColor: .windowBackgroundColor))
                 .modifier(SettingsPageStyle(title: resolvedSelection.title))
                 .navigationTitle(resolvedSelection.title)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1045,12 +1052,24 @@ private final class SettingsModuleRegistry: ObservableObject {
 private struct MenuBarSettings: View {
     @EnvironmentObject private var coordinator: SettingsHighlightCoordinator
     @State private var statusIcons = false
+
+    private let pages: [(id: Bool, title: String, icon: String)] = [
+        (false, String(localized: "Visibility"), "eye"),
+        (true, String(localized: "Status Icons"), "menubar.rectangle")
+    ]
+
     var body: some View {
         VStack(spacing: 0) {
-            Picker("Menu Bar & Dock", selection: $statusIcons) {
-                Text("Visibility").tag(false)
-                Text("Status Icons").tag(true)
-            }.pickerStyle(.segmented).padding()
+            SettingsPageTabBar(
+                items: pages.map(\.id),
+                selection: $statusIcons,
+                title: { id in pages.first { $0.id == id }?.title ?? "" },
+                icon: { id in pages.first { $0.id == id }?.icon ?? "" },
+                accessibilityTitle: String(localized: "Menu Bar & Dock")
+            )
+            .frame(maxWidth: .infinity)
+            .padding(.top, 16)
+            .padding(.bottom, 2)
             if statusIcons {
                 MenuBarStatusSettingsView(controller: MenuBarStatusManager.shared.controller)
             } else {
@@ -1106,11 +1125,25 @@ private struct FeatureGallery: View {
                     .background(colorScheme == .dark ? Color(white: 0.16) : Color.white, in: RoundedRectangle(cornerRadius: 12))
                     .id(SettingsTab.features)
                     TextField("Search features", text: $query).textFieldStyle(.roundedBorder)
-                    Picker("Feature filter", selection: $filter) {
-                        Text("All Features").tag(0)
-                        Text("Enabled Features").tag(1)
-                        Text("Disabled Features").tag(2)
-                    }.pickerStyle(.segmented)
+                    SettingsPageTabBar(
+                        items: [0, 1, 2],
+                        selection: $filter,
+                        title: { value in
+                            switch value {
+                            case 1: return String(localized: "Enabled Features")
+                            case 2: return String(localized: "Disabled Features")
+                            default: return String(localized: "All Features")
+                            }
+                        },
+                        icon: { value in
+                            switch value {
+                            case 1: return "checkmark.circle"
+                            case 2: return "xmark.circle"
+                            default: return "square.grid.2x2"
+                            }
+                        },
+                        accessibilityTitle: String(localized: "Feature filter")
+                    )
                     if visibleModules.isEmpty {
                         Text("No matching features.").foregroundStyle(.secondary)
                     }
@@ -1329,12 +1362,6 @@ private struct GeneralSettings: View {
 
     var body: some View {
         settingsForm
-            .toolbar {
-                Button("Quit app") {
-                    NSApp.terminate(self)
-                }
-                .controlSize(.extraLarge)
-            }
             .navigationTitle(page.title)
     }
 
@@ -5585,6 +5612,100 @@ struct SettingsSegmentedPicker<Item: Hashable>: View {
     }
 }
 
+/// Page-level tab strip shown at the top of a settings section that owns
+/// several sub-pages (e.g. Appearance & Interaction). Unlike
+/// ``SettingsSegmentedControl`` -- a right-hand control inside a form row --
+/// this one is a centered floating pill with icon + label segments, sized and
+/// styled for whole-page navigation.
+struct SettingsPageTabBar<Item: Hashable>: View {
+    let items: [Item]
+    @Binding var selection: Item
+    let title: (Item) -> String
+    let icon: (Item) -> String
+    /// VoiceOver name for the whole strip.
+    let accessibilityTitle: String
+
+    @Namespace private var selectionNamespace
+    @State private var hovered: Item?
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(items, id: \.self) { item in
+                segment(for: item)
+            }
+        }
+        .padding(3)
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.primary.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
+                )
+        }
+        // Driven from the value, not only from `withAnimation` at the tap, so
+        // a selection changed from elsewhere -- settings search jumping to a
+        // page, another window -- slides the thumb too.
+        .animation(.spring(response: 0.32, dampingFraction: 0.82), value: selection)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Text(accessibilityTitle))
+    }
+
+    private var selectionAnimation: Animation { .spring(response: 0.32, dampingFraction: 0.82) }
+
+    @ViewBuilder
+    private func segment(for item: Item) -> some View {
+        let isSelected = selection == item
+        let isHovered = hovered == item
+
+        Button {
+            guard selection != item else { return }
+            withAnimation(selectionAnimation) { selection = item }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: icon(item))
+                    .font(.system(size: 12, weight: .semibold))
+                Text(title(item))
+                    .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
+            }
+            .foregroundStyle(isSelected ? Color.white : Color.secondary)
+            .lineLimit(1)
+            .padding(.horizontal, 18)
+            .frame(height: 30)
+            .background {
+                if isSelected {
+                    // System accent colour, so the strip follows
+                    // System Settings > Appearance like the row controls do.
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Color.accentColor)
+                        .overlay(
+                            LinearGradient(colors: [.white.opacity(0.22), .clear],
+                                           startPoint: .top, endPoint: .center)
+                                .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        )
+                        .shadow(color: Color.accentColor.opacity(0.35), radius: 5, x: 0, y: 1.5)
+                        .matchedGeometryEffect(id: "pageTabSelection", in: selectionNamespace)
+                } else if isHovered {
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Color.primary.opacity(0.06))
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { inside in
+            withAnimation(.easeOut(duration: 0.12)) {
+                if inside {
+                    hovered = item
+                } else if hovered == item {
+                    hovered = nil
+                }
+            }
+        }
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
 struct LockScreenSettings: View {
     @Default(.showMediaOutputControl) private var showMediaOutputControl
     @Default(.enableReminderLiveActivity) private var enableReminderLiveActivity
@@ -5713,7 +5834,75 @@ struct LockScreenSettings: View {
         )
     }
 
+    private enum SubTab: Hashable, CaseIterable, Identifiable {
+        case general, widgets
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .general: return String(localized: "General")
+            case .widgets: return String(localized: "Widgets")
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .general: return "switch.2"
+            case .widgets: return "widget.small"
+            }
+        }
+    }
+
+    @EnvironmentObject private var coordinator: SettingsHighlightCoordinator
+    @State private var selectedSubTab: SubTab = .general
+
+    /// Search anchors living in the general tab; every other lock screen
+    /// anchor is a widget row and needs the widgets tab visible before its
+    /// anchor can scroll into view.
+    private let generalHighlightTitles: Set<String> = [
+        "Enable lock screen live activity",
+        "Live activity icon",
+        "Play lock/unlock sounds",
+        "Siri detection speed",
+        "Material",
+        "Glass mode",
+        "Preview lock screen widgets",
+    ]
+
     var body: some View {
+        VStack(spacing: 0) {
+            SettingsPageTabBar(
+                items: SubTab.allCases,
+                selection: $selectedSubTab,
+                title: { $0.title },
+                icon: { $0.icon },
+                accessibilityTitle: String(localized: "Lock Screen")
+            )
+            .frame(maxWidth: .infinity)
+            .padding(.top, 16)
+            .padding(.bottom, 2)
+
+            if selectedSubTab == .general {
+                generalForm
+            } else {
+                widgetsForm
+            }
+        }
+        .onAppear(perform: enforceLockScreenGlassConsistency)
+        .onChange(of: lockScreenGlassStyle) { _, _ in enforceLockScreenGlassConsistency() }
+        .onChange(of: lockScreenGlassCustomizationMode) { _, _ in enforceLockScreenGlassConsistency() }
+        .navigationTitle("Lock Screen")
+        // Search jumps need the tab owning the anchor to be rendered first.
+        .onReceive(coordinator.$pendingScrollRequest) { request in
+            guard let request, request.tab == .lockScreen,
+                  request.id.hasPrefix("lockScreen-") else { return }
+            let title = String(request.id.dropFirst("lockScreen-".count))
+            selectedSubTab = generalHighlightTitles.contains(title) ? .general : .widgets
+        }
+    }
+
+    private var generalForm: some View {
         Form {
             Section {
                 Defaults.Toggle(key: .enableLockScreenLiveActivity) {
@@ -5874,7 +6063,11 @@ struct LockScreenSettings: View {
             } footer: {
                 Text("Opens a transparent preview window with mock data that mirrors the current lock screen widget configuration.")
             }
+        }
+    }
 
+    private var widgetsForm: some View {
+        Form {
             Section {
                 SettingsSegmentedPicker(
                     "Widget appearance",
@@ -6387,10 +6580,6 @@ struct LockScreenSettings: View {
 
             LockScreenPositioningControls()
         }
-        .onAppear(perform: enforceLockScreenGlassConsistency)
-        .onChange(of: lockScreenGlassStyle) { _, _ in enforceLockScreenGlassConsistency() }
-        .onChange(of: lockScreenGlassCustomizationMode) { _, _ in enforceLockScreenGlassConsistency() }
-        .navigationTitle("Lock Screen")
     }
 }
 
