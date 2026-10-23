@@ -37,10 +37,6 @@ struct AppearanceSettingsPreview: View {
     @Default(.enableDeveloperTools) private var developerTools
     @Default(.showStandardMediaControls) private var media
     @Default(.showMirror) private var mirror
-    @Default(.enableLyrics) private var lyrics
-    @Default(.lyricsPanelWidth) private var lyricsWidth
-    @Default(.lyricsPanelOffset) private var lyricsOffset
-    @Default(.autoHideInactiveNotchMediaPlayer) private var autoHide
     @Default(.enablePerAppVolume) private var perAppVolume
     @Default(.showPerAppVolumeIcon) private var volumeIcon
     @Default(.enableCaffeinate) private var caffeinate
@@ -53,13 +49,13 @@ struct AppearanceSettingsPreview: View {
     private var scheme: ColorScheme { appearance.colorScheme(for: systemScheme) }
     private var expandedSize: CGSize {
         if minimalistic {
-            return minimalisticBaseOpenNotchSize(isDynamicIslandMode: pill, includesLyrics: lyrics)
+            return minimalisticBaseOpenNotchSize(for: .home, isDynamicIslandMode: pill, includesLyrics: false)
         }
         return getOpenNotchSize(screen: resolvedName)
     }
     private var size: CGSize { expanded ? expandedSize : closedSize }
     private var referenceWidth: CGFloat {
-        minimalistic ? max(420, closedSize.width) : max(900, sideLyricsRequiredNotchWidth())
+        minimalistic ? max(420, closedSize.width) : 900
     }
     private var surfaceHeight: CGFloat {
         let scale = AppearancePreviewGeometry.scale(stageWidth: stageWidth, referenceWidth: referenceWidth)
@@ -84,11 +80,8 @@ struct AppearanceSettingsPreview: View {
     private var sizeNote: String {
         if !expanded && hardwareSize.width > 0 && !customizeWidth { return String(localized: "Width follows the physical notch") }
         if expanded && minimalistic { return String(localized: "Minimalistic layout uses its own size") }
-        if expanded && expandedSize.width < max(openWidth, currentRecommendedMinimumNotchWidth(), sideLyricsRequiredNotchWidth()) {
+        if expanded && expandedSize.width < max(openWidth, currentRecommendedMinimumNotchWidth()) {
             return String(localized: "Width limited by the preview display")
-        }
-        if expanded && sideLyricsRequiredNotchWidth() > max(openWidth, currentRecommendedMinimumNotchWidth()) {
-            return String(localized: "Width accommodates the lyrics layout")
         }
         return expanded ? String(localized: "Minimum width accommodates enabled tabs") : String(localized: "Closed size without live activities")
     }
@@ -203,12 +196,17 @@ struct AppearanceSettingsPreview: View {
     }
 
     private var demoHeader: some View {
-        let exclusion = hardwareSize.width > 0 ? max(closedSize.width, hardwareSize.width + 4) : min(closedSize.width, 300)
+        let exclusion = hardwareSize.width > 0
+            ? max(closedSize.width, hardwareSize.width + 4)
+            : (minimalistic ? 0 : min(closedSize.width, 300))
         let side = max(0, (size.width - exclusion - 52) / 2)
         return HStack(spacing: 0) {
             Group {
                 if minimalistic {
-                    if calendar { Image(systemName: "calendar") }
+                    HStack(spacing: 4) {
+                        Image(systemName: "house.fill")
+                        Image(systemName: "chevron.down").font(.system(size: 8, weight: .semibold))
+                    }
                 } else {
                     ViewThatFits(in: .horizontal) {
                         tabRow(spacing: tabSpacing)
@@ -250,21 +248,10 @@ struct AppearanceSettingsPreview: View {
         .fixedSize(horizontal: true, vertical: false)
     }
 
-    @ViewBuilder
     private var idleContent: some View {
-        if minimalistic {
-            VStack(spacing: 8) {
-                Image(systemName: "music.note.slash")
-                    .font(.system(size: 24, weight: .light))
-                Text("Nothing Playing")
-                    .font(.system(size: 12, weight: .medium))
-            }
-            .foregroundStyle(.gray)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            TimelineView(.periodic(from: Calendar.current.startOfDay(for: .now), by: 60)) { context in
-                HomeIdleView(date: context.date)
-            }
+        TimelineView(.periodic(from: Calendar.current.startOfDay(for: .now), by: 60)) { context in
+            HomeClockView(date: context.date, compact: minimalistic)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }

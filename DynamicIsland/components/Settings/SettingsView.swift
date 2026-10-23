@@ -3331,7 +3331,27 @@ private extension MediaControllerType {
     }
 }
 
+private func customizationHeader(_ title: LocalizedStringKey, expanded: Binding<Bool>) -> some View {
+    Button {
+        expanded.wrappedValue.toggle()
+    } label: {
+        Label(title, systemImage: expanded.wrappedValue ? "chevron.down" : "chevron.right")
+    }
+    .buttonStyle(.plain)
+    .accessibilityValue(expanded.wrappedValue ? Text("Expanded") : Text("Collapsed"))
+}
+
 struct Media: View {
+    @Default(.useMusicVisualizer) var useMusicVisualizer
+    @Default(.customVisualizers) var customVisualizers
+    @Default(.selectedVisualizer) var selectedVisualizer
+    @State private var isPresented: Bool = false
+    @State private var name: String = ""
+    @State private var url: String = ""
+    @State private var speed: CGFloat = 1.0
+    @State private var visualizerImportError: String?
+    @State private var visualizerImportTask: Task<Void, Never>?
+    @State private var musicCustomizationExpanded = false
     @Default(.sliderColor) private var sliderColor
     @Default(.waitInterval) var waitInterval
     @Default(.mediaController) var mediaController
@@ -3793,6 +3813,136 @@ struct Media: View {
             } header: {
                 Text("Media")
             }
+
+            Section {
+                if musicCustomizationExpanded {
+                    Toggle(
+                        "Use music visualizer spectrogram",
+                        isOn: $useMusicVisualizer.animation()
+                    )
+                    if !useMusicVisualizer && !customVisualizers.isEmpty {
+                        Picker("Selected animation", selection: $selectedVisualizer) {
+                            ForEach(customVisualizers, id: \.UUID) { visualizer in
+                                Text(visualizer.name).tag(Optional(visualizer))
+                            }
+                        }
+                    }
+                }
+            } header: {
+                customizationHeader("Music animations", expanded: $musicCustomizationExpanded)
+            } footer: {
+                if musicCustomizationExpanded {
+                    Text("Turn off the spectrogram to use a custom animation. If none is available, the built-in spectrum is shown.")
+                }
+            }
+
+            if musicCustomizationExpanded {
+                Section {
+                    List {
+                        ForEach(customVisualizers, id: \.UUID) { visualizer in
+                            Button {
+                                selectedVisualizer = visualizer
+                                useMusicVisualizer = false
+                            } label: {
+                                HStack {
+                                    CustomVisualizerAnimationView(visualizer: visualizer, isPlaying: true)
+                                        .frame(width: 30, height: 30)
+                                        .accessibilityHidden(true)
+                                    Text(visualizer.name)
+                                    Spacer(minLength: 0)
+                                    if selectedVisualizer?.UUID == visualizer.UUID {
+                                        Image(systemName: "checkmark")
+                                            .accessibilityLabel(Text("selected"))
+                                    }
+                                }
+                                .padding(.vertical, 2)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .safeAreaPadding(EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0))
+                    .frame(minHeight: 120)
+                    .actionBar {
+                        HStack(spacing: 5) {
+                            Button {
+                                name = ""
+                                url = ""
+                                speed = 1.0
+                                visualizerImportError = nil
+                                isPresented = true
+                            } label: {
+                                Image(systemName: "plus")
+                            }
+                            .help("Add new visualizer")
+                            .accessibilityLabel(Text("Add new visualizer"))
+                            Divider()
+                            Button {
+                                guard let selectedVisualizer else { return }
+                                customVisualizers.removeAll { $0.UUID == selectedVisualizer.UUID }
+                                normalizeVisualizerSelection()
+                            } label: {
+                                Image(systemName: "minus")
+                            }
+                            .disabled(selectedVisualizer == nil)
+                            .help("Remove selected animation")
+                            .accessibilityLabel(Text("Remove selected animation"))
+                        }
+                    }
+                    .controlSize(.small)
+                    .buttonStyle(.plain)
+                    .overlay {
+                        if customVisualizers.isEmpty {
+                            Text("No custom visualizer")
+                                .foregroundStyle(Color(.secondaryLabelColor))
+                                .padding(.bottom, 22)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .sheet(isPresented: $isPresented) {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Add new visualizer")
+                                .font(.title.bold())
+                            TextField("Name", text: $name)
+                            TextField("Lottie JSON URL", text: $url)
+                            HStack {
+                                Text("Speed")
+                                Spacer(minLength: 80)
+                                SettingsSlider(
+                                    value: $speed, in: 0.1...2, step: 0.1,
+                                    valueLabel: Text(verbatim: String(format: "%.1f×", speed)))
+                            }
+                            if let visualizerImportError {
+                                Text(visualizerImportError)
+                                    .foregroundStyle(.red)
+                                    .font(.callout)
+                            }
+                            HStack {
+                                Button("Cancel") { isPresented = false }
+                                    .keyboardShortcut(.cancelAction)
+                                Spacer()
+                                if visualizerImportTask != nil {
+                                    ProgressView().controlSize(.small)
+                                }
+                                Button("Add") { addVisualizer() }
+                                    .buttonStyle(.borderedProminent)
+                                    .keyboardShortcut(.defaultAction)
+                                    .disabled(visualizerImportTask != nil)
+                            }
+                        }
+                        .textFieldStyle(.roundedBorder)
+                        .padding(24)
+                        .frame(width: 420)
+                        .onDisappear {
+                            visualizerImportTask?.cancel()
+                            visualizerImportTask = nil
+                        }
+                    }
+                } header: {
+                    Text("Custom vizualizers (Lottie)")
+                }
+            }
+
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
@@ -3809,8 +3959,37 @@ struct Media: View {
             .overlay(alignment: .bottom) { Divider() }
         }
         .navigationTitle("Media")
+        .onAppear { normalizeVisualizerSelection() }
+        .onChange(of: customVisualizers) { normalizeVisualizerSelection() }
     }
 
+
+    private func normalizeVisualizerSelection() {
+        selectedVisualizer = CustomVisualizer.resolvedSelection(selectedVisualizer, in: customVisualizers)
+        if customVisualizers.isEmpty { useMusicVisualizer = true }
+    }
+
+    private func addVisualizer() {
+        visualizerImportError = nil
+        do {
+            let visualizer = try CustomVisualizer.validated(name: name, url: url, speed: speed)
+            visualizerImportTask = Task { @MainActor in
+                defer { if !Task.isCancelled { visualizerImportTask = nil } }
+                do {
+                    _ = try await visualizer.loadAnimation()
+                    try Task.checkCancellation()
+                    customVisualizers.append(visualizer)
+                    selectedVisualizer = visualizer
+                    useMusicVisualizer = false
+                    isPresented = false
+                } catch {
+                    if !Task.isCancelled { visualizerImportError = error.localizedDescription }
+                }
+            }
+        } catch {
+            visualizerImportError = error.localizedDescription
+        }
+    }
 
 }
 
@@ -4752,9 +4931,6 @@ struct Appearance: View {
     @Default(.headerTabSpacing) private var headerTabSpacing
     @Default(.mirrorShape) var mirrorShape
     @Default(.selectedCameraID) var selectedCameraID
-    @Default(.useMusicVisualizer) var useMusicVisualizer
-    @Default(.customVisualizers) var customVisualizers
-    @Default(.selectedVisualizer) var selectedVisualizer
     @Default(.customAppIcons) private var customAppIcons
     @Default(.selectedAppIconID) private var selectedAppIconID
     @Default(.openNotchWidth) var openNotchWidth
@@ -4767,16 +4943,11 @@ struct Appearance: View {
     @Default(.lockScreenTimerGlassCustomizationMode) private var lockScreenTimerGlassCustomizationMode
     @Default(.lockScreenTimerWidgetUsesBlur) private var timerGlassModeIsGlass
     @Default(.externalDisplayStyle) private var externalDisplayStyle
-    @State private var selectedListVisualizer: CustomVisualizer? = nil
 
     @State private var isIconImporterPresented = false
     @State private var isIconDropTarget = false
     @State private var iconImportError: String?
 
-    @State private var isPresented: Bool = false
-    @State private var name: String = ""
-    @State private var url: String = ""
-    @State private var speed: CGFloat = 1.0
 
     private var notchWidthRange: ClosedRange<CGFloat> {
         let minW = currentRecommendedMinimumNotchWidth()
@@ -4801,7 +4972,6 @@ struct Appearance: View {
     @EnvironmentObject private var searchCoordinator: SettingsHighlightCoordinator
     @State private var previewExpanded = true
     @State private var previewScreenName = DynamicIslandViewCoordinator.shared.selectedScreen
-    @State private var musicCustomizationExpanded = false
     @State private var mirrorCustomizationExpanded = false
     @State private var appIconsExpanded = false
     @Default(.notchAppearance) private var notchAppearance
@@ -4890,180 +5060,6 @@ struct Appearance: View {
                 Text("Header layout")
             } footer: {
                 Text("Spacing automatically tightens when needed to keep tabs clear of the notch.")
-            }
-
-            Section {
-                if musicCustomizationExpanded {
-                    Toggle(
-                        "Use music visualizer spectrogram",
-                        isOn: $useMusicVisualizer.animation()
-                    )
-                    .disabled(true)
-                    if !useMusicVisualizer {
-                        if customVisualizers.count > 0 {
-                            Picker(
-                                "Selected animation",
-                                selection: $selectedVisualizer
-                            ) {
-                                ForEach(
-                                    customVisualizers,
-                                    id: \.self
-                                ) { visualizer in
-                                    Text(visualizer.name)
-                                        .tag(visualizer)
-                                }
-                            }
-                        } else {
-                            HStack {
-                                Text("Selected animation")
-                                Spacer()
-                                Text("No custom animation available")
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
-            } header: {
-                customizationHeader("Music animations", expanded: $musicCustomizationExpanded)
-            }
-
-            if musicCustomizationExpanded {
-                Section {
-                    List {
-                        ForEach(customVisualizers, id: \.self) { visualizer in
-                            HStack {
-                                LottieView(
-                                    state: LUStateData(
-                                        type: .loadedFrom(visualizer.url), speed: visualizer.speed, loopMode: .loop)
-                                )
-                                .frame(width: 30, height: 30, alignment: .center)
-                                Text(visualizer.name)
-                                Spacer(minLength: 0)
-                                if selectedVisualizer == visualizer {
-                                    Text("selected")
-                                        .font(.caption)
-                                        .fontWeight(.medium)
-                                        .foregroundStyle(.secondary)
-                                        .padding(.trailing, 8)
-                                }
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            .padding(.vertical, 2)
-                            .background(
-                                selectedListVisualizer != nil
-                                    ? selectedListVisualizer == visualizer ? Color.accentColor : Color.clear
-                                    : Color.clear,
-                                in: RoundedRectangle(cornerRadius: 5)
-                            )
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                if selectedListVisualizer == visualizer {
-                                    selectedListVisualizer = nil
-                                    return
-                                }
-                                selectedListVisualizer = visualizer
-                            }
-                        }
-                    }
-                    .safeAreaPadding(
-                        EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0)
-                    )
-                    .frame(minHeight: 120)
-                    .actionBar {
-                        HStack(spacing: 5) {
-                            Button {
-                                name = ""
-                                url = ""
-                                speed = 1.0
-                                isPresented.toggle()
-                            } label: {
-                                Image(systemName: "plus")
-                                    .foregroundStyle(.secondary)
-                                    .contentShape(Rectangle())
-                            }
-                            Divider()
-                            Button {
-                                if selectedListVisualizer != nil {
-                                    let visualizer = selectedListVisualizer!
-                                    selectedListVisualizer = nil
-                                    customVisualizers.remove(at: customVisualizers.firstIndex(of: visualizer)!)
-                                    if visualizer == selectedVisualizer && customVisualizers.count > 0 {
-                                        selectedVisualizer = customVisualizers[0]
-                                    }
-                                }
-                            } label: {
-                                Image(systemName: "minus")
-                                    .foregroundStyle(.secondary)
-                                    .contentShape(Rectangle())
-                            }
-                        }
-                    }
-                    .controlSize(.small)
-                    .buttonStyle(PlainButtonStyle())
-                    .overlay {
-                        if customVisualizers.isEmpty {
-                            Text("No custom visualizer")
-                                .foregroundStyle(Color(.secondaryLabelColor))
-                                .padding(.bottom, 22)
-                        }
-                    }
-                    .sheet(isPresented: $isPresented) {
-                        VStack(alignment: .leading) {
-                            Text("Add new visualizer")
-                                .font(.largeTitle.bold())
-                                .padding(.vertical)
-                            TextField("Name", text: $name)
-                            TextField("Lottie JSON URL", text: $url)
-                            HStack {
-                                Text("Speed")
-                                Spacer(minLength: 80)
-                                SettingsSlider(
-                                    value: $speed, in: 0...2, step: 0.1,
-                                    valueLabel: Text("\(speed, specifier: "%.1f")s"))
-                            }
-                            .padding(.vertical)
-                            HStack {
-                                Button {
-                                    isPresented.toggle()
-                                } label: {
-                                    Text("Cancel")
-                                        .frame(maxWidth: .infinity, alignment: .center)
-                                }
-
-                                Button {
-                                    let visualizer: CustomVisualizer = .init(
-                                        UUID: UUID(),
-                                        name: name,
-                                        url: URL(string: url)!,
-                                        speed: speed
-                                    )
-
-                                    if !customVisualizers.contains(visualizer) {
-                                        customVisualizers.append(visualizer)
-                                    }
-
-                                    isPresented.toggle()
-                                } label: {
-                                    Text("Add")
-                                        .frame(maxWidth: .infinity, alignment: .center)
-                                }
-                                .buttonStyle(BorderedProminentButtonStyle())
-                            }
-                        }
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .controlSize(.extraLarge)
-                        .padding()
-                    }
-                } header: {
-                    HStack(spacing: 0) {
-                        Text("Custom vizualizers (Lottie)")
-                        if !Defaults[.customVisualizers].isEmpty {
-                            Text(" – \(Defaults[.customVisualizers].count)")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-
             }
 
             Section {
@@ -5481,16 +5477,6 @@ struct Appearance: View {
                 .accessibilityLabel(Text("Reset") + Text(" ") + Text(title))
             }
         }
-    }
-
-    private func customizationHeader(_ title: LocalizedStringKey, expanded: Binding<Bool>) -> some View {
-        Button {
-            expanded.wrappedValue.toggle()
-        } label: {
-            Label(title, systemImage: expanded.wrappedValue ? "chevron.down" : "chevron.right")
-        }
-        .buttonStyle(.plain)
-        .accessibilityValue(expanded.wrappedValue ? Text("Expanded") : Text("Collapsed"))
     }
 
     private func enforceLockScreenGlassConsistency() {

@@ -20,1910 +20,444 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Combine
+import AppKit
 import Defaults
 import SwiftUI
-import AppKit
-import AVFoundation
-
-private final class DynamicIslandArtworkLoopRegistry {
-    static let shared = DynamicIslandArtworkLoopRegistry()
-    private var playersByURL: [URL: DynamicIslandArtworkLoopController] = [:]
-
-    func player(for url: URL) -> DynamicIslandArtworkLoopController {
-        if let existing = playersByURL[url] {
-            existing.retain()
-            return existing
-        }
-        let controller = DynamicIslandArtworkLoopController(url: url)
-        controller.retain()
-        playersByURL[url] = controller
-        return controller
-    }
-
-    func release(_ controller: DynamicIslandArtworkLoopController, for url: URL) {
-        controller.release()
-        if playersByURL[url] === controller, controller.referenceCount == 0 {
-            playersByURL[url] = nil
-        }
-    }
-}
-
-private final class DynamicIslandArtworkLoopController {
-    let player: AVQueuePlayer
-    private var looper: AVPlayerLooper?
-    private var playbackStateCancellable: AnyCancellable?
-    var referenceCount = 0
-
-    init(url: URL) {
-        let item = AVPlayerItem(url: url)
-        player = AVQueuePlayer()
-        player.isMuted = true
-        player.actionAtItemEnd = .none
-        looper = AVPlayerLooper(player: player, templateItem: item)
-
-        if MusicManager.shared.isPlaying {
-            player.play()
-        }
-
-        playbackStateCancellable = MusicManager.shared.$isPlaying
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isPlaying in
-                guard let self else { return }
-                if isPlaying {
-                    self.player.play()
-                } else {
-                    self.player.pause()
-                }
-            }
-    }
-
-    func retain() {
-        referenceCount += 1
-    }
-
-    func release() {
-        referenceCount -= 1
-    }
-
-    deinit {
-        player.pause()
-        looper = nil
-        playbackStateCancellable = nil
-    }
-}
-
-private final class DynamicIslandArtworkVideoContainerView: NSView {
-    let playerLayer = AVPlayerLayer()
-
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        wantsLayer = true
-        layer?.backgroundColor = NSColor.clear.cgColor
-        playerLayer.videoGravity = .resizeAspectFill
-        playerLayer.backgroundColor = NSColor.clear.cgColor
-        layer?.addSublayer(playerLayer)
-    }
-
-    required init?(coder: NSCoder) {
-        nil
-    }
-
-    override func layout() {
-        super.layout()
-        // SwiftUI owns the enclosing transition timing. Prevent the video
-        // layer from adding a second implicit frame animation during that
-        // transition, which makes Canvas artwork lag behind static artwork.
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        playerLayer.frame = bounds
-        CATransaction.commit()
-    }
-}
-
-private struct DynamicIslandArtworkVideoView: NSViewRepresentable {
-    let url: URL
-    let videoGravity: AVLayerVideoGravity
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
-
-    func makeNSView(context: Context) -> DynamicIslandArtworkVideoContainerView {
-        let view = DynamicIslandArtworkVideoContainerView(frame: .zero)
-        // SwiftUI mounts this view during the open transition; the shared
-        // player is already warm, so attaching the layer on the next runloop
-        // turn keeps AVPlayerLayer setup off the mount's critical path.
-        context.coordinator.scheduleAttach(layer: view.playerLayer, url: url, gravity: videoGravity)
-        return view
-    }
-
-    func updateNSView(_ nsView: DynamicIslandArtworkVideoContainerView, context: Context) {
-        context.coordinator.scheduleAttach(layer: nsView.playerLayer, url: url, gravity: videoGravity)
-    }
-
-    final class Coordinator {
-        private var controller: DynamicIslandArtworkLoopController?
-        private var currentURL: URL?
-        private var attachTask: Task<Void, Never>?
-        private var attachGeneration: Int = 0
-
-        func scheduleAttach(layer: AVPlayerLayer, url: URL, gravity: AVLayerVideoGravity) {
-            // Increment generation to invalidate any pending deferred attach
-            attachGeneration &+= 1
-            let generation = attachGeneration
-
-            attachTask?.cancel()
-            attachTask = Task { @MainActor in
-                // Yield to let updateNSView run first if it's pending
-                await Task.yield()
-                // Only proceed if this is still the latest generation
-                guard generation == attachGeneration else { return }
-                attach(layer: layer, url: url, gravity: gravity)
-            }
-        }
-
-        func attach(layer: AVPlayerLayer, url: URL, gravity: AVLayerVideoGravity) {
-            layer.videoGravity = gravity
-
-            if currentURL != url || controller == nil {
-                detach()
-                currentURL = url
-                controller = DynamicIslandArtworkLoopRegistry.shared.player(for: url)
-            }
-
-            if layer.player !== controller?.player {
-                layer.player = controller?.player
-            }
-        }
-
-        func detach() {
-            attachTask?.cancel()
-            attachTask = nil
-            guard let controller, let currentURL else { return }
-            DynamicIslandArtworkLoopRegistry.shared.release(controller, for: currentURL)
-            self.controller = nil
-            self.currentURL = nil
-        }
-
-        deinit {
-            detach()
-        }
-    }
-}
-
-struct DynamicIslandArtworkSourceView: View {
-    @Environment(\.isMediaSettingsPreview) private var settingsPreview
-    @ObservedObject private var musicManager = MusicManager.shared
-    @Default(.showLiveCanvasInDynamicIsland) private var showLiveCanvasInDynamicIsland
-
-    let cornerRadius: CGFloat
-    let contentMode: ContentMode
-    var prefersVideo: Bool = true
-
-    private var liveCanvasURL: URL? {
-        guard !settingsPreview, showLiveCanvasInDynamicIsland, prefersVideo else { return nil }
-        return musicManager.videoArtworkURL
-    }
-
-    var body: some View {
-        Group {
-            if let liveCanvasURL {
-                DynamicIslandArtworkVideoView(url: liveCanvasURL, videoGravity: .resizeAspectFill)
-            } else {
-                Image(nsImage: musicManager.albumArt)
-                    .resizable()
-                    .aspectRatio(contentMode: contentMode)
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-    }
-}
-
-// MARK: - Music Player Components
-
-struct MusicPlayerView: View {
-    @EnvironmentObject var vm: DynamicIslandViewModel
-    let albumArtNamespace: Namespace.ID
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace)
-            MusicControlsView()
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-struct LyricsSidePanelView: View {
-    @ObservedObject private var musicManager = MusicManager.shared
-    @EnvironmentObject private var vm: DynamicIslandViewModel
-    @Default(.pinLyricsWhenClosed) private var pinLyricsWhenClosed
-    @State private var showingLyricsPicker = false
-    @State private var lyricsCandidates: [LyricsCandidate] = []
-    @State private var candidatesKey: LyricsLookupKey?
-    @State private var loadingCandidates = false
-    @State private var candidatesFailed = false
-    @State private var candidatesPage = 0
-    @State private var suppressionToken = UUID()
-    @State private var isSuppressing = false
-    private var artistLineColor: Color {
-        Defaults[.playerColorTinting]
-            ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6).notchReadableTint()
-            : .gray
-    }
-
-    /// The colour a line has yet to be sung in. Tinted rather than plain grey so
-    /// the unsung remainder still reads as part of the current line.
-    private var lyricsStyle: SyncedLyricsStyle {
-        SyncedLyricsStyle(
-            sung: Color.primary,
-            unsung: artistLineColor.opacity(0.55),
-            idle: Color.primary.opacity(0.5),
-            tint: artistLineColor
-        )
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 6) {
-                Text("Lyrics")
-                    .font(.headline)
-                    .foregroundStyle(artistLineColor)
-                Spacer()
-                lyricsPickerButton
-                pinButton
-            }
-            .padding(.horizontal, 12)
-            .padding(.top, 10)
-            .padding(.bottom, 6)
-
-            SyncedLyricsList(musicManager: musicManager, style: lyricsStyle)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color.primary.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-        .onHover { hovering in
-            updateSuppression(for: hovering)
-        }
-        .onChange(of: showingLyricsPicker) { _, isPresented in
-            vm.setMediaOutputPopoverActive(isPresented, token: suppressionToken)
-        }
-        .onDisappear {
-            updateSuppression(for: false)
-            vm.setMediaOutputPopoverActive(false, token: suppressionToken)
-        }
-    }
-
-    private var candidatesPageCount: Int { max(1, (lyricsCandidates.count + 9) / 10) }
-
-    static func candidatePageRange(count: Int, page: Int) -> Range<Int> {
-        let start = min(max(0, page) * 10, count)
-        return start..<min(start + 10, count)
-    }
-
-    private var lyricsPickerButton: some View {
-        Button {
-            showingLyricsPicker.toggle()
-        } label: {
-            Image(systemName: "list.bullet")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(showingLyricsPicker ? artistLineColor : Color.primary.opacity(0.5))
-                .frame(width: 20, height: 20)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help("Choose lyrics")
-        .accessibilityLabel("Choose lyrics")
-        .popover(isPresented: $showingLyricsPicker, arrowEdge: .bottom) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Choose lyrics").font(.headline)
-                if loadingCandidates {
-                    ProgressView("Searching lyrics…")
-                } else {
-                    if candidatesFailed {
-                        Text("Some lyrics sources could not be loaded. Reopen to retry.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    if lyricsCandidates.isEmpty {
-                        Text("No alternative lyrics found").foregroundStyle(.secondary)
-                    } else {
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 4) {
-                                ForEach(lyricsCandidates[Self.candidatePageRange(count: lyricsCandidates.count, page: candidatesPage)]) { candidate in
-                                    Button {
-                                        musicManager.selectLyrics(candidate, for: candidatesKey)
-                                        showingLyricsPicker = false
-                                    } label: {
-                                        HStack(alignment: .top, spacing: 8) {
-                                            Image(systemName: musicManager.isSelectedLyrics(candidate) ? "checkmark.circle.fill" : "circle")
-                                            VStack(alignment: .leading, spacing: 3) {
-                                                Text(candidate.label)
-                                                    .font(.callout)
-                                                    .lineLimit(2)
-                                                    .help(candidate.label)
-                                                HStack(spacing: 0) {
-                                                    Text(candidate.resolution.availability == .timed ? "Synced lyrics" : "Plain lyrics")
-                                                    Text(verbatim: " · ")
-                                                    if let duration = candidate.durationDisplay {
-                                                        if duration.isLastLine {
-                                                            Text("Last line \(duration.time)")
-                                                                .help("Start time of the last lyric line, not the full song duration.")
-                                                        } else {
-                                                            Text("Duration \(duration.time)")
-                                                        }
-                                                    } else {
-                                                        Text("Duration unknown")
-                                                    }
-                                                }
-                                                .font(.caption).foregroundStyle(.secondary)
-                                            }
-                                            Spacer(minLength: 0)
-                                        }
-                                        .padding(8)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .frame(height: 64, alignment: .top)
-                                        .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        }
-                        .frame(height: CGFloat(Self.candidatePageRange(count: lyricsCandidates.count, page: candidatesPage).count) * 68 - 4)
-                        .id(candidatesPage)
-                        HStack {
-                            Button("Previous page") { candidatesPage -= 1 }
-                                .disabled(candidatesPage == 0)
-                            Spacer()
-                            Text("\(candidatesPage + 1) / \(candidatesPageCount)")
-                                .monospacedDigit()
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Button("Next page") { candidatesPage += 1 }
-                                .disabled(candidatesPage + 1 >= candidatesPageCount)
-                        }
-                    }
-                }
-            }
-            .padding(14)
-            .frame(width: 360)
-            .fixedSize(horizontal: false, vertical: true)
-            .task(id: musicManager.lyricsSelectionKey) {
-                candidatesKey = musicManager.lyricsSelectionKey
-                lyricsCandidates = []
-                candidatesPage = 0
-                loadingCandidates = true
-                let result = await musicManager.lyricsCandidates()
-                guard !Task.isCancelled else { return }
-                lyricsCandidates = result.items
-                candidatesFailed = result.failed
-                loadingCandidates = false
-            }
-        }
-    }
-
-    /// Keeps the current line under the notch once it closes again.
-    ///
-    /// Filled while pinned so the state reads at a glance from the panel that
-    /// set it -- the strip it controls is only visible once the notch closes,
-    /// which is exactly when this button is off screen.
-    private var pinButton: some View {
-        Button {
-            withAnimation(.smooth) {
-                pinLyricsWhenClosed.toggle()
-            }
-        } label: {
-            Image(systemName: pinLyricsWhenClosed ? "pin.fill" : "pin")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(pinLyricsWhenClosed ? artistLineColor : Color.primary.opacity(0.5))
-                .rotationEffect(.degrees(pinLyricsWhenClosed ? 0 : 45))
-                .frame(width: 20, height: 20)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help(pinLyricsWhenClosed
-            ? "Stop showing lyrics under the closed notch"
-            : "Keep showing lyrics under the closed notch")
-        .accessibilityLabel(pinLyricsWhenClosed
-            ? "Unpin lyrics from closed notch"
-            : "Pin lyrics to closed notch")
-    }
-
-    // Prevent lyrics scrolling to close the expanded notch
-    private func updateSuppression(for hovering: Bool) {
-        guard hovering != isSuppressing else { return }
-        isSuppressing = hovering
-        vm.setScrollGestureSuppression(hovering, token: suppressionToken)
-    }
-}
-
-struct AlbumArtView: View {
-    @ObservedObject var musicManager = MusicManager.shared
-    @ObservedObject var vm: DynamicIslandViewModel
-    @Default(.showLiveCanvasInDynamicIsland) private var showLiveCanvasInDynamicIsland
-    let albumArtNamespace: Namespace.ID
-
-    private var usesLiveCanvasArtwork: Bool {
-        showLiveCanvasInDynamicIsland && musicManager.videoArtworkURL != nil
-    }
-
-    private var albumArtCornerRadius: CGFloat {
-        Defaults[.cornerRadiusScaling]
-            ? musicManager.albumArt.size.width / musicManager.albumArt.size.height > 1.0
-                ? MusicPlayerImageSizes.cornerRadiusInset.opened / 3
-                : MusicPlayerImageSizes.cornerRadiusInset.opened
-            : musicManager.albumArt.size.width / musicManager.albumArt.size.height > 1.0
-                ? MusicPlayerImageSizes.cornerRadiusInset.closed / 3
-                : MusicPlayerImageSizes.cornerRadiusInset.closed
-    }
-
-    var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            if Defaults[.lightingEffect] {
-                albumArtBackground
-            }
-            albumArtButton
-        }
-    }
-
-    private var albumArtBackground: some View {
-        GeometryReader { geo in
-            Color.clear
-                .background(
-                    Image(nsImage: musicManager.albumArtGlowTexture)
-                        .resizable()
-                        .aspectRatio(nil, contentMode: .fill)
-                )
-                .mask(
-                    RadialGradient(
-                        gradient: Gradient(colors: [.white, .white.opacity(0.7), .clear]),
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: geo.size.width * 0.65
-                    )
-                )
-                .scaleEffect(x: 1.3, y: 1.4)
-                .rotationEffect(.degrees(92))
-                .opacity(
-                    usesLiveCanvasArtwork
-                        ? (musicManager.isPlaying ? 0.62 : 0.18)
-                        : (musicManager.isPlaying ? 0.5 : 0)
-                )
-                .shadow(
-                    color: Color(nsColor: musicManager.avgColor).opacity(usesLiveCanvasArtwork ? 0.24 : 0.16),
-                    radius: usesLiveCanvasArtwork ? 22 : 14,
-                    x: 0,
-                    y: 0
-                )
-        }
-        .aspectRatio(1, contentMode: .fit)
-    }
-
-    private var albumArtButton: some View {
-        ZStack {
-            Button {
-                musicManager.openMusicApp()
-            } label: {
-                ZStack(alignment:.bottomTrailing) {
-                    albumArtImage
-                    appIconOverlay
-                }
-                .albumArtFlip(angle: musicManager.flipAngle)
-                .parallax3D()
-                .padding(.bottom, -5)
-
-            }
-            .buttonStyle(PlainButtonStyle())
-            .scaleEffect(musicManager.isPlaying ? 1 : 0.85)
-            
-            albumArtDarkOverlay
-        }
-    }
-
-    private var albumArtDarkOverlay: some View {
-        Rectangle()
-            .aspectRatio(1, contentMode: .fit)
-            .foregroundColor(Color.black)
-            .opacity(musicManager.isPlaying ? 0 : 0.8)
-            .blur(radius: 50)
-    }
-
-    private var albumArtImage: some View {
-        Color.clear
-            .aspectRatio(1, contentMode: .fit)
-            .overlay {
-                DynamicIslandArtworkSourceView(
-                    cornerRadius: albumArtCornerRadius,
-                    contentMode: .fit
-                )
-            }
-            .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
-        .clipped()
-    }
-
-    @ViewBuilder
-    private var appIconOverlay: some View {
-        if vm.notchState == .open && !musicManager.usingAppIconForArtwork {
-            AppIcon(for: musicManager.bundleIdentifier ?? "com.apple.Music")
-                .resizable()
-                .scaledToFill()
-                .frame(width: 36, height: 36)
-                .offset(x: 10, y: 10)
-                .transition(.scale.combined(with: .opacity).animation(.bouncy.delay(0.3)))
-                .zIndex(2)
-        }
-    }
-}
-
-struct MusicControlsView: View {
-    @Environment(\.isMediaSettingsPreview) private var settingsPreview
-    @EnvironmentObject var vm: DynamicIslandViewModel
-    @ObservedObject var musicManager = MusicManager.shared
-    @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
-    @State private var sliderValue: Double = MusicManager.shared.estimatedPlaybackPosition()
-    @State private var dragging: Bool = false
-    @State private var lastDragged: Date = .distantPast
-    @State private var hudValue: Double = 0
-    @State private var hudDragging: Bool = false
-    @State private var hudLastDragged: Date = .distantPast
-    @Default(.showShuffleAndRepeat) private var showCustomControls
-    @Default(.musicControlSlots) private var slotConfig
-    @Default(.showMediaOutputControl) private var showMediaOutputControl
-    @Default(.musicSkipBehavior) private var musicSkipBehavior
-    @Default(.enableLyrics) private var enableLyrics
-    private let seekInterval: TimeInterval = 10
-
-    var body: some View {
-        VStack(alignment: .leading) {
-            songInfoAndSlider
-            if shouldShowControlHUDRow {
-                controlHUDRow
-            } else {
-                playbackControls
-            }
-        }
-        .buttonStyle(PlainButtonStyle())
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var songInfoAndSlider: some View {
-        GeometryReader { geo in
-            VStack(alignment: .leading, spacing: 4) {
-                songInfo(width: geo.size.width)
-                    .zIndex(1) // Ensure it draws above the waveform scrubber
-                musicSlider
-                    .zIndex(0)
-            }
-        }
-        .padding(.top, 10)
-        .padding(.leading, 5)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func songInfo(width: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            MusicTitleMarqueeView(
-                text: musicManager.songTitle,
-                isExplicit: musicManager.isCurrentTrackExplicit,
-                font: .headline,
-                nsFont: .headline,
-                textColor: Color.primary,
-                frameWidth: width,
-                badgeHeight: 14
-            )
-            MarqueeText(
-                $musicManager.artistName,
-                font: .headline,
-                nsFont: .headline,
-                textColor: Defaults[.playerColorTinting] ? Color(nsColor: musicManager.avgColor)
-                    .ensureMinimumBrightness(factor: 0.6).notchReadableTint() : .gray,
-                frameWidth: width
-            )
-            .fontWeight(.medium)
-
-        }
-    }
-
-    /// Whether the progress timeline should be paused (no ticks).
-    private var isProgressTimelinePaused: Bool {
-        !musicManager.isPlaying || musicManager.isLiveStream || musicManager.playbackRate <= 0
-    }
-
-    private var musicSlider: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: isProgressTimelinePaused)) { timeline in
-            MusicSliderView(
-                sliderValue: $sliderValue,
-                duration: $musicManager.songDuration,
-                lastDragged: $lastDragged,
-                color: musicManager.avgColor,
-                dragging: $dragging,
-                currentDate: timeline.date,
-                timestampDate: musicManager.timestampDate,
-                elapsedTime: musicManager.elapsedTime,
-                playbackRate: musicManager.playbackRate,
-                isPlaying: musicManager.isPlaying,
-                isLiveStream: musicManager.isLiveStream
-            ) { newValue in
-                guard !musicManager.isLiveStream else { return }
-                MusicManager.shared.seek(to: newValue)
-            }
-            .padding(.top, 5)
-            .frame(height: 36)
-        }
-    }
-
-    private var playbackControls: some View {
-        HStack(spacing: 8) {
-            ForEach(Array(displayedSlots.enumerated()), id: \.offset) { _, slot in
-                slotView(for: slot)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
-    }
-
-    private var shouldShowControlHUDRow: Bool {
-        guard !settingsPreview else { return false }
-        guard vm.notchState == .open else { return false }
-        guard coordinator.sneakPeek.show else { return false }
-        guard Defaults[.enableSystemHUD] else { return false }
-        guard !Defaults[.enableCustomOSD] && !Defaults[.enableVerticalHUD] && !Defaults[.enableCircularHUD] else { return false }
-
-        switch coordinator.sneakPeek.type {
-        case .volume:
-            return Defaults[.enableVolumeHUD]
-        case .brightness:
-            return Defaults[.enableBrightnessHUD]
-        case .backlight:
-            return Defaults[.enableKeyboardBacklightHUD]
-        default:
-            return false
-        }
-    }
-
-    private var controlHUDRow: some View {
-        HStack(alignment: .center, spacing: 10) {
-            if !controlLeftIconName.isEmpty {
-                Image(systemName: controlLeftIconName)
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 22, height: 22, alignment: .center)
-            }
-
-            controlHUDSlider
-
-            if !controlRightIconName.isEmpty {
-                Image(systemName: controlRightIconName)
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 22, height: 22, alignment: .center)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
-        .onAppear { syncHUDValueIfNeeded(force: true) }
-        .onChange(of: coordinator.sneakPeek.value) { _, _ in
-            syncHUDValueIfNeeded(force: false)
-        }
-    }
-
-    private var controlHUDSlider: some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: 0)
-            CustomSlider(
-                value: Binding(
-                    get: { hudValue },
-                    set: { newValue in
-                        hudValue = newValue
-                        updateControlHUDValue(newValue)
-                    }
-                ),
-                range: 0...1,
-                color: Color.primary,
-                dragging: $hudDragging,
-                lastDragged: $hudLastDragged,
-                onValueChange: { newValue in
-                    updateControlHUDValue(newValue)
-                },
-                thumbSize: 10,
-                restingTrackHeight: 4,
-                draggingTrackHeight: 7
-            )
-            .frame(height: 7)
-            Spacer(minLength: 0)
-        }
-        .frame(height: 22)
-    }
-
-    private func syncHUDValueIfNeeded(force: Bool) {
-        guard shouldShowControlHUDRow else { return }
-        guard force || !hudDragging else { return }
-
-        let target = Double(coordinator.sneakPeek.value)
-        guard target != hudValue else { return }
-
-        guard !force else {
-            // First sync when the row appears: adopt the current level outright
-            // rather than sliding up to it from wherever the slider last sat.
-            hudValue = target
-            return
-        }
-
-        // The keys deliver discrete steps (1/16 of the range each), and nothing
-        // animated the fill between them, so the track jumped. Glide instead —
-        // short enough to keep up with key auto-repeat, and interruptible, so a
-        // held key reads as one continuous sweep rather than a queue of hops.
-        withAnimation(.easeOut(duration: 0.18)) {
-            hudValue = target
-        }
-    }
-
-    private func updateControlHUDValue(_ newValue: Double) {
-        let clamped = max(0, min(1, newValue))
-        switch coordinator.sneakPeek.type {
-        case .volume:
-            SystemVolumeController.shared.setVolume(Float(clamped))
-        case .brightness:
-            SystemBrightnessController.shared.setBrightness(Float(clamped))
-        case .backlight:
-            SystemKeyboardBacklightController.shared.setLevel(Float(clamped))
-        default:
-            break
-        }
-    }
-
-    private var controlLeftIconName: String {
-        switch coordinator.sneakPeek.type {
-        case .volume:
-            return SystemVolumeController.shared.isMuted ? "speaker.slash" : "speaker.wave.1"
-        case .brightness:
-            return "sun.min.fill"
-        case .backlight:
-            return "light.min"
-        default:
-            return ""
-        }
-    }
-
-    private var controlRightIconName: String {
-        switch coordinator.sneakPeek.type {
-        case .volume:
-            return SystemVolumeController.shared.isMuted ? "" : "speaker.wave.3"
-        case .brightness:
-            return "sun.max.fill"
-        case .backlight:
-            return "light.max"
-        default:
-            return ""
-        }
-    }
-
-    private var brandAccentColor: Color {
-        musicManager.brandAccentColor
-    }
-
-    private var repeatIcon: String {
-        switch musicManager.repeatMode {
-        case .off:
-            return "repeat"
-        case .all:
-            return "repeat"
-        case .one:
-            return "repeat.1"
-        }
-    }
-
-    private var repeatIconColor: Color {
-        switch musicManager.repeatMode {
-        case .off:
-            return Color.primary
-        case .all, .one:
-            return brandAccentColor
-        }
-    }
-
-    private var displayedSlots: [MusicControlButton] {
-        if showCustomControls {
-            let normalized = slotConfig.normalized(allowingMediaOutput: showMediaOutputControl, isAppleMusicActive: musicManager.isAppleMusicActive, canFavorite: musicManager.activeSourceCanEverFavorite)
-            return normalized.contains(where: { $0 != .none }) ? normalized : MusicControlButton.defaultLayout
-        }
-
-        switch musicSkipBehavior {
-        case .track:
-            return MusicControlButton.minimalLayout
-        case .tenSecond:
-            return [.none, .seekBackward, .playPause, .seekForward, .none]
-        }
-    }
-
-    @ViewBuilder
-    private func slotView(for control: MusicControlButton) -> some View {
-        switch control {
-        case .none:
-            Spacer(minLength: 0)
-        case .playPause:
-            HoverButton(
-                icon: musicManager.isPlaying ? (musicManager.isLiveStream ? "stop.fill" : "pause.fill") : "play.fill",
-                scale: .large
-            ) {
-                MusicManager.shared.togglePlay()
-            }
-        case .trackBackward:
-            playbackButton(
-                icon: "backward.fill",
-                press: nil,
-                trigger: skipGestureTrigger(for: .trackBackward),
-                skipDirection: .backward
-            ) {
-                musicManager.previousTrack()
-            }
-        case .trackForward:
-            playbackButton(
-                icon: "forward.fill",
-                press: nil,
-                trigger: skipGestureTrigger(for: .trackForward),
-                skipDirection: .forward
-            ) {
-                musicManager.nextTrack()
-            }
-        case .seekBackward:
-            playbackButton(
-                icon: "gobackward.10",
-                press: .wiggle(.counterClockwise),
-                trigger: skipGestureTrigger(for: .seekBackward)
-            ) {
-                musicManager.seek(by: -seekInterval)
-            }
-        case .seekForward:
-            playbackButton(
-                icon: "goforward.10",
-                press: .wiggle(.clockwise),
-                trigger: skipGestureTrigger(for: .seekForward)
-            ) {
-                musicManager.seek(by: seekInterval)
-            }
-        case .shuffle:
-            HoverButton(
-                icon: "shuffle",
-                iconColor: musicManager.isShuffled ? brandAccentColor : Color.primary,
-                scale: .medium
-            ) {
-                MusicManager.shared.toggleShuffle()
-            }
-        case .repeatMode:
-            HoverButton(
-                icon: repeatIcon,
-                iconColor: repeatIconColor,
-                scale: .medium
-            ) {
-                MusicManager.shared.toggleRepeat()
-            }
-        case .mediaOutput:
-            MediaOutputPickerButton()
-        case .airPlay:
-            AirPlayPickerButton()
-        case .lyrics:
-            HoverButton(
-                icon: enableLyrics ? "quote.bubble.fill" : "quote.bubble",
-                iconColor: enableLyrics ? brandAccentColor : Color.primary,
-                scale: .medium
-            ) {
-                enableLyrics.toggle()
-            }
-        case .likeTrack:
-            LikeTrackControl { presentation, toggle in
-                HoverButton(
-                    icon: presentation.iconName,
-                    iconColor: presentation.isActive ? brandAccentColor : Color.primary,
-                    scale: .medium
-                ) {
-                    toggle()
-                }
-            }
-        }
-    }
-
-    private struct SkipTrigger {
-        let token: Int
-        /// nil for the track buttons: the pulse advances the skip glyph rather
-        /// than moving the button.
-        let pressEffect: HoverButton.PressEffect?
-    }
-
-    private func playbackButton(
-        icon: String,
-        press: HoverButton.PressEffect?,
-        trigger: SkipTrigger?,
-        skipDirection: SkipTrackGlyph.Direction? = nil,
-        action: @escaping () -> Void
-    ) -> some View {
-        HoverButton(
-            icon: icon,
-            scale: .medium,
-            pressEffect: press,
-            externalTriggerToken: trigger?.token,
-            externalTriggerEffect: trigger?.pressEffect,
-            skipDirection: skipDirection
-        ) {
-            action()
-        }
-    }
-
-    private func skipGestureTrigger(for control: MusicControlButton) -> SkipTrigger? {
-        guard let pulse = musicManager.skipGesturePulse else { return nil }
-
-        switch control {
-        case .trackBackward where pulse.behavior == .track && pulse.direction == .backward:
-            return SkipTrigger(token: pulse.token, pressEffect: nil)
-        case .trackForward where pulse.behavior == .track && pulse.direction == .forward:
-            return SkipTrigger(token: pulse.token, pressEffect: nil)
-        case .seekBackward where pulse.behavior == .tenSecond && pulse.direction == .backward:
-            return SkipTrigger(token: pulse.token, pressEffect: .wiggle(.counterClockwise))
-        case .seekForward where pulse.behavior == .tenSecond && pulse.direction == .forward:
-            return SkipTrigger(token: pulse.token, pressEffect: .wiggle(.clockwise))
-        default:
-            return nil
-        }
-    }
-}
-
-// MARK: - Main View
 
 struct NotchHomeView: View {
-    @EnvironmentObject var vm: DynamicIslandViewModel
-    @ObservedObject var webcamManager = WebcamManager.shared
-    @ObservedObject var batteryModel = BatteryStatusViewModel.shared
-    @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
-    @ObservedObject private var musicManager = MusicManager.shared
-    @Default(.showStandardMediaControls) private var showStandardMediaControls
-    @Default(.autoHideInactiveNotchMediaPlayer) private var autoHideInactiveNotchMediaPlayer
-    @Default(.enableLyrics) private var enableLyrics
-    @Default(.lyricsPanelWidth) private var lyricsPanelWidth
-    @Default(.lyricsPanelOffset) private var lyricsPanelOffset
-    let albumArtNamespace: Namespace.ID
+    @EnvironmentObject private var vm: DynamicIslandViewModel
+    @ObservedObject private var coordinator = DynamicIslandViewCoordinator.shared
+    @ObservedObject private var webcamManager = WebcamManager.shared
+    @Default(.enableMinimalisticUI) private var minimalistic
+    @Default(.showMirror) private var showMirror
 
-    /// Whether the music player should actively display (enabled AND has real content).
-    private var shouldShowMusicPlayer: Bool {
-        showStandardMediaControls && (!autoHideInactiveNotchMediaPlayer || musicManager.hasActiveSession)
-    }
-
-    private var shouldShowSideLyrics: Bool {
-        shouldShowMusicPlayer && enableLyrics
-    }
-    
     var body: some View {
         Group {
             if !coordinator.firstLaunch {
-                mainContent
+                VStack(spacing: 0) {
+                    HStack(spacing: minimalistic ? 12 : 28) {
+                        TimelineView(.periodic(from: Calendar.current.startOfDay(for: .now), by: 60)) { context in
+                            HomeClockView(date: context.date, compact: minimalistic)
+                        }
+                        .frame(maxWidth: .infinity)
+
+                        if showMirror && webcamManager.cameraAvailable && vm.notchState == .open {
+                            CameraPreviewView(webcamManager: webcamManager)
+                                .frame(width: minimalistic ? 80 : 128, height: minimalistic ? 80 : 128)
+                        }
+                    }
+                    .frame(maxWidth: 460, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity)
+
+                    if minimalistic {
+                        MinimalisticHomeActivitiesView()
+                    }
+                }
+                .padding(.horizontal, minimalistic ? 4 : 16)
+                .padding(.vertical, 8)
+                .blur(radius: vm.notchState == .closed ? 30 : 0)
             }
         }
         .transition(.opacity)
     }
-
-    private var mainContent: some View {
-        Group {
-            if Defaults[.enableMinimalisticUI] {
-                MinimalisticMusicPlayerView(albumArtNamespace: albumArtNamespace)
-            } else if shouldShowSideLyrics {
-                sideLyricsContent
-            } else {
-                HStack(alignment: .top, spacing: SideLyricsLayout.hStackSpacing) {
-                    if !shouldShowMusicPlayer && !mirrorIsVisible {
-                        TimelineView(.periodic(from: Calendar.current.startOfDay(for: .now), by: 60)) { context in
-                            HomeIdleView(date: context.date)
-                        }
-                    }
-
-                    // Normal mode: Show full music player with optional webcam
-                    if shouldShowMusicPlayer {
-                        MusicPlayerView(albumArtNamespace: albumArtNamespace)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
-                    if mirrorIsVisible {
-                        cameraPreview
-                    }
-                }
-            }
-        }
-        .transition(.opacity.animation(.smooth.speed(0.9))
-            .combined(with: .move(edge: .top)))
-        .blur(radius: vm.notchState == .closed ? 30 : 0)
-        .padding(Defaults[.enableMinimalisticUI] ? 0 : 8) //Putting the main padding for home view here for consistency
-    }
-
-    private var sideLyricsContent: some View {
-        HStack(alignment: .top, spacing: SideLyricsLayout.hStackSpacing) {
-            MusicPlayerView(albumArtNamespace: albumArtNamespace)
-                .frame(minWidth: SideLyricsLayout.minimumPlayerWidth, maxWidth: .infinity, alignment: .leading)
-                .layoutPriority(1)
-
-            LyricsSidePanelView()
-                .frame(width: max(0, lyricsPanelWidth), alignment: .topLeading)
-                .padding(.leading, max(0, -lyricsPanelOffset))
-                .offset(x: lyricsPanelOffset)
-
-            if mirrorIsVisible {
-                cameraPreview
-                    .frame(minWidth: SideLyricsLayout.minimumMirrorWidth, maxWidth: .infinity)
-            }
-        }
-    }
-
-    private var mirrorIsVisible: Bool {
-        Defaults[.showMirror] && webcamManager.cameraAvailable && vm.notchState == .open
-    }
-
-    private var cameraPreview: some View {
-        CameraPreviewView(webcamManager: webcamManager)
-            .scaledToFit()
-            .opacity(vm.notchState == .closed ? 0 : 1)
-            .blur(radius: vm.notchState == .closed ? 20 : 0)
-    }
-
 }
 
-struct HomeIdleView: View {
+struct HomeClockView: View {
     let date: Date
+    let compact: Bool
 
     var body: some View {
-        HStack(spacing: 28) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(date, format: .dateTime.hour().minute())
-                    .font(.system(size: 48, weight: .ultraLight, design: .rounded))
-                    .monospacedDigit()
-                    .tracking(-1.5)
-                    .foregroundStyle(Color.primary.opacity(0.95))
-                Text(date, format: .dateTime.month().day().weekday(.wide))
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(0.55))
-            }
-            .lineLimit(1)
-            .minimumScaleFactor(0.75)
-
-            Spacer(minLength: 0)
-
-            Rectangle()
-                .fill(Color.primary.opacity(0.12))
-                .frame(width: 1, height: 40)
-                .accessibilityHidden(true)
-
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle().fill(Color.primary.opacity(0.04))
-                    Circle().strokeBorder(Color.primary.opacity(0.10), lineWidth: 1)
-                    Circle().strokeBorder(Color.primary.opacity(0.06), lineWidth: 1).padding(6)
-                    Circle().fill(Color.accentColor.opacity(0.15)).padding(15)
-                    Image(systemName: "music.note")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(Color.accentColor.opacity(0.85))
-                }
-                .frame(width: 58, height: 58)
-                .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Not Playing")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Color.primary.opacity(0.75))
-                    Text("Let the music begin")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.primary.opacity(0.45))
-                }
-                .fixedSize()
-            }
+        VStack(alignment: .leading, spacing: 5) {
+            Text(date, format: .dateTime.hour().minute())
+                .font(.system(size: compact ? 36 : 48, weight: .ultraLight, design: .rounded))
+                .monospacedDigit()
+                .tracking(-1.5)
+                .foregroundStyle(Color.primary.opacity(0.95))
+            Text(date, format: .dateTime.month().day().weekday(.wide))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Color.primary.opacity(0.55))
         }
-        .frame(maxWidth: 460)
-        .padding(.horizontal, 16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .lineLimit(1)
+        .minimumScaleFactor(0.65)
         .accessibilityElement(children: .combine)
     }
 }
 
-struct MusicSliderView: View {
-    @Binding var sliderValue: Double
-    @Binding var duration: Double
-    @Binding var lastDragged: Date
-    var color: NSColor
-    @Binding var dragging: Bool
-    let currentDate: Date
-    let timestampDate: Date
-    let elapsedTime: Double
-    let playbackRate: Double
-    let isPlaying: Bool
-    let isLiveStream: Bool
-    var onValueChange: (Double) -> Void
-    var labelLayout: TimeLabelLayout = .stacked
-    var trailingLabel: TrailingLabel = .duration
-    var restingTrackHeight: CGFloat = 8
-    var draggingTrackHeight: CGFloat = 14
-    /// When set, bypasses Defaults[.sliderColor] (used by lock screen appearance).
-    var tintOverride: Color? = nil
-    /// Greys the track out until it is reached for, the way Apple's transport
-    /// sliders do. Opt-in: the notch's own slider is meant to carry the album
-    /// colour at rest.
-    var desaturatesWhenIdle: Bool = false
-
-    enum TimeLabelLayout {
-        case stacked
-        case inline
-    }
-
-    enum TrailingLabel {
-        case duration
-        case remaining
-    }
+private struct MinimalisticHomeActivitiesView: View {
+    @EnvironmentObject private var vm: DynamicIslandViewModel
+    @ObservedObject private var reminderManager = ReminderLiveActivityManager.shared
+    @ObservedObject private var timerManager = TimerManager.shared
+    @ObservedObject private var coordinator = DynamicIslandViewCoordinator.shared
+    @Default(.enableReminderLiveActivity) private var enableReminderLiveActivity
+    @Default(.timerPresets) private var timerPresets
 
     var body: some View {
-        Group {
-            if isLiveStream {
-                liveStreamView
-            } else {
-                switch labelLayout {
-                case .stacked:
-                    stackedContent
-                case .inline:
-                    inlineContent
-                }
-            }
-        }
-        .onAppear {
-            guard !isLiveStream else { return }
-            guard !dragging else { return }
-            setSliderValueWithoutAnimation(MusicManager.shared.estimatedPlaybackPosition())
-        }
-        .onChange(of: currentDate) { newDate in
-            guard !isLiveStream else { return }
-            guard !dragging, timestampDate.timeIntervalSince(lastDragged) > -1 else { return }
-            setSliderValueWithoutAnimation(MusicManager.shared.estimatedPlaybackPosition(at: newDate))
-        }
-        .onChange(of: isPlaying) { _, playing in
-            // Snap slider to the exact position when music pauses so
-            // the in-flight animation doesn't coast past the true value.
-            if !playing {
-                sliderValue = MusicManager.shared.estimatedPlaybackPosition()
-            }
-        }
-        .onChange(of: isLiveStream) { isLive in
-            if isLive {
-                sliderValue = 0
+        VStack(spacing: 0) {
+            timerCountdownSection
+            if shouldShowReminderList {
+                reminderList
             }
         }
     }
 
-    private func setSliderValueWithoutAnimation(_ value: Double) {
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            sliderValue = value
-        }
+    private var reminderEntries: [ReminderLiveActivityManager.ReminderEntry] {
+        reminderManager.activeWindowReminders
     }
 
-    private var stackedContent: some View {
-        VStack(spacing: 6) {
-            sliderCore
-                .frame(height: sliderFrameHeight)
-
-            HStack {
-                Text(timeString(from: sliderValue))
-                Spacer()
-                Text(trailingTimeText)
-            }
-            .fontWeight(.medium)
-            .foregroundColor(timeLabelColor)
-            .font(.system(size: 11, weight: .medium, design: .default).monospacedDigit())
-        }
+    private var shouldShowReminderList: Bool {
+        enableReminderLiveActivity && !reminderEntries.isEmpty
     }
 
-    private var inlineContent: some View {
-        HStack(spacing: 6) {
-            Text(timeString(from: sliderValue))
-                .font(inlineLabelFont)
-                .foregroundColor(timeLabelColor)
-                .frame(width: 36, alignment: .leading)
-
-            sliderCore
-                .frame(height: sliderFrameHeight)
-                .frame(maxWidth: .infinity)
-
-            Text(trailingTimeText)
-                .font(inlineLabelFont)
-                .foregroundColor(timeLabelColor)
-                .frame(width: 42, alignment: .trailing)
-        }
+    private var reminderListHeight: CGFloat {
+        ReminderLiveActivityManager.additionalHeight(forRowCount: reminderEntries.count)
     }
 
-    @ViewBuilder
-    private var liveStreamView: some View {
-        switch labelLayout {
-        case .stacked:
-            LiveStreamProgressIndicator(tint: sliderTint)
-                .frame(maxWidth: .infinity)
-                .frame(height: sliderFrameHeight)
-                
-        case .inline:
-            HStack(spacing: 6) {
-                Spacer()
-                    .frame(width: 36)
-                LiveStreamProgressIndicator(tint: sliderTint)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: sliderFrameHeight)
-
-                Spacer()
-                    .frame(width: 42)
-            }
-        }
+    private var shouldShowTimerCountdown: Bool {
+        coordinator.timerLiveActivityEnabled && timerManager.isExternalTimerActive
     }
 
-    @ViewBuilder
-    private var sliderCore: some View {
-        if hasUsableDuration {
-            CustomSlider(
-                value: $sliderValue,
-                range: 0 ... duration,
-                color: sliderTint,
-                dragging: $dragging,
-                lastDragged: $lastDragged,
-                onValueChange: onValueChange,
-                restingTrackHeight: restingTrackHeight,
-                draggingTrackHeight: draggingTrackHeight,
-                desaturatesWhenIdle: desaturatesWhenIdle
-            )
+    private var timerCountdownColor: Color {
+        let baseColor: Color
+        if let presetId = timerManager.activePresetId,
+           let preset = timerPresets.first(where: { $0.id == presetId }) {
+            baseColor = preset.color
         } else {
-            // Non-interactive fallback matching CustomSlider's idle appearance:
-            // gray track + colored fill at current estimated position. No seeking
-            // allowed until hasUsableDuration becomes true.
-            // Use estimated playback position and a surrogate duration so the
-            // fill renders meaningfully even before the real duration arrives.
-            let estimatedPosition: Double = {
-                guard isPlaying else { return min(elapsedTime, duration) }
-                let timeDifference = currentDate.timeIntervalSince(timestampDate)
-                let estimated = elapsedTime + (timeDifference * playbackRate)
-                return min(max(0, estimated), duration)
-            }()
-            let surrogateDuration = max(1, estimatedPosition * 2, elapsedTime * 2)
-            let progress = surrogateDuration > 0 ? min(max(estimatedPosition / surrogateDuration, 0), 1) : 0
-            GeometryReader { geometry in
-                let width = geometry.size.width
-                let trackHeight = restingTrackHeight
-                let filledWidth = max(1, width) * progress
-                ZStack(alignment: .leading) {
-                    Rectangle()
-                        .fill(.gray.opacity(0.3))
-                        .frame(height: trackHeight)
-                        .cornerRadius(trackHeight / 2)
-                        .transaction { $0.disablesAnimations = true }
-                    Rectangle()
-                        .fill(sliderTint)
-                        .frame(width: filledWidth, height: trackHeight)
-                        .cornerRadius(trackHeight / 2)
-                        .transaction { $0.disablesAnimations = true }
-                }
+            baseColor = timerManager.timerColor
+        }
+        return baseColor.ensureMinimumBrightness(factor: 0.75).notchReadableTint()
+    }
+
+    private var timerCountdownText: String {
+        timerManager.formattedRemainingTime()
+    }
+
+    private var timerDisplayName: String {
+        let trimmed = timerManager.timerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "Timer" : trimmed
+    }
+
+    private var timerCountdownSection: some View {
+        VStack(spacing: 0) {
+            if shouldShowTimerCountdown {
+                timerCountdownView
+                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            .frame(height: restingTrackHeight)
         }
+        .padding(.top, shouldShowTimerCountdown ? minimalisticTimerCountdownTopPadding : 0)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: shouldShowTimerCountdown ? minimalisticTimerCountdownBlockHeight : 0, alignment: .top)
+        .animation(.smooth(duration: 0.25), value: shouldShowTimerCountdown)
     }
 
-    private var sliderTint: Color {
-        if let tintOverride {
-            return tintOverride
-        }
-        switch Defaults[.sliderColor] {
-        case .albumArt:
-            return Color(nsColor: color).ensureMinimumBrightness(factor: 0.6).notchReadableTint()
-        case .accent:
-            return .accentColor
-        case .white:
-            return Color.primary
-        }
+    private func displayFont(size: CGFloat) -> Font {
+        .custom("SF Pro Display", size: size)
     }
 
-    private var timeLabelColor: Color {
-        if let tintOverride {
-            return tintOverride
-        }
-        return Defaults[.playerColorTinting]
-            ? Color(nsColor: color).ensureMinimumBrightness(factor: 0.6).notchReadableTint()
-            : .gray
-    }
-
-    /// Whether the reported duration is one a track could actually have.
-    ///
-    /// Senders do not always report a usable one — a live stream has none to
-    /// give, and some hand back a sentinel or an epoch timestamp instead. The
-    /// remaining-time label subtracts the position from it and formats the
-    /// result as hours, so an epoch came out on screen as `-1732919508:00:54`.
-    /// A day is well past any track and well short of those.
-    private var hasUsableDuration: Bool {
-        duration.isFinite && duration > 0 && duration <= 24 * 60 * 60
-    }
-
-    /// Shown in place of a time there is no sensible value for, rather than a
-    /// formatted impossibility.
-    private static let unknownTime = "--:--"
-
-    private var trailingTimeText: String {
-        guard hasUsableDuration else { return Self.unknownTime }
-
-        switch trailingLabel {
-        case .duration:
-            return timeString(from: duration)
-        case .remaining:
-            // A position that is not a position cannot be subtracted from
-            // anything, and a negative one would inflate what is left rather
-            // than reduce it.
-            guard sliderValue.isFinite, sliderValue >= 0 else { return Self.unknownTime }
-
-            let remaining = timeString(from: max(duration - sliderValue, 0))
-            // The minus belongs to a time, not to the absence of one: prefixing
-            // it unconditionally turned --:-- into ---:--.
-            return remaining == Self.unknownTime ? remaining : "-" + remaining
-        }
-    }
-
-    private var inlineLabelFont: Font {
-        .system(size: 11, weight: .medium, design: .default).monospacedDigit()
-    }
-
-    private var sliderFrameHeight: CGFloat {
-        max(restingTrackHeight, draggingTrackHeight)
-    }
-
-    func timeString(from seconds: Double) -> String {
-        // Int(_:) traps on a value too large to represent, and NaN has no
-        // meaning here either; neither belongs on screen as a time.
-        guard seconds.isFinite, seconds >= 0, seconds < Double(Int.max) else {
-            return Self.unknownTime
-        }
-
-        let totalMinutes = Int(seconds) / 60
-        let remainingSeconds = Int(seconds) % 60
-        let hours = totalMinutes / 60
-        let minutes = totalMinutes % 60
-
-        if hours > 0 {
-            return String(format: "%d:%02d:%02d", hours, minutes, remainingSeconds)
-        } else {
-            return String(format: "%d:%02d", minutes, remainingSeconds)
-        }
-    }
-
-}
-
-
-struct CustomSlider: View {
-    @Binding var value: Double
-    var range: ClosedRange<Double>
-    var color: Color = Color.primary
-    @Binding var dragging: Bool
-    @Binding var lastDragged: Date
-    var onValueChange: ((Double) -> Void)?
-    var thumbSize: CGFloat = 12
-    var restingTrackHeight: CGFloat = 8
-    var draggingTrackHeight: CGFloat = 14
-    /// See `MusicSliderView.desaturatesWhenIdle`.
-    var desaturatesWhenIdle: Bool = false
-    
-    @State private var isHovering: Bool = false
-    @Default(.enableRealTimeWaveform) var enableRealTimeWaveform
-    @Default(.enableWaveformScrubber) var enableWaveformScrubber
-
-    private var isEngaged: Bool { dragging || isHovering }
-
-    private var trackSaturation: Double {
-        desaturatesWhenIdle && !isEngaged ? 0 : 1
-    }
-
-    private var trackOpacity: Double {
-        guard desaturatesWhenIdle else { return 1 }
-        return isEngaged ? 1 : 0.82
-    }
-
-    var body: some View {
+    private var timerCountdownView: some View {
         GeometryReader { geometry in
-            let width = geometry.size.width
-            let trackHeight = CGFloat(dragging ? draggingTrackHeight : restingTrackHeight)
-            let rangeSpan = range.upperBound - range.lowerBound
+            let availableWidth = geometry.size.width
+            let preferredCountdownWidth = max(availableWidth * 0.42, 150)
+            let maxCountdownWidth = max(availableWidth - 60, 0)
+            let countdownWidth = min(preferredCountdownWidth, maxCountdownWidth)
+            let marqueeWidth = max(availableWidth - countdownWidth - 12, 0)
 
-            let progress = rangeSpan == .zero ? 0 : (value - range.lowerBound) / rangeSpan
-            let filledTrackWidth = min(max(progress, 0), 1) * max(1, width)
-            
-            let showScrubber = isHovering && enableRealTimeWaveform && enableWaveformScrubber
-
-            ZStack(alignment: .bottomLeading) {
-                // Background track
-                if showScrubber {
-                    RealTimeWaveformScrubberView(
-                        color: color,
-                        secondaryColor: Defaults[.coloredSpectrogram] ? Color(nsColor: MusicManager.shared.secondaryColor) : nil,
-                        progress: progress,
-                        minHeight: trackHeight
-                    )
-                    .frame(height: trackHeight * 3.5)
-                    .offset(y: trackHeight * 0.2)
-                    .transaction { $0.disablesAnimations = true }
-                } else {
-                    Rectangle()
-                        .fill(.gray.opacity(0.3))
-                        .frame(height: trackHeight)
-                        .cornerRadius(trackHeight / 2)
-                        .transaction { $0.disablesAnimations = true }
-                }
-
-                // Filled track
-                if !showScrubber {
-                    Rectangle()
-                        .fill(color)
-                        .frame(width: filledTrackWidth, height: trackHeight)
-                        .cornerRadius(trackHeight / 2)
-                        .transaction { $0.disablesAnimations = true }
-                }
-            }
-            // The track swells from its middle, so it grows into the space
-            // above and below equally instead of climbing off the baseline --
-            // which is also what leaves it level with the times beside it.
-            // The waveform scrubber is the exception: it is 3.5x the track and
-            // is drawn to rise out of the bar, so it stays bottom-anchored.
-            .frame(
-                height: max(restingTrackHeight, draggingTrackHeight),
-                alignment: showScrubber ? .bottom : .center
-            )
-            .contentShape(Rectangle())
-            .highPriorityGesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { gesture in
-                        withAnimation {
-                            dragging = true
-                        }
-                        let newValue = range.lowerBound + Double(gesture.location.x / width) * rangeSpan
-                        value = min(max(newValue, range.lowerBound), range.upperBound)
-                    }
-                    .onEnded { _ in
-                        onValueChange?(value)
-                        dragging = false
-                        lastDragged = Date()
-                    }
-            )
-            .saturation(trackSaturation)
-            // Kept well above the volume bar's resting brightness: a seek bar
-            // that fades as far as that one reads as disabled rather than idle.
-            .opacity(trackOpacity)
-            .animation(.easeOut(duration: 0.2), value: trackSaturation)
-            .animation(.easeOut(duration: 0.2), value: trackOpacity)
-            .animation(.bouncy.speed(1.4), value: dragging)
-            .onHover { hovering in
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isHovering = hovering
-                }
-            }
-        }
-    }
-}
-
-private struct MediaOutputPickerButton: View {
-    @Environment(\.isMediaSettingsPreview) private var settingsPreview
-    @ObservedObject private var routeManager = AudioRouteManager.shared
-    @StateObject private var volumeModel = MediaOutputVolumeViewModel()
-    @State private var isPopoverPresented = false
-    @State private var popoverToken = UUID()
-    @EnvironmentObject private var vm: DynamicIslandViewModel
-
-    var body: some View {
-        HoverButton(icon: buttonIcon, iconColor: Color.primary, scale: .medium) {
-            isPopoverPresented.toggle()
-            if isPopoverPresented {
-                routeManager.refreshDevices()
-            }
-        }
-        .accessibilityLabel("Media output")
-        .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            MediaOutputSelectorPopover(
-                routeManager: routeManager,
-                volumeModel: volumeModel,
-                onHoverChanged: { _ in }
-            ) {
-                isPopoverPresented = false
-                updatePopoverActivity()
-            }
-        }
-        .onAppear {
-            guard !settingsPreview else { return }
-            routeManager.refreshDevices()
-        }
-        .onChange(of: isPopoverPresented) { _, _ in
-            updatePopoverActivity()
-        }
-        .onDisappear {
-            vm.setMediaOutputPopoverActive(false, token: popoverToken)
-        }
-    }
-
-    private var buttonIcon: String {
-        routeManager.activeDevice?.iconName ?? "speaker.wave.2"
-    }
-
-    /// Reports whether this picker's popover is open, so the notch knows not to
-    /// auto-close while it is.
-    ///
-    /// Keyed by a token unique to this presenter: several pickers can exist at
-    /// once and the notch has to stay open while *any* of them is showing, so
-    /// the view model tracks a set of open popovers rather than one flag that
-    /// the second picker to close would clear on behalf of the first.
-    private func updatePopoverActivity() {
-        // Presentation alone, deliberately. Also requiring the pointer to be over
-        // the popover raced the notch's own hover tracking: the popover is a
-        // separate window, so moving into it reads as leaving the notch, and any
-        // moment before the popover reported the pointer let the auto-close timer
-        // shut the notch and take the popover with it. This is what the stats,
-        // timer and clipboard popovers already do.
-        vm.setMediaOutputPopoverActive(isPopoverPresented, token: popoverToken)
-    }
-}
-
-private struct AirPlayPickerButton: View {
-    @Environment(\.isMediaSettingsPreview) private var settingsPreview
-    @ObservedObject private var musicManager = MusicManager.shared
-    @ObservedObject private var airPlayManager = AppleMusicAirPlayManager.shared
-    @State private var isPopoverPresented = false
-    @State private var popoverToken = UUID()
-    @EnvironmentObject private var vm: DynamicIslandViewModel
-
-    private var isAppleMusicActive: Bool {
-        musicManager.bundleIdentifier == "com.apple.Music"
-    }
-
-    var body: some View {
-        HoverButton(icon: "airplayaudio", iconColor: Color.primary, scale: .medium) {
-            isPopoverPresented.toggle()
-            if isPopoverPresented {
-                Task { await airPlayManager.refreshDevices() }
-            }
-        }
-        .accessibilityLabel("AirPlay")
-        .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            AirPlaySelectorPopover(
-                airPlayManager: airPlayManager,
-                onHoverChanged: { _ in }
-            ) {
-                isPopoverPresented = false
-                updatePopoverActivity()
-            }
-        }
-        .onAppear {
-            if !settingsPreview && isAppleMusicActive {
-                Task { await airPlayManager.refreshDevices() }
-            }
-        }
-        .onChange(of: isPopoverPresented) { _, _ in
-            updatePopoverActivity()
-        }
-        .onChange(of: musicManager.bundleIdentifier) { _, newBundle in
-            if !settingsPreview && newBundle == "com.apple.Music" {
-                Task { await airPlayManager.refreshDevices() }
-            }
-        }
-        .onDisappear {
-            vm.setMediaOutputPopoverActive(false, token: popoverToken)
-        }
-    }
-
-    /// Reports whether this picker's popover is open, so the notch knows not to
-    /// auto-close while it is.
-    ///
-    /// Keyed by a token unique to this presenter: several pickers can exist at
-    /// once and the notch has to stay open while *any* of them is showing, so
-    /// the view model tracks a set of open popovers rather than one flag that
-    /// the second picker to close would clear on behalf of the first.
-    private func updatePopoverActivity() {
-        // Presentation alone, deliberately. Also requiring the pointer to be over
-        // the popover raced the notch's own hover tracking: the popover is a
-        // separate window, so moving into it reads as leaving the notch, and any
-        // moment before the popover reported the pointer let the auto-close timer
-        // shut the notch and take the popover with it. This is what the stats,
-        // timer and clipboard popovers already do.
-        vm.setMediaOutputPopoverActive(isPopoverPresented, token: popoverToken)
-    }
-}
-
-struct MediaOutputSelectorPopover: View {
-    @ObservedObject var routeManager: AudioRouteManager
-    @ObservedObject var volumeModel: MediaOutputVolumeViewModel
-    var onHoverChanged: (Bool) -> Void
-    var dismiss: () -> Void
-
-    var body: some View {
-        VStack(spacing: 16) {
-            volumeSection
-            Divider()
-            devicesSection
-        }
-        .frame(width: 240)
-        .padding(16)
-        .onHover { hovering in
-            onHoverChanged(hovering)
-        }
-        .onDisappear {
-            onHoverChanged(false)
-        }
-    }
-
-    private var volumeSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 12) {
-                Button {
-                    volumeModel.toggleMute()
-                } label: {
-                    // Half the chip, which is about where Apple puts a glyph
-                    // inside a circular one. At 18pt the speaker's waves ran
-                    // right up against the edge of the circle.
-                    Image(systemName: volumeIconName)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.primary)
-                        .frame(width: 28, height: 28)
-                        .background(
-                            Circle()
-                                .fill(Color.secondary.opacity(0.18))
-                        )
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .disabled(!volumeModel.canMute)
-
-                Slider(
-                    value: Binding(
-                        get: { Double(volumeModel.level) },
-                        set: { newValue in
-                            volumeModel.setVolume(Float(newValue))
-                        }
-                    ),
-                    in: 0 ... 1
+            HStack(alignment: .lastTextBaseline, spacing: 12) {
+                MarqueeText(
+                    .init(get: { timerDisplayName }, set: { _ in }),
+                    font: .system(size: 16, weight: .semibold),
+                    nsFont: .title3,
+                    textColor: timerCountdownColor.opacity(0.85),
+                    frameWidth: max(marqueeWidth, 1)
                 )
-                .tint(.accentColor)
-                .disabled(!volumeModel.canSetVolume)
-            }
-
-            HStack {
-                Text("Output volume")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Spacer()
-                Text(volumePercentage)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-        }
-    }
-
-    private var devicesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Output devices")
-                .font(.caption)
-                .foregroundColor(.secondary)
-
-            if routeManager.devices.isEmpty {
-                Text("No audio outputs available")
-                    .font(.callout)
-                    .foregroundColor(.secondary)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                ScrollView {
-                    VStack(spacing: 6) {
-                        ForEach(routeManager.devices) { device in
-                            Button {
-                                routeManager.select(device: device)
-                                dismiss()
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Image(systemName: device.iconName)
-                                        .font(.system(size: 14, weight: .medium))
-                                    Text(device.name)
-                                        .foregroundColor(.primary)
-                                        .lineLimit(1)
-                                    Spacer()
-                                    if device.id == routeManager.activeDeviceID {
-                                        Image(systemName: "checkmark")
-                                            .font(.system(size: 12, weight: .bold))
-                                    }
-                                }
-                                .padding(.vertical, 6)
-                                .padding(.horizontal, 8)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .fill(device.id == routeManager.activeDeviceID ? Color.primary.opacity(0.12) : .clear)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                .alignmentGuide(.lastTextBaseline) { dimensions in
+                    dimensions[VerticalAlignment.bottom]
                 }
-                .frame(maxHeight: 240)
+
+                Spacer(minLength: 8)
+
+                Text(timerCountdownText)
+                    .font(displayFont(size: 56))
+                    .monospacedDigit()
+                    .foregroundStyle(timerManager.isOvertime ? Color.red : timerCountdownColor)
+                    .contentTransition(.numericText())
+                    .animation(.smooth(duration: 0.25), value: timerManager.remainingTime)
+                    .lineLimit(1)
+                    .frame(width: countdownWidth, alignment: .trailing)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 4)
+        .frame(height: minimalisticTimerCountdownContentHeight, alignment: .top)
+    }
+
+    private var reminderList: some View {
+        MinimalisticReminderEventListView(reminders: reminderEntries)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: reminderListHeight, alignment: .top)
+            .opacity(shouldShowReminderList ? 1 : 0)
+            .animation(.easeInOut(duration: 0.18), value: shouldShowReminderList)
+            .environmentObject(vm)
+    }
+
+    private struct MinimalisticReminderEventListView: View {
+        let reminders: [ReminderLiveActivityManager.ReminderEntry]
+
+        private let textFont = Font.system(size: 13, weight: .regular)
+        private let separatorSpacing: CGFloat = 10
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: ReminderLiveActivityManager.listRowSpacing) {
+                ForEach(reminders) { entry in
+                    MinimalisticReminderEventRow(entry: entry, textFont: textFont, separatorSpacing: separatorSpacing)
+                }
+            }
+            .padding(.top, ReminderLiveActivityManager.listTopPadding)
         }
     }
 
-    private var volumeIconName: String {
-        if volumeModel.isMuted || volumeModel.level <= 0.001 {
-            return "speaker.slash.fill"
-        } else if volumeModel.level < 0.33 {
-            return "speaker.wave.1.fill"
-        } else if volumeModel.level < 0.66 {
-            return "speaker.wave.2.fill"
-        }
-        return "speaker.wave.3.fill"
-    }
+    private struct MinimalisticReminderEventRow: View {
+        let entry: ReminderLiveActivityManager.ReminderEntry
+        let textFont: Font
+        let separatorSpacing: CGFloat
 
-    private var volumePercentage: String {
-        volumeModel.canSetVolume ? "\(Int(round(volumeModel.level * 100)))%" : "—"
-    }
-}
+        @EnvironmentObject private var vm: DynamicIslandViewModel
+        @State private var didCopyLink = false
+        @State private var copyResetToken: UUID?
+        @State private var isDetailsPopoverPresented = false
+        @State private var isHoveringDetailsPopover = false
 
-struct AirPlaySelectorPopover: View {
-    @ObservedObject var airPlayManager: AppleMusicAirPlayManager
-    var onHoverChanged: (Bool) -> Void
-    var dismiss: () -> Void
+        private let indicatorHeight: CGFloat = 20
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("AirPlay")
-                .font(.caption)
-                .foregroundColor(.secondary)
+        private static let timeFormatter: DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .none
+            formatter.timeStyle = .short
+            return formatter
+        }()
 
-            if airPlayManager.devices.isEmpty {
-                Text("No AirPlay devices found")
-                    .font(.callout)
-                    .foregroundColor(.secondary)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                ScrollView {
-                    VStack(spacing: 6) {
-                        ForEach(airPlayManager.devices) { device in
-                            VStack(spacing: 4) {
-                                Button {
-                                    Task { await airPlayManager.toggleDevice(device) }
-                                } label: {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: device.iconName)
-                                            .font(.system(size: 14, weight: .medium))
-                                        Text(device.name)
-                                            .foregroundColor(.primary)
-                                            .lineLimit(1)
-                                        Spacer()
-                                        if device.isSelected {
-                                            Image(systemName: "checkmark")
-                                                .font(.system(size: 12, weight: .bold))
-                                        }
-                                    }
-                                    .padding(.vertical, 6)
-                                    .padding(.horizontal, 8)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                            .fill(device.isSelected ? Color.primary.opacity(0.12) : .clear)
-                                    )
+        var body: some View {
+            HStack(spacing: separatorSpacing) {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(eventColor)
+                    .frame(width: 8, height: indicatorHeight)
+
+                HStack(spacing: 6) {
+                    Text(entry.event.title)
+                        .font(textFont)
+                        .foregroundStyle(Color.primary)
+                        .lineLimit(1)
+
+                    if let timeText {
+                        Text(timeText)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundStyle(Color.primary.opacity(0.6))
+                            .lineLimit(1)
+                    }
+                }
+                .layoutPriority(1)
+
+                Spacer(minLength: 12)
+
+                HStack(spacing: separatorSpacing) {
+                    if let url = linkURL {
+                        Button {
+                            copyToClipboard(url: url)
+                            triggerCopyFeedback()
+                        } label: {
+                            Image(systemName: didCopyLink ? "checkmark.circle.fill" : "link")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(didCopyLink ? Color.green : Color.primary.opacity(0.85))
+                                .symbolRenderingMode(.monochrome)
+                                .animation(.easeInOut(duration: 0.2), value: didCopyLink)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Copy event link")
+                    }
+
+                    if hasDetails {
+                        Button {
+                            isDetailsPopoverPresented.toggle()
+                        } label: {
+                            Image(systemName: "info.circle")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Color.primary.opacity(0.85))
+                        }
+                        .buttonStyle(.plain)
+                        .popover(isPresented: $isDetailsPopoverPresented, arrowEdge: .top) {
+                            MinimalisticReminderDetailsView(
+                                entry: entry,
+                                linkURL: linkURL,
+                                onHoverChanged: { hovering in
+                                    isHoveringDetailsPopover = hovering
+                                    updatePopoverActivity()
                                 }
-                                .buttonStyle(.plain)
-
-                                if device.isSelected {
-                                    AirPlayVolumeSlider(
-                                        airPlayManager: airPlayManager,
-                                        deviceID: device.id
-                                    )
-                                    .padding(.horizontal, 8)
-                                }
+                            )
+                            .onDisappear {
+                                isHoveringDetailsPopover = false
+                                updatePopoverActivity()
+                            }
+                        }
+                        .onChange(of: isDetailsPopoverPresented) { _, presented in
+                            if !presented {
+                                isHoveringDetailsPopover = false
+                                updatePopoverActivity()
                             }
                         }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxHeight: 300)
+            }
+            .frame(height: ReminderLiveActivityManager.listRowHeight)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                openInCalendar()
+            }
+            .onDisappear {
+                copyResetToken = nil
+                didCopyLink = false
+                vm.isReminderPopoverActive = false
             }
         }
-        .frame(width: 240)
-        .padding(16)
-        .onHover { hovering in
-            onHoverChanged(hovering)
+
+        private var eventColor: Color {
+            Color(nsColor: entry.event.calendar.color).ensureMinimumBrightness(factor: 0.7).notchReadableTint()
         }
-        .onDisappear {
-            onHoverChanged(false)
+
+        private var hasDetails: Bool {
+            let location = entry.event.location?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let notes = entry.event.notes?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return !location.isEmpty || !notes.isEmpty
+        }
+
+        private var linkURL: URL? {
+            entry.event.url ?? entry.event.calendarAppURL()
+        }
+
+        private var timeText: String? {
+            Self.timeFormatter.string(from: entry.event.start)
+        }
+
+        private func updatePopoverActivity() {
+            vm.isReminderPopoverActive = isDetailsPopoverPresented && isHoveringDetailsPopover
+        }
+
+        private func triggerCopyFeedback() {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.65)) {
+                didCopyLink = true
+            }
+
+            let token = UUID()
+            copyResetToken = token
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [token] in
+                guard copyResetToken == token else { return }
+
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    didCopyLink = false
+                }
+
+                if copyResetToken == token {
+                    copyResetToken = nil
+                }
+            }
+        }
+
+        private func copyToClipboard(url: URL) {
+    #if canImport(AppKit)
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.setString(url.absoluteString, forType: .string)
+    #endif
+        }
+
+        private func openInCalendar() {
+    #if canImport(AppKit)
+            guard let url = linkURL else { return }
+            NSWorkspace.shared.open(url)
+    #endif
         }
     }
-}
 
-/// Local @State slider decoupled from the manager's @Published state.
-/// This prevents SwiftUI from resetting the slider position when other
-/// published properties on the manager change during a drag.
-struct AirPlayVolumeSlider: View {
-    @ObservedObject var airPlayManager: AppleMusicAirPlayManager
-    let deviceID: String
+    private struct MinimalisticReminderDetailsView: View {
+        let entry: ReminderLiveActivityManager.ReminderEntry
+        let linkURL: URL?
+        var onHoverChanged: (Bool) -> Void = { _ in }
 
-    @State private var sliderValue: Double = 0
-    @State private var isSyncing = false
+        private let detailFont = Font.system(size: 13, weight: .regular)
+        private let smallLabelFont = Font.system(size: 12, weight: .semibold)
+        private static let timeFormatter: DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .none
+            formatter.timeStyle = .short
+            return formatter
+        }()
 
-    var body: some View {
-        Slider(value: $sliderValue, in: 0...100)
-            .tint(.accentColor)
-            .onAppear {
-                isSyncing = true
-                sliderValue = Double(airPlayManager.currentVolume(for: deviceID))
-                isSyncing = false
+        var body: some View {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(entry.event.title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(2)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    if let timeRange = timeRangeText {
+                        detailRow(icon: "clock", label: "Time", value: timeRange)
+                    }
+
+                    if let location = entry.event.location, !location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        detailRow(icon: "mappin.and.ellipse", label: "Location", value: location)
+                    }
+
+                    if let notes = entry.event.notes, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        detailRow(icon: "note.text", label: "Notes", value: notes)
+                    }
+                }
+
+                if let url = linkURL {
+                    Button {
+                        open(url: url)
+                    } label: {
+                        Label("Open in Calendar", systemImage: "arrow.up.right.square")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .buttonStyle(.link)
+                    .foregroundStyle(Color.accentColor)
+                }
             }
-            .onChange(of: sliderValue) { _, newValue in
-                guard !isSyncing else { return }
-                airPlayManager.setVolume(Int(newValue), for: deviceID)
+            .padding(16)
+            .frame(minWidth: 220)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.notchBackground.opacity(0.92))
+            )
+            .onHover { hovering in
+                onHoverChanged(hovering)
             }
-    }
-}
-
-final class MediaOutputVolumeViewModel: ObservableObject {
-    @Published var level: Float
-    @Published var isMuted: Bool
-    @Published private(set) var canSetVolume: Bool
-    @Published private(set) var canMute: Bool
-
-    private let controller: SystemVolumeController
-    private var cancellables: Set<AnyCancellable> = []
-
-    init(controller: SystemVolumeController = .shared) {
-        self.controller = controller
-        controller.start()
-        level = controller.currentVolume
-        isMuted = controller.isMuted
-        canSetVolume = controller.directDisplayVolumeCapabilities?.canSetVolume ?? true
-        canMute = controller.directDisplayVolumeCapabilities?.canMute ?? true
-
-        NotificationCenter.default.publisher(for: .systemVolumeDidChange)
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.syncFromController() }
-            .store(in: &cancellables)
-
-        NotificationCenter.default.publisher(for: .systemAudioRouteDidChange)
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.syncFromController()
+            .onDisappear {
+                onHoverChanged(false)
             }
-            .store(in: &cancellables)
-    }
-
-    /// How long the volume HUD stays suppressed after a change made from one of
-    /// our own controls. Refreshed on every change, so a drag holds it off until
-    /// shortly after the last movement.
-    private static let ownControlHUDSuppression: TimeInterval = 1.5
-
-    func setVolume(_ value: Float) {
-        // The user is already looking at a volume control. Letting the change
-        // raise the notch's volume HUD puts a second slider on screen and swaps
-        // out the content this one is anchored to, tearing the popover down
-        // mid-drag -- which is why the slider could not be dragged at all.
-        guard value.isFinite, canSetVolume else { return }
-        HUDSuppressionCoordinator.shared.suppressVolumeHUD(for: Self.ownControlHUDSuppression)
-        // Native writes are synchronous; DDC only publishes verified readback.
-        if controller.directDisplayVolumeCapabilities == nil {
-            level = value
-            if value > 0 { isMuted = false }
         }
-        controller.setVolume(value)
-    }
 
-    func toggleMute() {
-        guard canMute else { return }
-        HUDSuppressionCoordinator.shared.suppressVolumeHUD(for: Self.ownControlHUDSuppression)
-        if controller.directDisplayVolumeCapabilities == nil { isMuted.toggle() }
-        controller.toggleMute()
-    }
+        private func detailRow(icon: String, label: String, value: String) -> some View {
+            VStack(alignment: .leading, spacing: 4) {
+                Label(label, systemImage: icon)
+                    .font(smallLabelFont)
+                    .foregroundStyle(Color.primary.opacity(0.8))
+                Text(value)
+                    .font(detailFont)
+                    .foregroundStyle(Color.primary)
+            }
+        }
 
-    private func syncFromController() {
-        canSetVolume = controller.directDisplayVolumeCapabilities?.canSetVolume ?? true
-        canMute = controller.directDisplayVolumeCapabilities?.canMute ?? true
-        guard canSetVolume else { return }
-        level = controller.currentVolume
-        isMuted = controller.isMuted
-    }
-}
+        private var timeRangeText: String? {
+            let startText = Self.timeFormatter.string(from: entry.event.start)
+            let endText = Self.timeFormatter.string(from: entry.event.end)
+            return startText == endText ? startText : "\(startText) – \(endText)"
+        }
 
-#Preview {
-    NotchHomeView(
-        albumArtNamespace: Namespace().wrappedValue
-    )
-    .environmentObject(DynamicIslandViewModel())
+        private func open(url: URL) {
+    #if canImport(AppKit)
+            NSWorkspace.shared.open(url)
+    #endif
+        }
+    }
 }

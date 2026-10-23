@@ -38,19 +38,17 @@ struct TabModel: Identifiable {
     }
 
     static func availableTabs() -> [TabModel] {
-        var tabsArray: [TabModel] = []
+        var tabsArray = [TabModel(label: "Home", icon: "house.fill", view: .home)]
 
-        if Defaults[.enableMinimalisticUI] {
-            return [TabModel(label: "Home", icon: "house.fill", view: .home)]
-                + (Defaults[.showCalendar] ? [TabModel(label: "Calendar", icon: "calendar", view: .calendar)] : [])
-        }
-        if Defaults[.showStandardMediaControls] || Defaults[.showMirror] {
-            tabsArray.append(TabModel(label: "Home", icon: "house.fill", view: .home))
+        if Defaults[.showStandardMediaControls] || Defaults[.enableMinimalisticUI] {
+            tabsArray.append(TabModel(label: "Media", icon: "play.rectangle.fill", view: .media))
         }
 
         if Defaults[.showCalendar] {
             tabsArray.append(TabModel(label: "Calendar", icon: "calendar", view: .calendar))
         }
+
+        if Defaults[.enableMinimalisticUI] { return tabsArray }
 
         if Defaults[.dynamicShelf] {
             tabsArray.append(TabModel(label: "Shelf", icon: "tray.fill", view: .shelf))

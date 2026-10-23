@@ -102,18 +102,57 @@ final class CalendarPageTests: XCTestCase {
         Defaults[.showMirror] = false
         Defaults[.showCalendar] = true
         XCTAssertTrue(TabModel.availableTabs().contains { $0.view == .calendar })
-        XCTAssertFalse(TabModel.availableTabs().contains { $0.view == .home })
+        XCTAssertTrue(TabModel.availableTabs().contains { $0.view == .home })
+        XCTAssertFalse(TabModel.availableTabs().contains { $0.view == .media })
+        Defaults[.showStandardMediaControls] = true
+        XCTAssertEqual(Array(TabModel.availableTabs().map(\.view).prefix(3)), [.home, .media, .calendar])
+        Defaults[.showStandardMediaControls] = false
         let size = calendarOpenNotchSize()
         Defaults[.enableLyrics].toggle()
         XCTAssertEqual(calendarOpenNotchSize(), size)
         Defaults[.enableMinimalisticUI] = true
-        XCTAssertEqual(TabModel.availableTabs().map(\.view), [.home, .calendar])
-        XCTAssertEqual(enabledStandardTabCount(), 2)
+        XCTAssertEqual(TabModel.availableTabs().map(\.view), [.home, .media, .calendar])
+        XCTAssertEqual(enabledStandardTabCount(), 3)
         XCTAssertEqual(ReopenTabSelection.resolve(preference: "system-calendar", lastPage: nil,
                                                   available: TabModel.availableTabs().map(\.id)), "system-calendar")
         Defaults[.showCalendar] = false
-        XCTAssertEqual(TabModel.availableTabs().map(\.view), [.home])
+        XCTAssertEqual(TabModel.availableTabs().map(\.view), [.home, .media])
         XCTAssertEqual(ReopenTabSelection.resolve(preference: "system-calendar", lastPage: nil,
                                                   available: TabModel.availableTabs().map(\.id)), "system-home")
+    }
+
+    @MainActor
+    func testMediaNavigationAndReopeningRespectModeAvailability() {
+        let coordinator = DynamicIslandViewCoordinator.shared
+        let state = (Defaults[.enableMinimalisticUI], Defaults[.showStandardMediaControls],
+                     Defaults[.reopenTab], coordinator.currentView)
+        defer {
+            Defaults[.enableMinimalisticUI] = state.0
+            Defaults[.showStandardMediaControls] = state.1
+            Defaults[.reopenTab] = state.2
+            coordinator.currentView = state.3
+        }
+
+        Defaults[.enableMinimalisticUI] = false
+        Defaults[.showStandardMediaControls] = true
+        Defaults[.reopenTab] = "system-media"
+        coordinator.selectTabForOpening()
+        XCTAssertEqual(coordinator.currentView, .media)
+
+        Defaults[.showStandardMediaControls] = false
+        coordinator.selectTabForOpening()
+        XCTAssertEqual(coordinator.currentView, .home)
+
+        Defaults[.enableMinimalisticUI] = true
+        coordinator.selectTabForOpening()
+        XCTAssertEqual(coordinator.currentView, .media)
+        coordinator.currentView = .stats
+        XCTAssertEqual(coordinator.currentView, .home)
+        coordinator.currentView = .media
+        XCTAssertEqual(coordinator.currentView, .media)
+
+        Defaults[.reopenTab] = "system-home"
+        coordinator.selectTabForOpening()
+        XCTAssertEqual(coordinator.currentView, .home)
     }
 }

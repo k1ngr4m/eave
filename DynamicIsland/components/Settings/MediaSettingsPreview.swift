@@ -35,7 +35,9 @@ struct MediaSettingsPreview: View {
         !minimalistic && (!showMedia || (autoHide && !music.hasActiveSession))
     }
     private var size: CGSize {
-        if minimalistic { return CGSize(width: 420, height: 280) }
+        if minimalistic {
+            return CGSize(width: 420, height: 176 + (lyrics && !music.isAdvertisement ? 50 : 0))
+        }
         return CGSize(width: 440 + (sideLyrics ? max(0, lyricsWidth) + abs(lyricsOffset) + 20 : 0),
                       height: 200)
     }
@@ -80,8 +82,6 @@ struct MediaSettingsPreview: View {
     private var player: some View {
         if minimalistic {
             MinimalisticMusicPlayerView(albumArtNamespace: artworkNamespace)
-                // The compact player's artwork can extend up around the camera area.
-                .padding(.top, vm.effectiveClosedNotchHeight)
         } else if music.hasActiveSession {
             HStack(alignment: .top, spacing: SideLyricsLayout.hStackSpacing) {
                 MusicPlayerView(albumArtNamespace: artworkNamespace)

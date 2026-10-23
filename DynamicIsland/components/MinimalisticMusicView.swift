@@ -25,6 +25,7 @@ struct MinimalisticMusicView: View {
     @EnvironmentObject var vm: DynamicIslandViewModel
     @ObservedObject var musicManager = MusicManager.shared
     @Default(.enableLyrics) var enableLyrics
+    @Default(.useMusicVisualizer) private var useMusicVisualizer
     @State private var isHovering: Bool = false
     
     var body: some View {
@@ -110,16 +111,20 @@ struct MinimalisticMusicView: View {
     // MARK: - Visualizer
     
     private var visualizerView: some View {
-        let width = CGFloat(Defaults[.visualizerBarCount]) * 4
+        let width = useMusicVisualizer ? CGFloat(Defaults[.visualizerBarCount]) * 4 : 32
         return HStack {
-            Rectangle()
-                .fill((Defaults[.coloredSpectrogram] ? Color(nsColor: musicManager.avgColor) : Color.gray).spectrogramGradient())
-                .frame(width: width, alignment: .center)
-                .mask {
-                    AudioVisualizerView(isPlaying: $musicManager.isPlaying)
-                        .frame(width: width, height: 12)
-                }
-                .frame(width: width, height: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12)), alignment: .center)
+            if useMusicVisualizer {
+                Rectangle()
+                    .fill((Defaults[.coloredSpectrogram] ? Color(nsColor: musicManager.avgColor) : Color.gray).spectrogramGradient())
+                    .frame(width: width, alignment: .center)
+                    .mask {
+                        AudioVisualizerView(isPlaying: $musicManager.isPlaying)
+                            .frame(width: width, height: 12)
+                    }
+            } else {
+                LottieAnimationView(isPlaying: musicManager.isPlaying)
+                    .frame(width: width, height: 24)
+            }
         }
         .frame(width: width, height: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12)), alignment: .center)
     }

@@ -38,18 +38,15 @@ func stocksOpenNotchHeight(headerHeight: CGFloat) -> CGFloat {
                           headerHeight: headerHeight)
 }
 
-/// Layout budgets applied to the home view only while the side lyrics panel is active
+/// Layout budgets for the media page's side lyrics panel.
 enum SideLyricsLayout {
     /// Room the standard player needs for its album art and five-button control row
     static let minimumPlayerWidth: CGFloat = 380
 
-    /// Room the webcam mirror needs to stay usable next to the player
-    static let minimumMirrorWidth: CGFloat = 220
-
-    /// Spacing between the player, mirror, and lyrics panel columns
+    /// Spacing between the player and lyrics panel columns
     static let hStackSpacing: CGFloat = 20
 
-    /// Combined home-view and notch content insets surrounding those columns
+    /// Combined media-page and notch content insets surrounding those columns
     static let combinedInset: CGFloat = 40
 }
 
@@ -62,28 +59,33 @@ func sideLyricsRequiredNotchWidth() -> CGFloat {
 
     let panelWidth = max(0, Defaults[.lyricsPanelWidth])
     let offsetDistance = abs(Defaults[.lyricsPanelOffset])
-    let mirrorWidth = Defaults[.showMirror] && WebcamManager.shared.cameraAvailable
-        ? SideLyricsLayout.minimumMirrorWidth + SideLyricsLayout.hStackSpacing
-        : 0
-
-    // Include the home-view and notch content insets so the player receives
+    // Include the media-page and notch content insets so the player receives
     // the same usable width it had before the panel was added.
     return SideLyricsLayout.minimumPlayerWidth
         + panelWidth
         + SideLyricsLayout.hStackSpacing
         + offsetDistance
-        + mirrorWidth
         + SideLyricsLayout.combinedInset
 }
 
 var openNotchSize: CGSize { getOpenNotchSize(screen: nil) }
 
-func getOpenNotchSize(screen screenName: String?) -> CGSize {
+func getOpenNotchSize(screen screenName: String?, includesSideLyrics: Bool = false) -> CGSize {
     let storedWidth = Defaults[.openNotchWidth]
     let minWidth = currentRecommendedMinimumNotchWidth()
     let maxWidth = maxAllowedNotchWidth(for: screenName)
-    let width = min(max(storedWidth, minWidth, sideLyricsRequiredNotchWidth()), maxWidth)
+    let lyricsWidth = includesSideLyrics ? sideLyricsRequiredNotchWidth() : 0
+    let width = min(max(storedWidth, minWidth, lyricsWidth), maxWidth)
     return .init(width: width, height: 200)
+}
+
+@MainActor
+func baseOpenNotchSize(for page: NotchViews, screen screenName: String?) -> CGSize {
+    if page == .calendar { return calendarOpenNotchSize() }
+    if Defaults[.enableMinimalisticUI] {
+        return minimalisticOpenNotchSize(for: page, isDynamicIslandMode: shouldUseDynamicIslandMode(for: screenName))
+    }
+    return getOpenNotchSize(screen: screenName, includesSideLyrics: page == .media)
 }
 
 /// Maximum notch width based on the current screen's point width.
@@ -150,26 +152,31 @@ let statsGridSpacingHeight: CGFloat = 12
 let notchShadowPaddingStandard: CGFloat = 18
 let notchShadowPaddingMinimalistic: CGFloat = 12
 
-func minimalisticBaseOpenNotchSize(isDynamicIslandMode: Bool, includesLyrics: Bool) -> CGSize {
+func minimalisticBaseOpenNotchSize(for page: NotchViews, isDynamicIslandMode: Bool, includesLyrics: Bool) -> CGSize {
     var size = CGSize(width: 420, height: 180)
 
     if isDynamicIslandMode {
-        size.width = 340 // Reduced from 420 for a narrower pill
-        size.height = 144 // Exact height of the minimalistic music player view
+        size.width = 340
+        size.height = 144
     }
 
-    if includesLyrics {
-        size.height += minimalisticLyricsExtraHeight
+    if page == .media {
+        size.height += isDynamicIslandMode ? 42 : 24
+        if includesLyrics {
+            size.height += minimalisticLyricsExtraHeight
+        }
     }
     return size
 }
 
 @MainActor
-func minimalisticOpenNotchSize(isDynamicIslandMode: Bool) -> CGSize {
+func minimalisticOpenNotchSize(for page: NotchViews, isDynamicIslandMode: Bool) -> CGSize {
     var size = minimalisticBaseOpenNotchSize(
+        for: page,
         isDynamicIslandMode: isDynamicIslandMode,
-        includesLyrics: Defaults[.enableLyrics] && !MusicManager.shared.isAdvertisement
+        includesLyrics: page == .media && Defaults[.enableLyrics] && !MusicManager.shared.isAdvertisement
     )
+    guard page == .home else { return size }
     let reminderCount = ReminderLiveActivityManager.shared.activeWindowReminders.count
     if reminderCount > 0 {
         let reminderHeight = ReminderLiveActivityManager.additionalHeight(forRowCount: reminderCount)

@@ -7,13 +7,18 @@ root = Path(__file__).resolve().parents[1]
 with tempfile.TemporaryDirectory() as directory:
     main = Path(directory) / "main.swift"
     main.write_text('''
-let tabs = ["system-home", "system-notes", "system-terminal", "extension-one", "extension-two"]
+let tabs = ["system-home", "system-media", "system-notes", "system-terminal", "extension-one", "extension-two"]
 func resolve(_ preference: String, _ last: String?, _ target: String? = nil,
              available: [String] = tabs) -> String? {
     ReopenTabSelection.resolve(preference: preference, lastPage: last,
                               available: available, explicitTarget: target)
 }
 assert(resolve(ReopenTabSelection.lastPage, "system-notes") == "system-notes")
+assert(resolve(ReopenTabSelection.lastPage, "system-media") == "system-media")
+assert(resolve("system-media", "system-home") == "system-media")
+assert(resolve("system-home", "system-media") == "system-home")
+assert(resolve("system-home", "system-home", "system-media") == "system-media")
+assert(resolve("system-media", "system-media", available: ["system-home"]) == "system-home")
 assert(resolve("system-terminal", "system-notes") == "system-terminal")
 assert(resolve("system-disabled", "system-notes") == "system-notes")
 assert(resolve("system-disabled", "system-disabled") == "system-home")

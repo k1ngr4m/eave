@@ -78,6 +78,7 @@ struct LockScreenMusicPanel: View {
     @Default(.musicSkipBehavior) private var musicSkipBehavior
     @Default(.lockScreenMusicMergedAirPlayOutput) private var mergedAirPlayOutput
     @Default(.enableLyrics) private var enableLyrics
+    @Default(.useMusicVisualizer) private var useMusicVisualizer
     @Default(.lockScreenMusicAlbumParallaxEnabled) private var lockScreenParallaxEnabled
     @Default(.lockScreenMusicPanelWidth) private var collapsedPanelWidth
     @Default(.lockScreenMusicFullscreenArtworkEnabled) private var fullscreenArtworkEnabled
@@ -612,7 +613,7 @@ struct LockScreenMusicPanel: View {
     @ViewBuilder
     private func visualizer(height: CGFloat) -> some View {
         let width = CGFloat(Defaults[.visualizerBarCount]) * 4
-        if Defaults[.useMusicVisualizer] {
+        if useMusicVisualizer {
             Rectangle()
                 .fill((Defaults[.coloredSpectrogram] ? Color(nsColor: musicManager.avgColor) : Color.gray).spectrogramGradient())
                 .mask {
@@ -620,6 +621,9 @@ struct LockScreenMusicPanel: View {
                         .frame(width: width, height: height)
                 }
                 .frame(width: width, height: height)
+        } else {
+            LottieAnimationView(isPlaying: musicManager.isPlaying)
+                .frame(width: 32, height: max(28, height))
         }
     }
 

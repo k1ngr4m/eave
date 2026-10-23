@@ -29,6 +29,7 @@ struct DynamicIslandHeader: View {
     @State private var showTimerPopover = false
     @State private var showPerAppVolumePopover = false
     @State private var showCaffeinatePopover = false
+    @State private var pageMenuToken = UUID()
     @Default(.enableTimerFeature) var enableTimerFeature
     @Default(.timerDisplayMode) var timerDisplayMode
     @Default(.enablePerAppVolume) var enablePerAppVolume
@@ -75,7 +76,7 @@ struct DynamicIslandHeader: View {
            let right = screen.auxiliaryTopRightArea {
             return max(vm.closedNotchSize.width, screen.frame.width - left.width - right.width + 4)
         }
-        return min(vm.closedNotchSize.width, 300)
+        return enableMinimalisticUI ? 0 : min(vm.closedNotchSize.width, 300)
     }
 
     var body: some View {
@@ -83,17 +84,35 @@ struct DynamicIslandHeader: View {
             let spacerWidth = notchExclusionWidth
             let sideWidth = max(0, (geometry.size.width - spacerWidth) / 2)
             HStack(spacing: 0) {
-                HStack {
-                    if !enableMinimalisticUI || coordinator.currentView == .calendar {
-                        TabSelectionView()
-                    } else if Defaults[.showCalendar] {
-                        Button { coordinator.currentView = .calendar } label: {
-                            Image(systemName: "calendar")
-                                .frame(width: 28, height: 28)
+                Group {
+                    if enableMinimalisticUI {
+                        let selectedTab = coordinator.availableTabs.first { $0.view == coordinator.currentView }
+                        Menu {
+                            ForEach(coordinator.availableTabs) { tab in
+                                Button {
+                                    coordinator.currentView = tab.view
+                                } label: {
+                                    Label(LocalizedStringKey(tab.label), systemImage: tab.icon)
+                                }
+                            }
+                        } label: {
+                            Image(systemName: selectedTab?.icon ?? "house.fill")
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Calendar")
-                        .help("Calendar")
+                        .menuStyle(.borderlessButton)
+                        .fixedSize()
+                        .accessibilityLabel(Text(LocalizedStringKey(selectedTab?.label ?? "Home")))
+                        .onReceive(NotificationCenter.default.publisher(for: NSMenu.didBeginTrackingNotification)) { _ in
+                            vm.setAutoCloseSuppression(true, token: pageMenuToken)
+                        }
+                        .onReceive(NotificationCenter.default.publisher(for: NSMenu.didEndTrackingNotification)) { _ in
+                            vm.setAutoCloseSuppression(false, token: pageMenuToken)
+                            vm.shouldRecheckHover.toggle()
+                        }
+                        .onDisappear {
+                            vm.setAutoCloseSuppression(false, token: pageMenuToken)
+                        }
+                    } else {
+                        TabSelectionView()
                     }
                 }
                 .frame(width: max(0, sideWidth - 16), alignment: .leading)
@@ -118,7 +137,7 @@ struct DynamicIslandHeader: View {
                 // of this size.
                 HStack(spacing: 8) {
                     if vm.notchState == .open && !enableMinimalisticUI {
-                        if Defaults[.showMirror] {
+                        if Defaults[.showMirror] && coordinator.currentView == .home {
                             Button(action: {
                                 vm.toggleCameraPreview()
                             }) {

@@ -45,6 +45,52 @@ struct CustomVisualizer: Codable, Hashable, Equatable, Defaults.Serializable {
     var name: String
     var url: URL
     var speed: CGFloat = 1.0
+
+    enum ValidationError: LocalizedError {
+        case name, url, speed, download, animation
+
+        var errorDescription: String? {
+            switch self {
+            case .name: String(localized: "Enter an animation name.")
+            case .url: String(localized: "Enter a valid HTTP or HTTPS link to a Lottie JSON file.")
+            case .speed: String(localized: "Animation speed must be between 0.1× and 2×.")
+            case .download: String(localized: "Unable to download the animation. Check the link and try again.")
+            case .animation: String(localized: "This file is not a playable Lottie JSON animation.")
+            }
+        }
+    }
+
+    static func validated(name: String, url: String, speed: CGFloat) throws -> Self {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { throw ValidationError.name }
+        guard let url = URL(string: url.trimmingCharacters(in: .whitespacesAndNewlines)),
+              ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
+              let host = url.host, !host.isEmpty, url.user == nil, url.password == nil else {
+            throw ValidationError.url
+        }
+        guard speed.isFinite, (0.1...2).contains(speed) else { throw ValidationError.speed }
+        return Self(UUID: Foundation.UUID(), name: name, url: url, speed: speed)
+    }
+
+    static func resolvedSelection(_ selection: Self?, in visualizers: [Self]) -> Self? {
+        visualizers.first { $0.UUID == selection?.UUID } ?? visualizers.first
+    }
+
+    func loadAnimation() async throws -> Lottie.LottieAnimation {
+        let key = url.absoluteString
+        if let animation = LottieAnimationCache.shared?.animation(forKey: key) { return animation }
+        let (data, response) = try await URLSession.shared.data(for: URLRequest(url: url, timeoutInterval: 15))
+        guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode) else {
+            throw ValidationError.download
+        }
+        guard let animation = try? Lottie.LottieAnimation.from(data: data),
+              animation.bounds.width > 0, animation.bounds.height > 0,
+              animation.framerate > 0, animation.endFrame > animation.startFrame else {
+            throw ValidationError.animation
+        }
+        LottieAnimationCache.shared?.setAnimation(animation, forKey: key)
+        return animation
+    }
 }
 
 struct CustomAppIcon: Codable, Hashable, Equatable, Defaults.Serializable, Identifiable {

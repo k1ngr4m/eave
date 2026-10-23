@@ -1,6 +1,125 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Enter an animation name." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请输入动画名称。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請輸入動畫名稱。"
+          }
+        }
+      }
+    },
+    "Enter a valid HTTP or HTTPS link to a Lottie JSON file." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请输入有效的 Lottie JSON 文件 HTTP 或 HTTPS 链接。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請輸入有效的 Lottie JSON 檔案 HTTP 或 HTTPS 連結。"
+          }
+        }
+      }
+    },
+    "Animation speed must be between 0.1× and 2×." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "动画速度须介于 0.1× 和 2× 之间。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "動畫速度須介於 0.1× 和 2× 之間。"
+          }
+        }
+      }
+    },
+    "Unable to download the animation. Check the link and try again." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法下载动画，请检查链接后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法下載動畫，請檢查連結後重試。"
+          }
+        }
+      }
+    },
+    "This file is not a playable Lottie JSON animation." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此文件不是可播放的 Lottie JSON 动画。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此檔案不是可播放的 Lottie JSON 動畫。"
+          }
+        }
+      }
+    },
+    "Turn off the spectrogram to use a custom animation. If none is available, the built-in spectrum is shown." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭频谱图后使用自定义动画；没有可用动画时显示内置频谱。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉頻譜圖後使用自訂動畫；沒有可用動畫時顯示內建頻譜。"
+          }
+        }
+      }
+    },
+    "Remove selected animation" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除所选动画"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除所選動畫"
+          }
+        }
+      }
+    },
     "Closed height" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -527,7 +527,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         // Use minimalistic or normal size based on settings
-        var baseSize = coordinator.currentView == .calendar ? calendarOpenNotchSize() : (Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize(isDynamicIslandMode: shouldUseDynamicIslandMode(for: vm.screen)) : getOpenNotchSize(screen: vm.screen))
+        var baseSize = baseOpenNotchSize(for: coordinator.currentView, screen: vm.screen)
         
         // Use a consistent height for different view types
         if coordinator.currentView == .llmUsage && coordinator.codexDetailPresented {

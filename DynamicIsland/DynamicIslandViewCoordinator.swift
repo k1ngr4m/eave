@@ -62,14 +62,14 @@ class DynamicIslandViewCoordinator: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var hoverOpenSuppressedUntil: Date = .distantPast
     
-    private static let tabOrder: [NotchViews] = [.home, .calendar, .shelf, .timer, .stats, .stocks, .llmUsage, .notes, .terminal, .developerTools]
+    private static let tabOrder: [NotchViews] = [.home, .media, .calendar, .shelf, .timer, .stats, .stocks, .llmUsage, .notes, .terminal, .developerTools]
     
     /// Direction of the most recent tab switch (true = forward/right, false = backward/left)
     @Published var tabSwitchForward: Bool = true
     
     @Published var currentView: NotchViews = .home {
         didSet {
-            if Defaults[.enableMinimalisticUI] && currentView != .home && currentView != .calendar {
+            if Defaults[.enableMinimalisticUI] && ![.home, .media, .calendar].contains(currentView) {
                 currentView = .home
                 return
             }
@@ -222,7 +222,7 @@ class DynamicIslandViewCoordinator: ObservableObject {
 
     private func handleMinimalisticModeChange(_ isEnabled: Bool) {
         guard isEnabled else { return }
-        if currentView != .home && currentView != .calendar {
+        if ![.home, .media, .calendar].contains(currentView) {
             withAnimation(.smooth) {
                 currentView = .home
             }

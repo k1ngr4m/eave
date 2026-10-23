@@ -133,7 +133,7 @@ struct ContentView: View {
     
     // Dynamic sizing based on view type and graph count with smooth transitions
     var dynamicNotchSize: CGSize {
-        let baseSize = coordinator.currentView == .calendar ? calendarOpenNotchSize() : (Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize(isDynamicIslandMode: isDynamicIslandMode) : getOpenNotchSize(screen: vm.screen))
+        let baseSize = baseOpenNotchSize(for: coordinator.currentView, screen: vm.screen)
 
         if isConnectivityHUDVisible,
            let connectivitySize = NetworkConnectivityHUDMetrics.size(
@@ -1234,7 +1234,7 @@ struct ContentView: View {
                           DynamicIslandFaceAnimation().animation(.interactiveSpring, value: musicManager.isPlayerIdle)
                       } else if vm.notchState == .open {
                           DynamicIslandHeader()
-                              .frame(height: (Defaults[.enableMinimalisticUI] && isDynamicIslandMode) ? nil : max(24, vm.effectiveClosedNotchHeight))
+                              .frame(height: (Defaults[.enableMinimalisticUI] && isDynamicIslandMode) ? 42 : max(24, vm.effectiveClosedNotchHeight))
                        } else {
                            Rectangle().fill(.clear).frame(width: vm.closedNotchSize.width - 20, height: vm.effectiveClosedNotchHeight)
                        }
@@ -1341,7 +1341,9 @@ struct ContentView: View {
                       Group {
                           switch coordinator.currentView {
                               case .home:
-                                  NotchHomeView(albumArtNamespace: albumArtNamespace)
+                                  NotchHomeView()
+                              case .media:
+                                  NotchMediaView(albumArtNamespace: albumArtNamespace)
                               case .calendar:
                                   StandaloneCalendarView(selectedDate: $coordinator.calendarDate)
                                       .padding(8)
@@ -1804,33 +1806,36 @@ struct ContentView: View {
         trailingInset: CGFloat = 0,
         enableClosedPlayPauseOverlay: Bool = false
     ) -> some View {
-        if useMusicVisualizer || forceSpectrum {
-            SpectrumVisualizer(useMusicVisualizer: useMusicVisualizer, forceSpectrum: forceSpectrum)
-                .blur(radius: (enableClosedPlayPauseOverlay && isHoveringClosedMusicWaveformControl) ? 2.4 : 0)
-                .overlay {
-                    if enableClosedPlayPauseOverlay {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.black.opacity(isHoveringClosedMusicWaveformControl ? 0.24 : 0.02))
-
-                            Image(systemName: musicManager.isPlaying ? "pause.fill" : "play.fill")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(.white.opacity(isHoveringClosedMusicWaveformControl ? 0.98 : 0.0))
-                                .contentTransition(.symbolEffect(.replace))
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .allowsHitTesting(false)
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.trailing, trailingInset)
-                .animation(.smooth(duration: 0.16), value: isHoveringClosedMusicWaveformControl)
-                .animation(.smooth(duration: 0.2), value: musicManager.isPlaying)
-        } else {
-            LottieAnimationView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        Group {
+            if useMusicVisualizer || forceSpectrum {
+                SpectrumVisualizer(useMusicVisualizer: useMusicVisualizer, forceSpectrum: forceSpectrum)
+            } else {
+                LottieAnimationView(isPlaying: musicManager.isPlaying)
+                    .frame(width: 30, height: 24)
+                    .frame(width: 50)
+            }
         }
+        .blur(radius: (enableClosedPlayPauseOverlay && isHoveringClosedMusicWaveformControl) ? 2.4 : 0)
+        .overlay {
+            if enableClosedPlayPauseOverlay {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.black.opacity(isHoveringClosedMusicWaveformControl ? 0.24 : 0.02))
+
+                    Image(systemName: musicManager.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white.opacity(isHoveringClosedMusicWaveformControl ? 0.98 : 0.0))
+                        .contentTransition(.symbolEffect(.replace))
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .allowsHitTesting(false)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.trailing, trailingInset)
+        .animation(.smooth(duration: 0.16), value: isHoveringClosedMusicWaveformControl)
+        .animation(.smooth(duration: 0.2), value: musicManager.isPlaying)
     }
 
     private var timerAccentColor: Color {
@@ -2420,11 +2425,11 @@ struct ContentView: View {
     }
 
     private func canPerformSkipGesture() -> Bool {
-        let canSkipInOpenHome = vm.notchState == .open && coordinator.currentView == .home
+        let canSkipInOpenMedia = vm.notchState == .open && coordinator.currentView == .media
         let canSkipInClosedMusic = !Defaults[.openNotchOnHover] && isClosedMusicGestureContext
 
         return enableHorizontalMusicGestures
-            && (canSkipInOpenHome || canSkipInClosedMusic)
+            && (canSkipInOpenMedia || canSkipInClosedMusic)
             && (!musicManager.isPlayerIdle || musicManager.bundleIdentifier != nil)
             && !lockScreenManager.isLocked
             && !hasAnyActivePopovers()

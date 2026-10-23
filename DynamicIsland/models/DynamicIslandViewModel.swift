@@ -161,6 +161,15 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
         
         setupDetectorObserver()
 
+        coordinator.$currentView
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self, self.notchState == .open else { return }
+                self.notchSize = self.calculateDynamicNotchSize()
+            }
+            .store(in: &cancellables)
+
         Defaults.publisher(.stockWatchlist, options: []).map { _ in () }
             .merge(with: Defaults.publisher(.stockChartCollapsed, options: []).map { _ in () })
             .receive(on: RunLoop.main)
@@ -455,7 +464,7 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
     }
 
     private func calculateDynamicNotchSize() -> CGSize {
-        let baseSize = coordinator.currentView == .calendar ? calendarOpenNotchSize() : (Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize(isDynamicIslandMode: shouldUseDynamicIslandMode(for: screen)) : getOpenNotchSize(screen: screen))
+        let baseSize = baseOpenNotchSize(for: coordinator.currentView, screen: screen)
         var adjustedSize = baseSize
 
         if coordinator.currentView == .llmUsage && coordinator.codexDetailPresented {

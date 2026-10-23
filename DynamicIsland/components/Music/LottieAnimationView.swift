@@ -22,27 +22,63 @@
 
 import SwiftUI
 import Lottie
-import LottieUI
 import Defaults
 
 struct LottieAnimationView: View {
-    let state1 = LUStateData(type: .loadedFrom(URL(string: "https://assets9.lottiefiles.com/packages/lf20_mniampqn.json")!), speed: 1.0, loopMode: .loop)
-    @Default(.selectedVisualizer) var selectedVisualizer
+    let isPlaying: Bool
+    @Default(.selectedVisualizer) private var selectedVisualizer
+    @Default(.customVisualizers) private var customVisualizers
+
     var body: some View {
-        if selectedVisualizer == nil {
-            LottieView(state: state1)
+        if let visualizer = CustomVisualizer.resolvedSelection(selectedVisualizer, in: customVisualizers) {
+            CustomVisualizerAnimationView(visualizer: visualizer, isPlaying: isPlaying)
+                .id(visualizer.UUID)
         } else {
-            LottieView(
-                state: LUStateData(
-                    type: .loadedFrom(selectedVisualizer!.url),
-                    speed: selectedVisualizer!.speed,
-                    loopMode: .loop
-                )
-            )
+            MusicAnimationFallbackView(isPlaying: isPlaying)
         }
     }
 }
 
+struct CustomVisualizerAnimationView: View {
+    let visualizer: CustomVisualizer
+    let isPlaying: Bool
+    @State private var loadedURL: URL?
+
+    var body: some View {
+        let speed = visualizer.speed.isFinite && visualizer.speed > 0 ? min(2, max(0.1, visualizer.speed)) : 1
+        Lottie.LottieView {
+            try await visualizer.loadAnimation()
+        } placeholder: {
+            if loadedURL != visualizer.url {
+                MusicAnimationFallbackView(isPlaying: isPlaying)
+            }
+        }
+        .reloadAnimationTrigger(visualizer.url)
+        .animationDidLoad { _ in loadedURL = visualizer.url }
+        .playbackMode(isPlaying ? .playing(.fromProgress(0, toProgress: 1, loopMode: .loop)) : .paused(at: .currentFrame))
+        .animationSpeed(Double(speed))
+        .resizable()
+        .aspectRatio(contentMode: .fit)
+        .clipped()
+    }
+}
+
+private struct MusicAnimationFallbackView: View {
+    let isPlaying: Bool
+    @Default(.visualizerBarCount) private var barCount
+
+    var body: some View {
+        Rectangle()
+            .fill(Color.gray.spectrogramGradient())
+            .frame(width: CGFloat(barCount) * 4, height: 12)
+            .mask {
+                AudioVisualizerView(isPlaying: .constant(isPlaying))
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
 #Preview {
-    LottieAnimationView()
+    LottieAnimationView(isPlaying: true)
+        .frame(width: 32, height: 32)
 }
