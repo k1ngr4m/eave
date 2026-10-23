@@ -28,12 +28,14 @@ private var values: [SettingsTab: Bool] = Dictionary(uniqueKeysWithValues: Setti
 private var builtPages = 0
 private let changes = PassthroughSubject<Void, Never>()
 private let registry = SettingsModuleRegistry(modules: [FIXTURES])
+private let primaryTabs: [SettingsTab] = [.liveActivities, .menuBar, .lockScreen]
 assert(builtPages == 0, "Pages must be created lazily")
 assert(Set(registry.modules.map(\.id)) == Set(SettingsTab.allCases.filter { $0 != .features }))
 private let original = values
 for minimal in [false, true] {
     let sidebar = registry.sidebarTabs(minimal: minimal)
-    assert(sidebar.prefix(3) == [.general, .appearance, .features])
+    assert(sidebar.prefix(6) == [.general, .appearance, .features] + primaryTabs)
+    assert(Set(sidebar).count == sidebar.count, "Sidebar destinations must not repeat")
     assert(sidebar.suffix(2) == [.shortcuts, .about])
     for module in registry.features {
         assert(sidebar.contains(module.id) == (!minimal || module.supportsMinimalMode))
@@ -54,7 +56,7 @@ RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 assert(notifications > 0, "Existing settings changes must refresh navigation")
 observation.cancel()
 assert(registry.enabledIDs.isEmpty)
-for module in registry.modules where module.kind == .configuration {
+for module in registry.modules where module.kind == .configuration || primaryTabs.contains(module.id) {
     assert(registry.sidebarTabs(minimal: true).contains(module.id))
 }
 for module in registry.features { module.enabled!.wrappedValue = true }
@@ -74,10 +76,13 @@ for title in ["Show lock screen media panel", "Show lock screen timer", "Show lo
 assert(SettingsSearchIndex.entries.first { $0.title == "Enable minimalistic UI" }?.tab == .features)
 assert(registry.appearancePages.map(\.id) == [.appearance, .interaction])
 for id: SettingsTab in [.liveActivities, .menuBar, .lockScreen, .media, .calendar, .devices, .hudAndOSD] {
-    assert(registry.module(id)?.kind == .configuration)
+    let isPrimary = primaryTabs.contains(id)
+    assert(registry.module(id)?.kind == (isPrimary ? .core : .configuration))
     assert(registry.module(id)?.enabled == nil)
-    assert(registry.galleryModules.contains { $0.id == id })
+    assert(registry.galleryModules.contains { $0.id == id } == !isPrimary)
+    if isPrimary { assert(id.group == .core) }
     assert(id.sidebarTab == id, "Search must highlight its own destination")
+    assert(registry.search(id.title).contains { $0.tab == id })
     for minimal in [true, false] {
         assert(registry.sidebarTabs(minimal: minimal).contains(id))
         assert(!registry.requiresGallery(id, minimal: minimal))

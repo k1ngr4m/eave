@@ -19,13 +19,12 @@ import UniformTypeIdentifiers
 
 /// Groups for organizing settings tabs in the sidebar.
 private enum SettingsTabGroup: String, CaseIterable, Identifiable {
-    case core, interface, efficiency, daily, system, development, other, info
+    case core, efficiency, daily, system, development, other, info
 
     var id: String { rawValue }
     var title: String? {
         switch self {
         case .core: return nil
-        case .interface: return String(localized: "Interface")
         case .efficiency: return String(localized: "Efficiency")
         case .daily: return String(localized: "Daily")
         case .system: return String(localized: "System")
@@ -68,8 +67,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     /// Which sidebar group this tab belongs to.
     var group: SettingsTabGroup {
         switch self {
-        case .general, .features, .appearance, .interaction: return .core
-        case .liveActivities, .menuBar, .lockScreen: return .interface
+        case .general, .features, .appearance, .interaction, .liveActivities, .menuBar, .lockScreen: return .core
         case .clipboard, .screenText, .shelf, .notes: return .efficiency
         case .media, .timer, .calendar, .keepAwake: return .daily
         case .devices, .hudAndOSD, .stats: return .system
@@ -1031,7 +1029,7 @@ private final class SettingsModuleRegistry: ObservableObject {
     }
 
     func sidebarTabs(minimal: Bool) -> [SettingsTab] {
-        [.general, .appearance, .features]
+        [.general, .appearance, .features, .liveActivities, .menuBar, .lockScreen]
             + galleryModules.filter { !requiresGallery($0.id, minimal: minimal) }.map(\.id)
             + [.shortcuts, .about]
     }
@@ -1215,9 +1213,9 @@ private extension SettingsModuleRegistry {
             SettingsModule(.general, kind: .core) { GeneralSettings() },
             SettingsModule(.appearance, kind: .core) { Appearance() },
             SettingsModule(.interaction, kind: .core) { GeneralSettings(page: .interaction) },
-            SettingsModule(.liveActivities, kind: .configuration, summary: String(localized: "Configure live activity indicators and system alerts.")) { LiveActivitiesSettings() },
-            SettingsModule(.menuBar, kind: .configuration, summary: String(localized: "Choose menu bar and Dock icons and their status displays.")) { MenuBarSettings() },
-            SettingsModule(.lockScreen, kind: .configuration, summary: String(localized: "Arrange media, timers and other lock screen widgets.")) { LockScreenSettings() },
+            SettingsModule(.liveActivities, kind: .core, summary: String(localized: "Configure live activity indicators and system alerts.")) { LiveActivitiesSettings() },
+            SettingsModule(.menuBar, kind: .core, summary: String(localized: "Choose menu bar and Dock icons and their status displays.")) { MenuBarSettings() },
+            SettingsModule(.lockScreen, kind: .core, summary: String(localized: "Arrange media, timers and other lock screen widgets.")) { LockScreenSettings() },
             SettingsModule(.media, kind: .configuration, summary: String(localized: "Configure playback controls, lyrics and music sources.")) { Media() },
             SettingsModule(.calendar, kind: .configuration, summary: String(localized: "Choose calendars, reminders and upcoming events.")) { CalendarSettings() },
             SettingsModule(.devices, kind: .configuration, summary: String(localized: "Configure connected devices and battery displays.")) { DevicesSettingsView() },
