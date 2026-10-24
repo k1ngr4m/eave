@@ -208,6 +208,7 @@ __pycache__/
 # Repository community documents
 /CODE_OF_CONDUCT.md
 /CONTRIBUTING.md
+/docs/
 
 !scripts/build-desktop-ping.sh
 !tests/test_desktop_ping.py
