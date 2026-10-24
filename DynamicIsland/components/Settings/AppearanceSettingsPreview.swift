@@ -14,6 +14,8 @@ struct AppearanceSettingsPreview: View {
     @Default(.enableMinimalisticUI) private var minimalistic
     @Default(.closedNotchWidth) private var closedWidth
     @Default(.openNotchWidth) private var openWidth
+    @Default(.customizeNonNotchWidth) private var customizeNonNotchWidth
+    @Default(.customizeOpenNotchWidth) private var customizeOpenNotchWidth
     @Default(.customizePhysicalNotchWidth) private var customizeWidth
     @Default(.notchHeight) private var notchHeight
     @Default(.notchHeightMode) private var notchHeightMode
@@ -80,7 +82,7 @@ struct AppearanceSettingsPreview: View {
     private var sizeNote: String {
         if !expanded && hardwareSize.width > 0 && !customizeWidth { return String(localized: "Width follows the physical notch") }
         if expanded && minimalistic { return String(localized: "Minimalistic layout uses its own size") }
-        if expanded && expandedSize.width < max(openWidth, currentRecommendedMinimumNotchWidth()) {
+        if expanded && expandedSize.width < max(customizeOpenNotchWidth ? openWidth : 0, currentRecommendedMinimumNotchWidth()) {
             return String(localized: "Width limited by the preview display")
         }
         return expanded ? String(localized: "Minimum width accommodates enabled tabs") : String(localized: "Closed size without live activities")

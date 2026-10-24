@@ -220,7 +220,7 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .interaction, title: "Open notch on hover", keywords: ["hover to open", "auto open"], highlightID: SettingsTab.interaction.highlightID(for: "Open notch on hover")),
         SettingsSearchEntry(tab: .interaction, title: "External display style", keywords: ["dynamic island", "pill", "external display", "non-notch", "floating", "capsule"], highlightID: SettingsTab.interaction.highlightID(for: "External display style")),
         SettingsSearchEntry(tab: .interaction, title: "Hide until hovered", keywords: ["hide", "hover", "external", "non-notch", "auto hide", "slide"], highlightID: SettingsTab.interaction.highlightID(for: "Hide until hovered")),
-        SettingsSearchEntry(tab: .appearance, title: "Notch display height", keywords: ["display height", "menu bar size"], highlightID: SettingsTab.appearance.highlightID(for: "Notch display height")),
+        SettingsSearchEntry(tab: .appearance, title: "Notch collapsed height", keywords: ["display height", "menu bar size", "adaptive", "高度", "自适应"], highlightID: SettingsTab.appearance.highlightID(for: "Notch collapsed height")),
 
         // Live Activities
         SettingsSearchEntry(tab: .liveActivities, title: "Enable download detection", keywords: ["downloads", "下载", "detection"], highlightID: SettingsTab.liveActivities.highlightID(for: "Enable download detection")),
@@ -342,7 +342,6 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .shelf, title: "LocalSend Device Picker Style", keywords: ["localsend", "glass", "picker", "material"], highlightID: SettingsTab.shelf.highlightID(for: "Device Picker Style")),
 
         SettingsSearchEntry(tab: .interaction, title: "Minimum hover duration", keywords: [], highlightID: SettingsTab.interaction.highlightID(for: "Minimum hover duration")),
-        SettingsSearchEntry(tab: .appearance, title: "Non-notch display height", keywords: [], highlightID: SettingsTab.appearance.highlightID(for: "Non-notch display height")),
         // Appearance
         SettingsSearchEntry(tab: .appearance, title: "Notch appearance", keywords: ["light", "dark", "system", "theme", "浅色", "深色", "跟随系统", "淺色", "跟隨系統", "刘海", "瀏海"], highlightID: SettingsTab.appearance.highlightID(for: "Notch appearance")),
         SettingsSearchEntry(tab: .interaction, title: "Main screen style", keywords: ["dynamic island", "pill", "non-notch", "display style", "notch style"], highlightID: SettingsTab.interaction.highlightID(for: "Main screen style")),
@@ -351,7 +350,8 @@ private enum SettingsSearchIndex {
         SettingsSearchEntry(tab: .appearance, title: "Enable window shadow", keywords: ["shadow", "appearance"], highlightID: SettingsTab.appearance.highlightID(for: "Enable window shadow")),
         SettingsSearchEntry(tab: .appearance, title: "Scale corner radius with notch size", keywords: ["corner radius", "shape"], highlightID: SettingsTab.appearance.highlightID(for: "Scale corner radius with notch size")),
         SettingsSearchEntry(tab: .appearance, title: "Use simpler close animation", keywords: ["close animation", "notch"], highlightID: SettingsTab.appearance.highlightID(for: "Use simpler close animation")),
-        SettingsSearchEntry(tab: .appearance, title: "Notch Width", keywords: ["expanded notch", "width", "resize"], highlightID: SettingsTab.appearance.highlightID(for: "Expanded notch width")),
+        SettingsSearchEntry(tab: .appearance, title: "Notch collapsed width", keywords: ["closed notch", "pill", "width", "adaptive", "收起", "宽度", "自适应"], highlightID: SettingsTab.appearance.highlightID(for: "Notch collapsed width")),
+        SettingsSearchEntry(tab: .appearance, title: "Notch expanded width", keywords: ["expanded notch", "width", "resize", "adaptive", "展开", "宽度", "自适应"], highlightID: SettingsTab.appearance.highlightID(for: "Notch expanded width")),
         SettingsSearchEntry(tab: .media, title: "Use colored spectrograms", keywords: ["spectrogram", "audio"], highlightID: SettingsTab.media.highlightID(for: "Use colored spectrograms")),
         SettingsSearchEntry(tab: .media, title: "Enable blur effect behind album art", keywords: ["blur", "album art"], highlightID: SettingsTab.media.highlightID(for: "Enable blur effect behind album art")),
         SettingsSearchEntry(tab: .media, title: "Slider color", keywords: ["slider", "accent"], highlightID: SettingsTab.media.highlightID(for: "Slider color")),
@@ -4931,6 +4931,8 @@ struct Appearance: View {
     @Default(.openNotchWidth) var openNotchWidth
     @Default(.closedNotchWidth) var closedNotchWidth
     @Default(.customizePhysicalNotchWidth) var customizePhysicalNotchWidth
+    @Default(.customizeNonNotchWidth) private var customizeNonNotchWidth
+    @Default(.customizeOpenNotchWidth) private var customizeOpenNotchWidth
     @Default(.enableMinimalisticUI) var enableMinimalisticUI
     @Default(.lockScreenGlassCustomizationMode) private var lockScreenGlassCustomizationMode
     @Default(.lockScreenGlassStyle) private var lockScreenGlassStyle
@@ -4945,9 +4947,6 @@ struct Appearance: View {
         let minW = currentRecommendedMinimumNotchWidth()
         let maxW = min(900, maxAllowedNotchWidth(for: previewScreenName))
         return minW...max(minW, maxW)
-    }
-    private var defaultOpenNotchWidth: CGFloat {
-        currentRecommendedMinimumNotchWidth()
     }
 
     private func highlightID(_ title: String) -> String {
@@ -4972,6 +4971,22 @@ struct Appearance: View {
         return (screen?.safeAreaInsets.top ?? 0) > 0
     }
 
+    private var customizeClosedWidth: Binding<Bool> {
+        previewScreenHasNotch ? $customizePhysicalNotchWidth : $customizeNonNotchWidth
+    }
+
+    private var customizeClosedHeight: Binding<Bool> {
+        let mode = previewScreenHasNotch ? $notchHeightMode : $nonNotchHeightMode
+        return Binding(
+            get: { mode.wrappedValue == .custom },
+            set: { mode.wrappedValue = $0 ? .custom : (previewScreenHasNotch ? .matchRealNotchSize : .matchMenuBar) }
+        )
+    }
+
+    private var closedHeight: Binding<CGFloat> {
+        previewScreenHasNotch ? $notchHeight : $nonNotchHeight
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             AppearanceSettingsPreview(expanded: $previewExpanded, screenName: $previewScreenName)
@@ -4982,9 +4997,20 @@ struct Appearance: View {
                 .modifier(SettingsPageStyle(compact: true))
         }
         .onChange(of: openNotchWidth) { previewExpanded = true }
+        .onChange(of: customizeOpenNotchWidth) { previewExpanded = true }
         .onChange(of: headerTabSpacing) { previewExpanded = true }
         .onChange(of: closedNotchWidth) { previewExpanded = false }
         .onChange(of: customizePhysicalNotchWidth) { previewExpanded = false }
+        .onChange(of: customizeNonNotchWidth) { previewExpanded = false }
+        .onChange(of: [closedNotchWidth, notchHeight, nonNotchHeight]) {
+            NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
+        }
+        .onChange(of: [notchHeightMode, nonNotchHeightMode]) {
+            NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
+        }
+        .onChange(of: customizePhysicalNotchWidth) {
+            NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
+        }
         .onChange(of: notchHeight) { previewHeight(hasNotch: true) }
         .onChange(of: notchHeightMode) { previewHeight(hasNotch: true) }
         .onChange(of: nonNotchHeight) { previewHeight(hasNotch: false) }
@@ -4995,13 +5021,7 @@ struct Appearance: View {
             if ["Enable dynamic mirror", "Mirror shape", "Mirror Camera", "Enable idle animation"].contains(title) {
                 mirrorCustomizationExpanded = true
             }
-            if title == "Customize physical notch width" {
-                previewHeight(hasNotch: true)
-            }
-            if [
-                "Closed notch / pill width", "Customize physical notch width", "Notch display height",
-                "Non-notch display height",
-            ].contains(title) {
+            if ["Notch collapsed width", "Notch collapsed height"].contains(title) {
                 previewExpanded = false
             } else {
                 previewExpanded = true
@@ -5011,15 +5031,15 @@ struct Appearance: View {
 
     private func previewHeight(hasNotch: Bool) {
         previewExpanded = false
-        if let screen = NSScreen.screens.first(where: { ($0.safeAreaInsets.top > 0) == hasNotch }) {
+        if previewScreenHasNotch != hasNotch,
+           let screen = NSScreen.screens.first(where: { ($0.safeAreaInsets.top > 0) == hasNotch }) {
             previewScreenName = screen.localizedName
         }
     }
 
     private var settingsForm: some View {
         Form {
-            notchWidthControls()
-            notchHeightControls()
+            notchSizeControls
 
             Section {
                 SettingsAdaptiveRow("Notch appearance") {
@@ -5130,127 +5150,85 @@ struct Appearance: View {
         return false
     }
 
-    @ViewBuilder
-    private func notchHeightControls() -> some View {
+    private var notchSizeControls: some View {
         Section {
-            SettingsAdaptiveRow("Notch display height") {
-                Picker(selection: $notchHeightMode) {
-                    Text("Match real notch size")
-                        .tag(WindowHeightMode.matchRealNotchSize)
-                    Text("Match menubar height")
-                        .tag(WindowHeightMode.matchMenuBar)
-                    Text("Custom height")
-                        .tag(WindowHeightMode.custom)
-                } label: {
-                    Label("Notch display height", systemImage: "arrow.left.and.right")
-                }
-                .labelsHidden()
-            }
-            .onChange(of: notchHeightMode) {
-                switch notchHeightMode {
-                case .matchRealNotchSize:
-                    notchHeight = 38
-                case .matchMenuBar:
-                    notchHeight = 44
-                case .custom:
-                    notchHeight = 38
-                }
-                NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
-            }
-            .settingsHighlight(id: highlightID("Notch display height"))
-            if notchHeightMode == .custom {
-                appearanceSlider(
-                    "Closed height on notched displays", value: $notchHeight, range: 15...45,
-                    step: 1, expanded: false, reset: { Defaults.reset(.notchHeight) }
-                )
-                .onChange(of: notchHeight) {
-                    NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
-                }
-            }
-            SettingsAdaptiveRow("Non-notch display height") {
-                Picker(selection: $nonNotchHeightMode) {
-                    Text("Match menubar height")
-                        .tag(WindowHeightMode.matchMenuBar)
-                    Text("Match real notch size")
-                        .tag(WindowHeightMode.matchRealNotchSize)
-                    Text("Custom height")
-                        .tag(WindowHeightMode.custom)
-                } label: {
-                    Label("Non-notch display height", systemImage: "arrow.left.and.right")
-                }
-                .labelsHidden()
-            }
-            .onChange(of: nonNotchHeightMode) {
-                switch nonNotchHeightMode {
-                case .matchMenuBar:
-                    nonNotchHeight = 24
-                case .matchRealNotchSize:
-                    nonNotchHeight = 32
-                case .custom:
-                    nonNotchHeight = 32
-                }
-                NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
-            }
-            .settingsHighlight(id: highlightID("Non-notch display height"))
-            if nonNotchHeightMode == .custom {
-                appearanceSlider(
-                    "Closed height on other displays", value: $nonNotchHeight, range: 0...40,
-                    step: 1, expanded: false, reset: { Defaults.reset(.nonNotchHeight) }
-                )
-                .onChange(of: nonNotchHeight) {
-                    NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
-                }
-            }
-        } header: {
-            Text("Closed height")
-        }
-    }
-
-    @ViewBuilder
-    private func notchWidthControls() -> some View {
-        Section {
-            if previewScreenHasNotch {
-                Defaults.Toggle(key: .customizePhysicalNotchWidth) { Text("Customize physical notch width") }
-                    .onChange(of: customizePhysicalNotchWidth) {
-                        NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
+            VStack(alignment: .trailing, spacing: 8) {
+                SettingsAdaptiveRow("Notch collapsed width") {
+                    SettingsSegmentedControl(items: [false, true], selection: customizeClosedWidth) {
+                        $0 ? String(localized: "Custom") : String(localized: "Adaptive")
                     }
-                    .settingsHighlight(id: highlightID("Customize physical notch width"))
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel(Text("Notch collapsed width"))
+                }
+                if customizeClosedWidth.wrappedValue {
+                    appearanceSliderControl(
+                        "Notch collapsed width", value: $closedNotchWidth,
+                        range: 80...400, step: 5, expanded: false,
+                        reset: { Defaults.reset(.closedNotchWidth) }
+                    )
+                    .fixedSize()
+                }
             }
-            appearanceSlider(
-                "Closed notch / pill width", value: $closedNotchWidth,
-                range: 80...400, step: 5, expanded: false,
-                reset: { Defaults.reset(.closedNotchWidth) }
-            )
-            .disabled(previewScreenHasNotch && !customizePhysicalNotchWidth)
-            .onChange(of: closedNotchWidth) {
-                NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
+            .settingsHighlight(id: highlightID("Notch collapsed width"))
+
+            VStack(alignment: .trailing, spacing: 8) {
+                SettingsAdaptiveRow("Notch collapsed height") {
+                    SettingsSegmentedControl(items: [false, true], selection: customizeClosedHeight) {
+                        $0 ? String(localized: "Custom") : String(localized: "Adaptive")
+                    }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel(Text("Notch collapsed height"))
+                }
+                if customizeClosedHeight.wrappedValue {
+                    appearanceSliderControl(
+                        "Notch collapsed height", value: closedHeight,
+                        range: previewScreenHasNotch ? 15...45 : 0...40,
+                        step: 1, expanded: false,
+                        reset: {
+                            if previewScreenHasNotch { Defaults.reset(.notchHeight) }
+                            else { Defaults.reset(.nonNotchHeight) }
+                        }
+                    )
+                    .fixedSize()
+                }
             }
-            .settingsHighlight(id: highlightID("Closed notch / pill width"))
-            if previewScreenHasNotch && !customizePhysicalNotchWidth {
-                Text("Closed width follows the physical notch on the preview display.")
-                    .font(.caption).foregroundStyle(.secondary)
+            .help(previewScreenHasNotch ? Text("Notch display height") : Text("Non-notch display height"))
+            .settingsHighlight(id: highlightID("Notch collapsed height"))
+
+            VStack(alignment: .trailing, spacing: 8) {
+                SettingsAdaptiveRow("Notch expanded width") {
+                    if enableMinimalisticUI {
+                        Text("Adaptive").foregroundStyle(.secondary)
+                    } else {
+                        SettingsSegmentedControl(items: [false, true], selection: $customizeOpenNotchWidth) {
+                            $0 ? String(localized: "Custom") : String(localized: "Adaptive")
+                        }
+                        .accessibilityElement(children: .contain)
+                        .accessibilityLabel(Text("Notch expanded width"))
+                    }
+                }
+                if customizeOpenNotchWidth && !enableMinimalisticUI {
+                    appearanceSliderControl(
+                        "Notch expanded width", value: $openNotchWidth,
+                        range: notchWidthRange, step: 10, expanded: true,
+                        reset: { openNotchWidth = currentRecommendedMinimumNotchWidth() }
+                    )
+                    .fixedSize()
+                }
             }
-            appearanceSlider(
-                "Expanded notch width", value: $openNotchWidth,
-                range: notchWidthRange, step: 10, expanded: true,
-                reset: { openNotchWidth = defaultOpenNotchWidth }
-            )
-            .disabled(enableMinimalisticUI)
-            .settingsHighlight(id: highlightID("Expanded notch width"))
+            .settingsHighlight(id: highlightID("Notch expanded width"))
         } header: {
-            Text("Notch Width")
+            Text("Dimensions")
         } footer: {
-            if enableMinimalisticUI {
-                Text(
-                    "Expanded width adjustments apply only to the standard notch layout. Disable Minimalistic UI to edit this value."
-                )
-            } else {
-                Text(
-                    "Recommended minimum: \(Int(currentRecommendedMinimumNotchWidth())) pt · \(enabledStandardTabCount()) tabs"
-                )
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Expanded height adapts to the current page.")
+                if enableMinimalisticUI {
+                    Text("Minimalistic layout uses its own size")
+                } else if customizeOpenNotchWidth {
+                    Text("Recommended minimum: \(Int(currentRecommendedMinimumNotchWidth())) pt · \(enabledStandardTabCount()) tabs")
+                }
             }
         }
-        .onAppear { enforceMinimumNotchWidth() }
     }
 
     private func appearanceSlider<Value: BinaryFloatingPoint>(
@@ -5258,19 +5236,29 @@ struct Appearance: View {
         expanded: Bool, reset: @escaping () -> Void
     ) -> some View {
         SettingsAdaptiveRow(title) {
-            HStack(spacing: 8) {
-                SettingsSlider(
-                    value: value, in: range, step: step,
-                    valueLabel: Text(verbatim: "\(Int(value.wrappedValue)) pt"),
-                    onEditingChanged: { if $0 { previewExpanded = expanded } }
-                )
-                .accessibilityLabel(Text(title))
-                Button("Reset") {
-                    previewExpanded = expanded
-                    reset()
-                }
-                .accessibilityLabel(Text("Reset") + Text(" ") + Text(title))
+            appearanceSliderControl(title, value: value, range: range, step: step, expanded: expanded, reset: reset)
+        }
+    }
+
+    private func appearanceSliderControl<Value: BinaryFloatingPoint>(
+        _ title: LocalizedStringKey, value: Binding<Value>, range: ClosedRange<Value>, step: Value,
+        expanded: Bool, reset: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: 8) {
+            SettingsSlider(
+                value: value, in: range, step: step,
+                valueLabel: Text(verbatim: "\(Int(value.wrappedValue)) pt"),
+                onEditingChanged: { if $0 { previewExpanded = expanded } }
+            )
+            .accessibilityLabel(Text(title))
+            Button {
+                previewExpanded = expanded
+                reset()
+            } label: {
+                Image(systemName: "arrow.counterclockwise")
             }
+            .accessibilityLabel(Text("Reset") + Text(" ") + Text(title))
+            .help(Text("Reset") + Text(" ") + Text(title))
         }
     }
 

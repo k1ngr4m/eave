@@ -71,17 +71,17 @@ func sideLyricsRequiredNotchWidth() -> CGFloat {
 var openNotchSize: CGSize { getOpenNotchSize(screen: nil) }
 
 func getOpenNotchSize(screen screenName: String?, includesSideLyrics: Bool = false) -> CGSize {
-    let storedWidth = Defaults[.openNotchWidth]
     let minWidth = currentRecommendedMinimumNotchWidth()
+    let preferredWidth = Defaults[.customizeOpenNotchWidth] ? Defaults[.openNotchWidth] : minWidth
     let maxWidth = maxAllowedNotchWidth(for: screenName)
     let lyricsWidth = includesSideLyrics ? sideLyricsRequiredNotchWidth() : 0
-    let width = min(max(storedWidth, minWidth, lyricsWidth), maxWidth)
+    let width = min(max(preferredWidth, minWidth, lyricsWidth), maxWidth)
     return .init(width: width, height: 200)
 }
 
 @MainActor
 func baseOpenNotchSize(for page: NotchViews, screen screenName: String?) -> CGSize {
-    if page == .calendar { return calendarOpenNotchSize() }
+    if page == .calendar { return calendarOpenNotchSize(screen: screenName) }
     if Defaults[.enableMinimalisticUI] {
         return minimalisticOpenNotchSize(for: page, isDynamicIslandMode: shouldUseDynamicIslandMode(for: screenName))
     }
@@ -128,20 +128,6 @@ func currentRecommendedMinimumNotchWidth() -> CGFloat {
     recommendedMinimumNotchWidth(forTabCount: enabledStandardTabCount())
 }
 
-/// Enforces the minimum notch width based on current tab count.
-/// Also clamps to screen width so the notch never exceeds the display.
-/// Only adjusts when not in minimalistic mode.
-func enforceMinimumNotchWidth() {
-    guard !Defaults[.enableMinimalisticUI] else { return }
-    let minWidth = currentRecommendedMinimumNotchWidth()
-    let maxWidth = maxAllowedNotchWidth()
-    var width = Defaults[.openNotchWidth]
-    if width < minWidth { width = minWidth }
-    if width > maxWidth { width = maxWidth }
-    if Defaults[.openNotchWidth] != width {
-        Defaults[.openNotchWidth] = width
-    }
-}
 // 10pt top padding + 40pt lyrics content; keep in sync with MinimalisticMusicPlayerView.calculateDynamicHeight
 private let minimalisticLyricsExtraHeight: CGFloat = 50
 let minimalisticTimerCountdownTopPadding: CGFloat = 12
@@ -237,8 +223,8 @@ func notchTerminalBottomCornerRadii(
 }
 
 /// Calendar dimensions do not depend on playback, lyrics, or mirror visibility.
-func calendarOpenNotchSize() -> CGSize {
-    CGSize(width: min(max(Defaults[.openNotchWidth], currentRecommendedMinimumNotchWidth()), maxAllowedNotchWidth()),
+func calendarOpenNotchSize(screen screenName: String? = nil) -> CGSize {
+    CGSize(width: getOpenNotchSize(screen: screenName).width,
            height: Defaults[.enableMinimalisticUI] ? 250 : 380)
 }
 
@@ -357,7 +343,8 @@ func getScreenFrame(_ screen: String? = nil) -> CGRect? {
 func getClosedNotchSize(screen: String? = nil) -> CGSize {
     // Default notch size, to avoid using optionals
     var notchHeight: CGFloat = Defaults[.nonNotchHeight]
-    var notchWidth: CGFloat = Defaults[.closedNotchWidth]
+    var notchWidth: CGFloat = Defaults[.customizeNonNotchWidth]
+        ? Defaults[.closedNotchWidth] : Defaults.Keys.closedNotchWidth.defaultValue
 
     var selectedScreen = NSScreen.main
 
@@ -382,15 +369,13 @@ func getClosedNotchSize(screen: String? = nil) -> CGSize {
         if screen.safeAreaInsets.top > 0 {
             // This is a display WITH a notch - use notch height settings
             notchHeight = Defaults[.notchHeight]
-            if Defaults[.notchHeightMode] == .matchRealNotchSize {
+            if Defaults[.notchHeightMode] != .custom {
                 notchHeight = screen.safeAreaInsets.top
-            } else if Defaults[.notchHeightMode] == .matchMenuBar {
-                notchHeight = screen.frame.maxY - screen.visibleFrame.maxY
             }
         } else {
             // This is a display WITHOUT a notch - use non-notch height settings
             notchHeight = Defaults[.nonNotchHeight]
-            if Defaults[.nonNotchHeightMode] == .matchMenuBar {
+            if Defaults[.nonNotchHeightMode] != .custom {
                 notchHeight = screen.frame.maxY - screen.visibleFrame.maxY
             }
         }

@@ -243,7 +243,7 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
         coordinator.$codexDetailPresented
             .removeDuplicates()
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.updateSideLyricsNotchSizeIfNeeded() }
+            .sink { [weak self] _ in self?.updateOpenNotchSizeIfNeeded() }
             .store(in: &cancellables)
 
         coordinator.$statsSecondRowExpansion
@@ -298,30 +298,10 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
             }
             .store(in: &cancellables)
 
-        Defaults.publisher(.openNotchWidth, options: [])
-            .map { $0.newValue }
-            .removeDuplicates()
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                guard self.notchState == .open else { return }
-                guard !Defaults[.enableMinimalisticUI] else { return }
-                let updatedTarget = self.calculateDynamicNotchSize()
-                guard self.notchSize != updatedTarget else { return }
-                withAnimation(.smooth) {
-                    self.notchSize = updatedTarget
-                }
-                if let delegate = AppDelegate.shared {
-                    delegate.ensureWindowSize(
-                        addShadowPadding(to: updatedTarget, isMinimalistic: false),
-                        animated: true,
-                        force: false
-                    )
-                }
-            }
-            .store(in: &cancellables)
-
         Publishers.MergeMany(
+            Defaults.publisher(.openNotchWidth, options: []).map { _ in () }.eraseToAnyPublisher(),
+            Defaults.publisher(.customizeOpenNotchWidth, options: []).map { _ in () }.eraseToAnyPublisher(),
+            coordinator.objectWillChange.eraseToAnyPublisher(),
             Defaults.publisher(.enableLyrics, options: []).map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.showCalendar, options: []).map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.showStandardMediaControls, options: []).map { _ in () }.eraseToAnyPublisher(),
@@ -336,13 +316,14 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
         )
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
-                self?.updateSideLyricsNotchSizeIfNeeded()
+                self?.updateOpenNotchSizeIfNeeded()
             }
             .store(in: &cancellables)
     }
 
-    private func updateSideLyricsNotchSizeIfNeeded() {
-        guard notchState == .open, !Defaults[.enableMinimalisticUI] else { return }
+    private func updateOpenNotchSizeIfNeeded() {
+        guard notchState == .open,
+              !Defaults[.enableMinimalisticUI] || coordinator.currentView == .calendar else { return }
 
         let updatedTarget = calculateDynamicNotchSize()
         guard notchSize != updatedTarget else { return }
@@ -350,7 +331,7 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
             notchSize = updatedTarget
         }
         AppDelegate.shared?.ensureWindowSize(
-            addShadowPadding(to: updatedTarget, isMinimalistic: false),
+            addShadowPadding(to: updatedTarget, isMinimalistic: Defaults[.enableMinimalisticUI]),
             animated: true,
             force: false
         )
@@ -492,6 +473,11 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
             isStatsTabActive: coordinator.currentView == .stats,
             secondRowProgress: coordinator.statsSecondRowExpansion
         )
+    }
+
+    func refreshNotchSize() {
+        closedNotchSize = getClosedNotchSize(screen: screen)
+        notchSize = notchState == .closed ? closedNotchSize : calculateDynamicNotchSize()
     }
 
     func close() {

@@ -565,7 +565,7 @@ struct StandaloneCalendarView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .frame(height: max(130, calendarOpenNotchSize().height - max(24, vm.effectiveClosedNotchHeight) - 36))
+        .frame(height: max(130, calendarOpenNotchSize(screen: vm.screen).height - max(24, vm.effectiveClosedNotchHeight) - 36))
         .task(id: selectedDate) {
             let date = selectedDate
             loadedDate = nil

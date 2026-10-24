@@ -860,9 +860,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.debouncedUpdateWindowSize()
         }.store(in: &cancellables)
 
-        Defaults.publisher(.openNotchWidth, options: []).sink { [weak self] _ in
-            self?.debouncedUpdateWindowSize()
-        }.store(in: &cancellables)
+        Defaults.publisher(.openNotchWidth, options: []).map { _ in () }
+            .merge(with: Defaults.publisher(.customizeOpenNotchWidth, options: []).map { _ in () })
+            .sink { [weak self] _ in
+                self?.debouncedUpdateWindowSize()
+            }.store(in: &cancellables)
+
+        Defaults.publisher(.customizeNonNotchWidth, options: [])
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.adjustWindowPosition() }
+            .store(in: &cancellables)
 
         // Observe terminal settings changes
         Defaults.publisher(.enableTerminalFeature, options: []).sink { [weak self] _ in
@@ -1557,6 +1564,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
                 
                 if let window = windows[screen], let viewModel = viewModels[screen] {
+                    viewModel.refreshNotchSize()
                     positionWindow(window, on: screen, changeAlpha: changeAlpha)
                     
                     if viewModel.notchState == .closed {
@@ -1583,7 +1591,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             
             vm.screen = selectedScreen.localizedName
-            vm.notchSize = getClosedNotchSize(screen: selectedScreen.localizedName)
+            vm.refreshNotchSize()
             
             if window == nil {
                 window = createDynamicIslandWindow(for: selectedScreen, with: vm)
@@ -1598,6 +1606,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         syncNotchSpaceMembership()
+        if !Defaults[.showOnAllDisplays] {
+            updateWindowSizeIfNeeded()
+        }
     }
     
     @objc func togglePopover(_ sender: Any?) {

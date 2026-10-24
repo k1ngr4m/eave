@@ -811,7 +811,9 @@ extension Defaults.Keys {
     static let nonNotchHeight = Key<CGFloat>("nonNotchHeight", default: 32)
     static let notchHeight = Key<CGFloat>("notchHeight", default: 32)
     static let openNotchWidth = Key<CGFloat>("openNotchWidth", default: 640)
+    static let customizeOpenNotchWidth = Key<Bool>("customizeOpenNotchWidth", default: false)
     static let closedNotchWidth = Key<CGFloat>("closedNotchWidth", default: 150)
+    static let customizeNonNotchWidth = Key<Bool>("customizeNonNotchWidth", default: false)
     static let customizePhysicalNotchWidth = Key<Bool>("customizePhysicalNotchWidth", default: false)
     static let reopenTab = Key<String>("reopenTab", default: ReopenTabSelection.lastPage)
     

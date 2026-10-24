@@ -160,7 +160,7 @@ class DynamicIslandViewCoordinator: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // Observe all tab-affecting settings to enforce minimum notch width
+        // Refresh tab availability and dimensions without changing the saved custom width.
         let tabChanges: [AnyPublisher<Void, Never>] = [
             Defaults.publisher(.showStandardMediaControls).map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.showCalendar).map { _ in () }.eraseToAnyPublisher(),
@@ -183,12 +183,8 @@ class DynamicIslandViewCoordinator: ObservableObject {
                 self.currentView = self.availableTabs.first?.view ?? .home
             }
             self?.objectWillChange.send()
-            enforceMinimumNotchWidth()
         }
         .store(in: &cancellables)
-
-        // Enforce minimum width on launch for existing configurations
-        enforceMinimumNotchWidth()
     }
 
     var isHoverOpenSuppressed: Bool {
