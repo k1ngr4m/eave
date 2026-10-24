@@ -1112,13 +1112,19 @@ private struct FeatureGallery: View {
                     Text("Enabled features appear in the sidebar. Turning a feature off keeps its saved settings.")
                         .foregroundStyle(.secondary)
                     VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Enable minimalistic UI")
+                        Spacer()
                         Toggle("Enable minimalistic UI", isOn: Binding(
                             get: { minimal },
                             set: { value in
                                 minimal = value
                                 if value { Defaults[.useModernCloseAnimation] = true }
                             }
-                        )).toggleStyle(.switch)
+                        ))
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
                         Text("This preset keeps the original compact layout and temporarily limits some features without changing their switches.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
