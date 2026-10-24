@@ -146,7 +146,8 @@ struct HomeClockView: View {
 
 /// The Home tab's right-hand glance column: weather, the next calendar event,
 /// and the battery — one quiet row each, hidden when the data is unavailable.
-private struct HomeGlanceColumn: View {
+/// Shared with the settings appearance preview so both show identical content.
+struct HomeGlanceColumn: View {
     @ObservedObject private var calendarManager = CalendarManager.shared
     @Default(.enableLockScreenWeatherWidget) private var showsWeather
 

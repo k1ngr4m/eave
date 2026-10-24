@@ -186,7 +186,9 @@ struct AppearanceSettingsPreview: View {
         VStack(spacing: 10) {
             if expanded {
                 demoHeader.frame(height: max(24, closedSize.height))
-                idleContent.padding(.horizontal, 24).padding(.bottom, 12)
+                idleContent
+                    .padding(.horizontal, minimalistic ? 4 : 16)
+                    .padding(.vertical, 8)
             }
         }
         .frame(width: size.width, height: size.height, alignment: .top)
@@ -250,10 +252,21 @@ struct AppearanceSettingsPreview: View {
         .fixedSize(horizontal: true, vertical: false)
     }
 
+    /// Mirrors NotchHomeView's home layout so the preview shows the same
+    /// clock-plus-glance composition as the real notch.
     private var idleContent: some View {
-        TimelineView(.periodic(from: Calendar.current.startOfDay(for: .now), by: 60)) { context in
-            HomeClockView(date: context.date, compact: minimalistic)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        HStack(spacing: minimalistic ? 12 : 28) {
+            TimelineView(.periodic(from: Calendar.current.startOfDay(for: .now), by: 60)) { context in
+                HomeClockView(date: context.date, compact: minimalistic)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            if !minimalistic {
+                HomeGlanceColumn()
+                    .fixedSize()
+            }
         }
+        .frame(maxWidth: 460, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
     }
 }
