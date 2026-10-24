@@ -60,6 +60,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     case notes
     case terminal
     case developerTools
+    case projectTasks
     case about
 
     var id: String { rawValue }
@@ -68,7 +69,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     var group: SettingsTabGroup {
         switch self {
         case .general, .features, .appearance, .interaction, .liveActivities, .menuBar, .lockScreen: return .core
-        case .clipboard, .screenText, .shelf, .notes: return .efficiency
+        case .clipboard, .screenText, .shelf, .notes, .projectTasks: return .efficiency
         case .media, .timer, .calendar, .keepAwake: return .daily
         case .devices, .hudAndOSD, .stats: return .system
         case .llmAgents, .terminal, .developerTools: return .development
@@ -103,6 +104,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .notes: return String(localized: "Notes")
         case .developerTools: return "开发工具"
         case .terminal: return String(localized: "Terminal")
+        case .projectTasks: return String(localized: "项目与任务")
         case .about: return String(localized: "About")
         }
     }
@@ -133,6 +135,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .notes: return "note.text"
         case .developerTools: return "curlybraces"
         case .terminal: return "apple.terminal"
+        case .projectTasks: return "checklist"
         case .about: return "info.circle"
         }
     }
@@ -163,6 +166,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .notes: return Color(red: 0.979, green: 0.716, blue: 0.153, opacity: 1.000)
         case .developerTools: return .blue
         case .terminal: return Color(red: 0.2, green: 0.8, blue: 0.4)
+        case .projectTasks: return .blue
         case .about: return .secondary
         }
     }
@@ -1241,6 +1245,7 @@ private extension SettingsModuleRegistry {
             feature(.terminal, key: .enableTerminalFeature, summary: String(localized: "Use a terminal inside the island."), supportsMinimalMode: false) { TerminalSettings() },
             feature(.developerTools, key: .enableDeveloperTools, summary: String(localized: "Format and validate JSON with developer tools."), supportsMinimalMode: false) { DeveloperToolsSettings() },
             feature(.stocks, key: .enableStocksFeature, summary: String(localized: "Follow stock quotes and a personal watchlist."), supportsMinimalMode: false) { Form { StocksSettingsSection() } },
+            feature(.projectTasks, key: .enableProjectTasks, summary: String(localized: "Manage local projects and tasks with an editable gantt chart and a notch quick-entry page."), supportsMinimalMode: false) { ProjectsSettingsView() },
             SettingsModule(.desktopPing, kind: .toggleable, summary: String(localized: "Send visual pings and emotes on the desktop."),
                 enabled: Binding(get: { DesktopPingManager.shared.configuration.enabled }, set: { DesktopPingManager.shared.configuration.enabled = $0 }),
                 changes: DesktopPingManager.shared.$configuration.map { _ in () }.eraseToAnyPublisher()) { DesktopPingSettings() },

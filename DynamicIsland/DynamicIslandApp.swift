@@ -26,6 +26,7 @@ import SkyLightWindow
 @main
 struct DynamicNotchApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @Default(.enableProjectTasks) private var enableProjectTasks
     var body: some Scene {
         Settings {
             EmptyView()
@@ -38,6 +39,13 @@ struct DynamicNotchApp: App {
         CommandGroup(replacing: .appSettings) {
             Button("Settings…") {
                 SettingsWindowController.shared.showWindow()
+            }
+        }
+        CommandGroup(after: .newItem) {
+            if enableProjectTasks {
+                Button(String(localized: "项目与任务…")) {
+                    ProjectsWindowController.shared.showWindow()
+                }
             }
         }
     }
@@ -545,6 +553,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let screenHeight = NSScreen.main?.visibleFrame.height ?? 800
             let maxFraction = Defaults[.terminalMaxHeightFraction]
             baseSize.height = min(screenHeight * maxFraction, max(300, screenHeight * maxFraction))
+        } else if coordinator.currentView == .tasks {
+            baseSize.height = max(baseSize.height, 316)
         }
         
 
@@ -874,6 +884,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Observe terminal settings changes
         Defaults.publisher(.enableTerminalFeature, options: []).sink { [weak self] _ in
             self?.debouncedUpdateWindowSize()
+        }.store(in: &cancellables)
+
+        // Projects & tasks: closing the module hides entries and closes the
+        // single projects window while keeping all committed data (PRD 5.1).
+        Defaults.publisher(.enableProjectTasks, options: []).receive(on: DispatchQueue.main).sink { [weak self] change in
+            guard let self else { return }
+            if !change.newValue {
+                ProjectsWindowController.shared.close()
+                if self.coordinator.currentView == .tasks {
+                    self.coordinator.currentView = .home
+                }
+            }
+            Task { @MainActor [weak self] in
+                self?.updateFeatureShortcutAvailability()
+            }
         }.store(in: &cancellables)
 
         Defaults.publisher(.terminalMaxHeightFraction, options: []).sink { [weak self] _ in
@@ -1484,6 +1509,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+
+        KeyboardShortcuts.onKeyDown(for: .openProjectTasks) { [weak self] in
+            guard let self else { return }
+            guard Defaults[.enableShortcuts], Defaults[.enableProjectTasks] else { return }
+            ProjectsWindowController.shared.showWindow()
+        }
     }
 
     @MainActor
@@ -1494,6 +1525,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateShortcut(.startDemoTimer, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableTimerFeature])
         updateShortcut(.toggleTerminalTab, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableTerminalFeature])
         updateShortcut(.toggleCaffeinate, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableCaffeinate])
+        updateShortcut(.openProjectTasks, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableProjectTasks])
     }
 
     @MainActor

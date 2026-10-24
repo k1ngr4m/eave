@@ -62,7 +62,7 @@ class DynamicIslandViewCoordinator: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var hoverOpenSuppressedUntil: Date = .distantPast
     
-    private static let tabOrder: [NotchViews] = [.home, .media, .calendar, .shelf, .timer, .stats, .stocks, .llmUsage, .notes, .terminal, .developerTools]
+    private static let tabOrder: [NotchViews] = [.home, .media, .calendar, .shelf, .timer, .stats, .stocks, .llmUsage, .notes, .terminal, .developerTools, .tasks]
     
     /// Direction of the most recent tab switch (true = forward/right, false = backward/left)
     @Published var tabSwitchForward: Bool = true
