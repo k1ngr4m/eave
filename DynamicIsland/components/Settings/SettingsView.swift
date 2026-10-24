@@ -91,7 +91,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .devices: return String(localized: "Devices")
         case .timer: return String(localized: "Timer")
         case .calendar: return String(localized: "Calendar")
-        case .hudAndOSD: return String(localized: "Volume & Brightness")
+        case .hudAndOSD: return String(localized: "HUD & OSD")
         case .clipboard: return String(localized: "Clipboard")
         case .screenText: return String(localized: "Copy text from screen")
         case .desktopPing: return String(localized: "Desktop Pings")

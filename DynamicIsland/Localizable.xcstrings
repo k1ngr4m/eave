@@ -2054,19 +2054,19 @@
         }
       }
     },
-    "Volume & Brightness" : {
+    "HUD & OSD" : {
       "extractionState" : "manual",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "音量与亮度"
+            "value" : "HUD 与 OSD"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "音量與亮度"
+            "value" : "HUD 與 OSD"
           }
         }
       }
