@@ -47,11 +47,14 @@ struct CalendarDate: Comparable, Hashable, Codable, Identifiable {
         components.year = year
         components.month = month
         components.day = day
-        guard let date = Calendar(identifier: .gregorian).date(from: components),
-              let checked = Calendar(identifier: .gregorian).dateComponents([.year, .month, .day], from: date).date else {
-            return nil
-        }
-        let validated = Calendar(identifier: .gregorian).dateComponents([.year, .month, .day], from: checked)
+        let calendar = Calendar(identifier: .gregorian)
+        guard let date = calendar.date(from: components) else { return nil }
+        // Do not read DateComponents.date here: on recent Foundation builds
+        // dateComponents(_:from:) no longer sets .calendar on its result, so
+        // .date is always nil. Comparing the components directly validates
+        // just as well — date(from:) rolls impossible dates forward, so a
+        // mismatch rejects them.
+        let validated = calendar.dateComponents([.year, .month, .day], from: date)
         guard validated.year == year, validated.month == month, validated.day == day else { return nil }
         self.year = year
         self.month = month

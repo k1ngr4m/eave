@@ -1245,7 +1245,7 @@ private extension SettingsModuleRegistry {
             feature(.terminal, key: .enableTerminalFeature, summary: String(localized: "Use a terminal inside the island."), supportsMinimalMode: false) { TerminalSettings() },
             feature(.developerTools, key: .enableDeveloperTools, summary: String(localized: "Format and validate JSON with developer tools."), supportsMinimalMode: false) { DeveloperToolsSettings() },
             feature(.stocks, key: .enableStocksFeature, summary: String(localized: "Follow stock quotes and a personal watchlist."), supportsMinimalMode: false) { Form { StocksSettingsSection() } },
-            feature(.projectTasks, key: .enableProjectTasks, summary: String(localized: "Manage local projects and tasks with an editable gantt chart and a notch quick-entry page."), supportsMinimalMode: false) { ProjectsSettingsView() },
+            feature(.projectTasks, key: .enableProjectTasks, summary: String(localized: "Manage local projects and tasks with an editable gantt chart and a notch quick-entry page."), supportsMinimalMode: false) { ProjectsSettingsView().environmentObject(ProjectWorkspaceViewModel.shared) },
             SettingsModule(.desktopPing, kind: .toggleable, summary: String(localized: "Send visual pings and emotes on the desktop."),
                 enabled: Binding(get: { DesktopPingManager.shared.configuration.enabled }, set: { DesktopPingManager.shared.configuration.enabled = $0 }),
                 changes: DesktopPingManager.shared.$configuration.map { _ in () }.eraseToAnyPublisher()) { DesktopPingSettings() },
