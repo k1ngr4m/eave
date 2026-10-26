@@ -60,7 +60,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     case notes
     case terminal
     case developerTools
-    case projectTasks
     case about
 
     var id: String { rawValue }
@@ -69,7 +68,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     var group: SettingsTabGroup {
         switch self {
         case .general, .features, .appearance, .interaction, .liveActivities, .menuBar, .lockScreen: return .core
-        case .clipboard, .screenText, .shelf, .notes, .projectTasks: return .efficiency
+        case .clipboard, .screenText, .shelf, .notes: return .efficiency
         case .media, .timer, .calendar, .keepAwake: return .daily
         case .devices, .hudAndOSD, .stats: return .system
         case .llmAgents, .terminal, .developerTools: return .development
@@ -104,7 +103,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .notes: return String(localized: "Notes")
         case .developerTools: return "开发工具"
         case .terminal: return String(localized: "Terminal")
-        case .projectTasks: return String(localized: "项目与任务")
         case .about: return String(localized: "About")
         }
     }
@@ -135,7 +133,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .notes: return "note.text"
         case .developerTools: return "curlybraces"
         case .terminal: return "apple.terminal"
-        case .projectTasks: return "checklist"
         case .about: return "info.circle"
         }
     }
@@ -166,7 +163,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .notes: return Color(red: 0.979, green: 0.716, blue: 0.153, opacity: 1.000)
         case .developerTools: return .blue
         case .terminal: return Color(red: 0.2, green: 0.8, blue: 0.4)
-        case .projectTasks: return .blue
         case .about: return .secondary
         }
     }
@@ -978,7 +974,8 @@ private struct SettingsModule: Identifiable {
     let id: SettingsTab
     let kind: Kind
     let summary: String
-    let enabled: Binding<Bool>?
+    private let enabledBinding: () -> Binding<Bool>?
+    var enabled: Binding<Bool>? { enabledBinding() }
     let supportsMinimalMode: Bool
     let changes: AnyPublisher<Void, Never>?
     let makeSettings: () -> AnyView
@@ -992,14 +989,15 @@ private struct SettingsModule: Identifiable {
     var isFeature: Bool { kind == .toggleable }
 
     init<Content: View>(_ id: SettingsTab, kind: Kind, summary: String = "",
-                        enabled: Binding<Bool>? = nil, supportsMinimalMode: Bool = true,
+                        enabled: @autoclosure @escaping () -> Binding<Bool>? = nil, supportsMinimalMode: Bool = true,
                         changes: AnyPublisher<Void, Never>? = nil,
                         @ViewBuilder settings: @escaping () -> Content) {
-        precondition((kind == .toggleable) == (enabled != nil))
+        precondition((kind == .toggleable) == (enabled() != nil))
         self.id = id
         self.kind = kind
         self.summary = summary
-        self.enabled = enabled
+        // Recreate the binding so SwiftUI reads the current value, not its creation-time snapshot.
+        self.enabledBinding = enabled
         self.supportsMinimalMode = supportsMinimalMode
         self.changes = changes
         self.makeSettings = { AnyView(settings()) }
@@ -1245,7 +1243,6 @@ private extension SettingsModuleRegistry {
             feature(.terminal, key: .enableTerminalFeature, summary: String(localized: "Use a terminal inside the island."), supportsMinimalMode: false) { TerminalSettings() },
             feature(.developerTools, key: .enableDeveloperTools, summary: String(localized: "Format and validate JSON with developer tools."), supportsMinimalMode: false) { DeveloperToolsSettings() },
             feature(.stocks, key: .enableStocksFeature, summary: String(localized: "Follow stock quotes and a personal watchlist."), supportsMinimalMode: false) { Form { StocksSettingsSection() } },
-            feature(.projectTasks, key: .enableProjectTasks, summary: String(localized: "Manage local projects and tasks with an editable gantt chart and a notch quick-entry page."), supportsMinimalMode: false) { ProjectsSettingsView().environmentObject(ProjectWorkspaceViewModel.shared) },
             SettingsModule(.desktopPing, kind: .toggleable, summary: String(localized: "Send visual pings and emotes on the desktop."),
                 enabled: Binding(get: { DesktopPingManager.shared.configuration.enabled }, set: { DesktopPingManager.shared.configuration.enabled = $0 }),
                 changes: DesktopPingManager.shared.$configuration.map { _ in () }.eraseToAnyPublisher()) { DesktopPingSettings() },

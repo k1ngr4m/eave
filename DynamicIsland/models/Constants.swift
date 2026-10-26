@@ -1314,9 +1314,6 @@ extension Defaults.Keys {
     static let savedNotes = Key<[NoteItem]>("savedNotes", default: [])
     static let enableAppleNotesSync = Key<Bool>("enableAppleNotesSync", default: false)
     static let appleNotesLastSyncDate = Key<Date?>("appleNotesLastSyncDate", default: nil)
-
-    // MARK: Projects & Tasks
-    static let enableProjectTasks = Key<Bool>("enableProjectTasks", default: false)
     
     // Helper to determine the default media controller based on macOS version
     static var defaultMediaController: MediaControllerType {

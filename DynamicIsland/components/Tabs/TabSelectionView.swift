@@ -81,9 +81,6 @@ struct TabModel: Identifiable {
         if Defaults[.enableDeveloperTools] {
             tabsArray.append(TabModel(label: "开发工具", icon: "curlybraces", view: .developerTools))
         }
-        if Defaults[.enableProjectTasks] {
-            tabsArray.append(TabModel(label: String(localized: "任务"), icon: "checklist", view: .tasks))
-        }
         return tabsArray
     }
 }

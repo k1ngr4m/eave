@@ -27,7 +27,8 @@ restricted = re.findall(r'feature\(\.(\w+),[^\n]+supportsMinimalMode: false', re
 kinds = dict(re.findall(r'SettingsModule\(\.(\w+), kind: \.(\w+)', registrations))
 features = re.findall(r'feature\(\.(\w+),', registrations) + ['clipboard', 'desktopPing']
 assert len(ids) == len(set(ids))
-assert set(restricted) == {'timer', 'stats', 'llmAgents', 'stocks', 'shelf', 'notes', 'terminal', 'developerTools', 'projectTasks'}
+assert "projectTasks" not in ids
+assert set(restricted) == {'timer', 'stats', 'llmAgents', 'stocks', 'shelf', 'notes', 'terminal', 'developerTools'}
 fixtures = []
 for name in ids:
     if name in features:

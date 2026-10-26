@@ -1363,8 +1363,6 @@ struct ContentView: View {
                                 DeveloperToolsView()
                             case .terminal:
                                 NotchTerminalView()
-                            case .tasks:
-                                NotchTasksView()
                           }
                       }
                       .id(coordinator.currentView)
