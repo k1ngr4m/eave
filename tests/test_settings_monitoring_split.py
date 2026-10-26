@@ -8,6 +8,17 @@ root = Path(__file__).resolve().parents[1]
 source = (root / 'DynamicIsland/components/Settings/SettingsView.swift').read_text()
 navigation = 'private enum SettingsTabGroup:' + source.split('private enum SettingsTabGroup:', 1)[1].split('final class SettingsHighlightCoordinator:', 1)[0]
 registry = 'private struct SettingsModule:' + source.split('private struct SettingsModule:', 1)[1].split('private struct MenuBarSettings:', 1)[0]
+probe = '''
+private struct SidebarProbe: View {
+    @ObservedObject var registry: SettingsModuleRegistry
+    let rendered: ([SettingsTab]) -> Void
+    var body: some View {
+        let tabs = registry.sidebarTabs(minimal: false)
+        rendered(tabs)
+        return Text(tabs.map(\\.rawValue).joined(separator: ","))
+    }
+}
+'''
 registrations = source.split('static func appModules()', 1)[1].split('static func feature<', 1)[0]
 # Use the production declarations, replacing only app services and page builders
 # with in-memory switches and inert views. Never touch the user's preferences.
@@ -16,6 +27,7 @@ restricted = re.findall(r'feature\(\.(\w+),[^\n]+supportsMinimalMode: false', re
 kinds = dict(re.findall(r'SettingsModule\(\.(\w+), kind: \.(\w+)', registrations))
 features = re.findall(r'feature\(\.(\w+),', registrations) + ['clipboard', 'desktopPing']
 assert len(ids) == len(set(ids))
+assert "projectTasks" not in ids
 assert set(restricted) == {'timer', 'stats', 'llmAgents', 'stocks', 'shelf', 'notes', 'terminal', 'developerTools'}
 fixtures = []
 for name in ids:
@@ -28,6 +40,11 @@ private var values: [SettingsTab: Bool] = Dictionary(uniqueKeysWithValues: Setti
 private var builtPages = 0
 private let changes = PassthroughSubject<Void, Never>()
 private let registry = SettingsModuleRegistry(modules: [FIXTURES])
+private var renderedTabs: [SettingsTab] = []
+private let host = NSHostingView(rootView: SidebarProbe(registry: registry) { renderedTabs = $0 })
+host.frame = NSRect(x: 0, y: 0, width: 600, height: 200)
+host.layoutSubtreeIfNeeded()
+assert(renderedTabs == registry.sidebarTabs(minimal: false))
 private let primaryTabs: [SettingsTab] = [.liveActivities, .menuBar, .lockScreen]
 assert(builtPages == 0, "Pages must be created lazily")
 assert(Set(registry.modules.map(\.id)) == Set(SettingsTab.allCases.filter { $0 != .features }))
@@ -47,19 +64,33 @@ assert(values == original, "Mode policy must not overwrite feature switches")
 private var notifications = 0
 private let observation = registry.objectWillChange.sink { notifications += 1 }
 for module in registry.features {
+    let previousNotifications = notifications
     module.enabled!.wrappedValue = false
+    RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+    host.layoutSubtreeIfNeeded()
+    assert(!renderedTabs.contains(module.id), "Disabling \(module.id) must redraw the sidebar")
+    assert(notifications > previousNotifications, "Disabling \(module.id) must refresh navigation")
     assert(!registry.sidebarTabs(minimal: false).contains(module.id))
     assert(registry.requiresGallery(module.id, minimal: false))
     assert(registry.search(module.title).contains { $0.tab == module.id })
 }
 RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 assert(notifications > 0, "Existing settings changes must refresh navigation")
-observation.cancel()
 assert(registry.enabledIDs.isEmpty)
 for module in registry.modules where module.kind == .configuration || primaryTabs.contains(module.id) {
     assert(registry.sidebarTabs(minimal: true).contains(module.id))
 }
-for module in registry.features { module.enabled!.wrappedValue = true }
+for module in registry.features {
+    let previousNotifications = notifications
+    module.enabled!.wrappedValue = true
+    RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+    host.layoutSubtreeIfNeeded()
+    assert(renderedTabs.contains(module.id), "Enabling \(module.id) must redraw the sidebar")
+    assert(notifications > previousNotifications, "Enabling \(module.id) must refresh navigation")
+    assert(registry.sidebarTabs(minimal: false).contains(module.id))
+    assert(!registry.requiresGallery(module.id, minimal: false))
+}
+observation.cancel()
 assert(values == original)
 assert(registry.search("  ").isEmpty)
 for entry in SettingsSearchIndex.entries {
@@ -98,7 +129,7 @@ print("Registry, enabled sidebar, full search, mode policy, observation and lazy
 '''.replace('FIXTURES', ',\n'.join(fixtures))
 with tempfile.TemporaryDirectory() as directory:
     main = Path(directory) / 'main.swift'
-    main.write_text('import SwiftUI\nimport Combine\n' + navigation + registry + '\nMainActor.assumeIsolated {\n' + checks.replace('private ', '') + '\n}\n')
+    main.write_text('import SwiftUI\nimport Combine\n' + navigation + registry + probe + '\nMainActor.assumeIsolated {\n' + checks.replace('private ', '') + '\n}\n')
     subprocess.run(['swift', str(main)], check=True)
 
 assert 'hiddenSettingsTools' not in source

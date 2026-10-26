@@ -974,7 +974,8 @@ private struct SettingsModule: Identifiable {
     let id: SettingsTab
     let kind: Kind
     let summary: String
-    let enabled: Binding<Bool>?
+    private let enabledBinding: () -> Binding<Bool>?
+    var enabled: Binding<Bool>? { enabledBinding() }
     let supportsMinimalMode: Bool
     let changes: AnyPublisher<Void, Never>?
     let makeSettings: () -> AnyView
@@ -988,14 +989,15 @@ private struct SettingsModule: Identifiable {
     var isFeature: Bool { kind == .toggleable }
 
     init<Content: View>(_ id: SettingsTab, kind: Kind, summary: String = "",
-                        enabled: Binding<Bool>? = nil, supportsMinimalMode: Bool = true,
+                        enabled: @autoclosure @escaping () -> Binding<Bool>? = nil, supportsMinimalMode: Bool = true,
                         changes: AnyPublisher<Void, Never>? = nil,
                         @ViewBuilder settings: @escaping () -> Content) {
-        precondition((kind == .toggleable) == (enabled != nil))
+        precondition((kind == .toggleable) == (enabled() != nil))
         self.id = id
         self.kind = kind
         self.summary = summary
-        self.enabled = enabled
+        // Recreate the binding so SwiftUI reads the current value, not its creation-time snapshot.
+        self.enabledBinding = enabled
         self.supportsMinimalMode = supportsMinimalMode
         self.changes = changes
         self.makeSettings = { AnyView(settings()) }
