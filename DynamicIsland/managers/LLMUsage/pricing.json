@@ -861,6 +861,26 @@
       }
     },
     {
+      "id": "openai/gpt-6.1-terra",
+      "name": "OpenAI: GPT-6.1 Terra",
+      "pricing": {
+        "prompt": "0.000001",
+        "completion": "0.000005",
+        "cache_read": "0.00000005",
+        "cache_write": "0.00000125"
+      }
+    },
+    {
+      "id": "openai/gpt-6.1-terra-pro",
+      "name": "OpenAI: GPT-6.1 Terra Pro",
+      "pricing": {
+        "prompt": "0.000001",
+        "completion": "0.000005",
+        "cache_read": "0.00000005",
+        "cache_write": "0.00000125"
+      }
+    },
+    {
       "id": "openai/gpt-audio",
       "name": "OpenAI: GPT Audio",
       "pricing": {
@@ -981,5 +1001,5 @@
       }
     }
   ],
-  "last_updated": "2026-10-26T03:48:23Z"
+  "last_updated": "2026-10-27T04:10:49Z"
 }
