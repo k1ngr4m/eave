@@ -904,9 +904,9 @@
       "id": "openai/gpt-oss-120b",
       "name": "OpenAI: gpt-oss-120b",
       "pricing": {
-        "prompt": "0.00000015",
-        "completion": "0.0000006",
-        "cache_read": "0.000000075",
+        "prompt": "0.00000001",
+        "completion": "0.000000037",
+        "cache_read": "",
         "cache_write": ""
       }
     },
@@ -914,9 +914,9 @@
       "id": "openai/gpt-oss-20b",
       "name": "OpenAI: gpt-oss-20b",
       "pricing": {
-        "prompt": "0.000000018",
-        "completion": "0.00000009",
-        "cache_read": "0.000000009",
+        "prompt": "0.00000003",
+        "completion": "0.00000013",
+        "cache_read": "0.00000003",
         "cache_write": ""
       }
     },
@@ -951,5 +951,5 @@
       }
     }
   ],
-  "last_updated": "2026-10-31T04:38:15Z"
+  "last_updated": "2026-11-01T04:57:48Z"
 }
