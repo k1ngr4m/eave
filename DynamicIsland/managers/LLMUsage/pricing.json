@@ -924,9 +924,9 @@
       "id": "openai/gpt-oss-120b",
       "name": "OpenAI: gpt-oss-120b",
       "pricing": {
-        "prompt": "0.000000027",
-        "completion": "0.000000101",
-        "cache_read": "0.000000025",
+        "prompt": "0.000000011",
+        "completion": "0.00000004",
+        "cache_read": "0.00000001",
         "cache_write": ""
       }
     },
@@ -971,5 +971,5 @@
       }
     }
   ],
-  "last_updated": "2026-11-06T05:38:58Z"
+  "last_updated": "2026-11-07T05:08:12Z"
 }
